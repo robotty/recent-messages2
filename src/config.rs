@@ -55,6 +55,8 @@ pub struct AppConfig {
     pub sessions_expire_after: Duration,
     #[serde(default = "one_hour")]
     pub recheck_twitch_auth_after: Duration,
+    #[serde(default = "sixty_four")]
+    pub db_pool_max_size: u64,
 }
 
 fn thirty_minutes() -> Duration {
@@ -74,6 +76,9 @@ fn default_buffer_size() -> usize {
 }
 fn default_save_file_directory() -> PathBuf {
     "messages".into()
+}
+fn sixty_four() -> u64 {
+    64
 }
 
 #[derive(Debug, Clone, Deserialize)]

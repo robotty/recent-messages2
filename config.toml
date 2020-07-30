@@ -23,6 +23,10 @@ redirect_uri = "https://example.com/"
 #recheck_twitch_auth_after = "1 hour"
 #save_file_directory = "messages"
 
+# up this setting in case you run into issues with larger deployments,
+# and increase max_connections_count on the PostgreSQL server config (as needed) as well
+#db_pool_max_size = 64
+
 # Configure the built-in web server
 [web]
 # address the web server should bind to. Supports IPv4, IPv6 and Unix sockets. Defaults to TCP, 127.0.0.1:2790

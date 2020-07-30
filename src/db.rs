@@ -24,7 +24,9 @@ pub async fn connect_to_postgresql(config: &Config) -> PgPool {
     let pg_config = tokio_postgres::Config::from(config.db.clone());
     log::debug!("PostgreSQL config: {:#?}", pg_config);
     let manager = PgConnectionManager::new(pg_config, NoTls);
-    Pool::builder().max_open(128).build(manager)
+    Pool::builder()
+        .max_open(config.app.db_pool_max_size)
+        .build(manager)
 }
 
 mod migrations {
