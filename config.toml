@@ -1,0 +1,75 @@
+# recent-messages2-specifc configuration options
+[app]
+# How often should the database be checked for expired channels and those channels then be parted (default: 30 minutes)
+#vacuum_channels_every = "30 minutes"
+# A channel is no longer listened to if it has not been accessed by anyone for at least this long (default: 24 hours)
+#channels_expire_after = "24 hours"
+
+# How often to start checking each channel for expired messages
+#vacuum_messages_every = "30 minutes"
+# After what time is a message considered expired?
+#messages_expire_after = "24 hours"
+
+# Maximum number of messages that will be stored for a channel. Defaults to 500.
+# If a message is received and this limit is exceeded, then the oldest message stored for the channel
+# will be deleted to make room.
+#max_buffer_size = 500
+
+client_id = "abc"
+client_secret = "def"
+redirect_uri = "https://example.com/"
+
+#sessions_expire_after = "7 days"
+#recheck_twitch_auth_after = "1 hour"
+
+# Configure the built-in web server
+[web]
+# address the web server should bind to. Supports IPv4, IPv6 and Unix sockets. Defaults to TCP, 127.0.0.1:2790
+#listen_address = { type = "tcp", address = "127.0.0.1:2790" }
+#listen_address = { type = "unix", path = "/var/run/recent_messages2/server.sock" }
+
+# Specify how we should connect to the PostgreSQL database server
+# most options are additionally documented here: https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-PARAMKEYWORDS
+[db]
+# Username to log into the database server as. Required
+user = "db_username"
+
+# Optional password for login, not needed e.g. if you use unix sockets with peer authentication
+#password = "a_password"
+
+# Name of the database to connect to. Required
+dbname = "recent_messages2"
+
+# A list of TCP or Unix addresses to try. Required (at least 1 must be specified).
+# Specify a list of addresses to try, in the other that they should be tried.
+# A TCP address can be specified like this:
+#     { hostname = "example.com", port = 5432 }
+#     { hostname = "example.com" }         (uses default port 5432)
+# A unix socket can be specified like this:
+#     { path = "/var/run/postgresql", port = 5432 }
+#     { path = "/var/run/postgresql" }     (uses default port 5432)
+# Unix sockets can only be specified on Unix systems. On Windows and other systems the a config specifying Unix
+# sockets will fail to parse.
+host = [ { path = "/var/run/postgresql" } ]
+
+# Control options passed to the PostgreSQL server.
+# Below is just an example, see https://www.postgresql.org/docs/current/config-setting.html#id-1.6.6.4.5
+# (the format is like in the PGOPTIONS environment variable)
+# See also the accompanying chapter 19: https://www.postgresql.org/docs/current/runtime-config.html
+#options = "-c search_path=my_custom_schema -c another_setting=another_value"
+
+# Maximum wait for connection
+# Supported duration format: https://docs.rs/humantime/2.0.1/humantime/fn.parse_duration.html
+#connect_timeout = "10s"
+
+# Controls whether client-side TCP keepalives are used. Defaults to true
+#keepalives = true
+
+# Controls the number of seconds of inactivity after which TCP should send a keepalive message to the server.
+# Defaults to 2 hours
+#keepalives_idle = "2 hours"
+
+# more supported options: application_name, ssl_mode, target_session_attrs, channel_binding
+# (usually irrelevant, search them up if you need them)
+# TLS (SSL) is not supported at the moment because there has been no demand. It can be added if needed.
+# Create a GitHub issue if you need TLS in your use case.

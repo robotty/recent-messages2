@@ -1,0 +1,6 @@
+# Forces SQL files in migrations/ to have the same endings on both Windows and Unix.
+# The files are hashed by the migrations library and having different line endings depending on the system
+# would cause the hashes to differ.
+# The migrations library always expects the hash of the file contents to be the same (in an effort to detect
+# differences between the migration scripts on disk and the migrations that were run against the database)
+*.sql text eol=lf
