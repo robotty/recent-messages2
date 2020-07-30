@@ -66,16 +66,11 @@ pub async fn get_recent_messages(
         )));
     }
 
-    let stored_messages = data_storage.get_messages(&channel_login).await;
+    let stored_messages = data_storage
+        .get_messages(&channel_login, options.limit)
+        .await;
 
-    let mut exported_messages =
-        crate::message_export::export_stored_messages(stored_messages, options);
-    if let Some(limit) = options.limit {
-        if exported_messages.len() > limit {
-            // delete unwanted messages
-            exported_messages.drain(..(exported_messages.len() - limit));
-        }
-    }
+    let exported_messages = crate::message_export::export_stored_messages(stored_messages, options);
 
     irc_listener.join_if_needed(channel_login.clone());
     let mut is_confirmed_joined = irc_listener.is_join_confirmed(channel_login.clone()).await;

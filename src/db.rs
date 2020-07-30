@@ -351,7 +351,13 @@ WHERE access_token = $1",
     // TODO background task to purge expired authorizations
 
     // left(start) of the vec: oldest messages
-    pub async fn get_messages(&self, channel_login: &str) -> Vec<StoredMessage> {
+    pub async fn get_messages(
+        &self,
+        channel_login: &str,
+        limit: Option<usize>,
+    ) -> Vec<StoredMessage> {
+        // limit: If specified, take the newest N messages.
+
         let channel_messages = self
             .messages
             .read()
@@ -361,7 +367,14 @@ WHERE access_token = $1",
         match channel_messages {
             Some(channel_messages) => {
                 let channel_messages = channel_messages.lock().await;
-                channel_messages.iter().cloned().collect()
+                let limit = limit.unwrap_or_else(|| channel_messages.len());
+                channel_messages
+                    .iter()
+                    .rev()
+                    .take(limit)
+                    .rev()
+                    .cloned()
+                    .collect()
             }
             None => vec![],
         }
