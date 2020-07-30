@@ -28,8 +28,6 @@ async fn main() {
     let config = match config {
         Ok(config) => config,
         Err(e) => {
-            // stderrlog::new().module(module_path!()).init().unwrap();
-
             log::debug!("Parsed args: {:#?}", args);
             log::error!(
                 "Failed to load config from `{}`: {}",
@@ -41,14 +39,6 @@ async fn main() {
     };
     let config: &'static Config = Box::leak(Box::new(config));
 
-    // logger init
-    // stderrlog::new()
-    //     .module(module_path!())
-    //     .quiet(args.quiet)
-    //     .verbosity(args.verbose + 2) // +2 makes INFO level be the default.
-    //     .timestamp(args.ts.unwrap_or(stderrlog::Timestamp::Off))
-    //     .init()
-    //     .unwrap();
     log::info!("Successfully loaded config");
     log::debug!("Parsed args: {:#?}", args);
     log::debug!("Config: {:#?}", config);

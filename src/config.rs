@@ -21,15 +21,6 @@ pub struct Args {
         default_value = DEFAULT_CONFIG_PATH
     )]
     pub config_path: PathBuf,
-    /// Silence all output
-    #[structopt(short = "q", long = "quiet")]
-    pub quiet: bool,
-    /// Verbose mode (-v, -vv, -vvv, etc)
-    #[structopt(short = "v", long = "verbose", parse(from_occurrences))]
-    pub verbose: usize,
-    /// Timestamp (sec, ms, ns, none)
-    #[structopt(short = "t", long = "timestamp")]
-    pub ts: Option<stderrlog::Timestamp>,
 }
 
 /// Config file options
