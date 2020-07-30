@@ -150,10 +150,17 @@ ORDER BY last_access DESC",
 
     pub async fn touch_or_add_channel(&self, channel_login: &str) -> Result<(), StorageError> {
         let db_conn = self.db.get().await?;
+        // this way we only update the last_access if it's been at least 30 minutes since
+        // the last time the last_access was updated for that channel. For high traffic
+        // channels this massively cuts down on the amount of writes the DB has to do
         db_conn
             .query(
                 r"INSERT INTO channel (channel_login)
-VALUES ($1)
+(
+	SELECT channel_login FROM channel
+	WHERE channel_login = $1
+	AND last_access < now() - INTERVAL '30 minutes'
+)
 ON CONFLICT ON CONSTRAINT channel_pkey DO UPDATE
     SET last_access = now()",
                 &[&channel_login],
