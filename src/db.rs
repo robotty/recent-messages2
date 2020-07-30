@@ -14,7 +14,6 @@ use thiserror::Error;
 use tokio::sync::{Mutex, RwLock};
 use tokio_postgres::error::Error as PgError;
 use tokio_postgres::tls::NoTls;
-use warp::reject::Reject;
 
 // TODO support TLS if needed
 // see https://docs.rs/postgres-native-tls/0.3.0/postgres_native_tls/index.html
@@ -84,14 +83,6 @@ impl From<mobc::Error<PgError>> for StorageError {
             mobc::Error::BadConn => StorageError::BadConn,
             mobc::Error::Inner(pg_error) => StorageError::PgError(pg_error),
         }
-    }
-}
-
-impl Reject for StorageError {}
-
-impl From<StorageError> for warp::Rejection {
-    fn from(err: StorageError) -> warp::Rejection {
-        warp::reject::custom(err)
     }
 }
 

@@ -352,7 +352,10 @@ pub fn with_authorization(
                     .await?;
 
                 if pre_validation_auth != authorization {
-                    data_storage.update_user_authorization(&authorization).await?;
+                    data_storage
+                        .update_user_authorization(&authorization)
+                        .await
+                        .map_err(ApiError::UpdateUserAuthorization)?;
                 }
 
                 Ok::<UserAuthorization, warp::Rejection>(authorization)
@@ -373,7 +376,8 @@ pub async fn extend_token(
 
     data_storage
         .update_user_authorization(&authorization)
-        .await?;
+        .await
+        .map_err(ApiError::UpdateUserAuthorization)?;
 
     Ok(warp::reply::json(&UserAuthorizationResponse::from_auth(
         &authorization,
