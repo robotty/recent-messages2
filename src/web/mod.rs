@@ -225,6 +225,8 @@ enum ApiError {
     QueryUserDetails(reqwest::Error),
     #[error("Failed to save user authorization to database: {0}")]
     SaveUserAuthorization(StorageError),
+    #[error("Failed to update user authorization to database: {0}")]
+    UpdateUserAuthorization(StorageError),
     #[error("Failed to query database for access token: {0}")]
     QueryAccessToken(StorageError),
     #[error("Failed to refresh Twitch OAuth access token: {0}")]
@@ -243,6 +245,7 @@ impl ApiError {
             ApiError::ExchangeCodeForAccessToken(_)
             | ApiError::QueryUserDetails(_)
             | ApiError::SaveUserAuthorization(_)
+            | ApiError::UpdateUserAuthorization(_)
             | ApiError::QueryAccessToken(_)
             | ApiError::FailedTwitchAccessTokenRefresh(_)
             | ApiError::AuthorizationRevokeFailed(_)
@@ -263,6 +266,7 @@ impl ApiError {
             ApiError::ExchangeCodeForAccessToken(_)
             | ApiError::QueryUserDetails(_)
             | ApiError::SaveUserAuthorization(_)
+            | ApiError::UpdateUserAuthorization(_)
             | ApiError::QueryAccessToken(_)
             | ApiError::FailedTwitchAccessTokenRefresh(_)
             | ApiError::AuthorizationRevokeFailed(_)
@@ -277,6 +281,7 @@ impl ApiError {
             ApiError::ExchangeCodeForAccessToken(_)
             | ApiError::QueryUserDetails(_)
             | ApiError::SaveUserAuthorization(_)
+            | ApiError::UpdateUserAuthorization(_)
             | ApiError::QueryAccessToken(_)
             | ApiError::FailedTwitchAccessTokenRefresh(_)
             | ApiError::AuthorizationRevokeFailed(_)
