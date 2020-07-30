@@ -21,6 +21,7 @@ redirect_uri = "https://example.com/"
 
 #sessions_expire_after = "7 days"
 #recheck_twitch_auth_after = "1 hour"
+#save_file_directory = "messages"
 
 # Configure the built-in web server
 [web]
