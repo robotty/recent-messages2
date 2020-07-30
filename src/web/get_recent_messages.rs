@@ -53,7 +53,7 @@ struct GetRecentMessagesResponse {
     error_code: Option<&'static str>,
 }
 
-// GET /api/v2/recent-messages/:channel?clearchatToNotice=bool&hide_moderation_messages=bool&hide_moderated_messages=bool
+// GET /api/v2/recent-messages/:channel?clearchat_to_notice=bool&hide_moderation_messages=bool&hide_moderated_messages=bool&limit=usize
 pub async fn get_recent_messages(
     channel_login: String,
     options: GetRecentMessagesQueryOptions,
