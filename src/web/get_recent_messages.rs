@@ -60,7 +60,11 @@ pub async fn get_recent_messages(
     data_storage: &'static DataStorage,
     irc_listener: &'static IrcListener,
 ) -> Result<impl warp::Reply, Rejection> {
-    if data_storage.is_channel_ignored(&channel_login).await? {
+    if data_storage
+        .is_channel_ignored(&channel_login)
+        .await
+        .map_err(ApiError::GetChannelIgnored)?
+    {
         return Err(warp::reject::custom(ApiError::ChannelIgnored(
             channel_login,
         )));
