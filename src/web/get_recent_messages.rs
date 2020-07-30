@@ -76,11 +76,11 @@ pub async fn get_recent_messages(
 
     let exported_messages = crate::message_export::export_stored_messages(stored_messages, options);
 
-    irc_listener.join_if_needed(channel_login.clone());
     let mut is_confirmed_joined = irc_listener.is_join_confirmed(channel_login.clone()).await;
 
-    // this background task is not awaited when the application is quit with Ctrl-C
     tokio::spawn(async move {
+        irc_listener.join_if_needed(channel_login.clone());
+
         if !is_confirmed_joined {
             // wait 5 seconds then check again
             tokio::time::delay_for(Duration::from_secs(5)).await;
