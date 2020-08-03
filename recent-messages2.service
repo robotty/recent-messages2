@@ -8,7 +8,7 @@ User=recent_messages
 Group=recent_messages
 Environment=RUST_LOG=twitch_irc=info,recent_messages2=info
 WorkingDirectory=/opt/recent-messages2
-ExecStart=/opt/recent-messages2/recent-messages2 --config config.prod.toml
+ExecStart=/opt/recent-messages2/target/release/recent-messages2 --config config.prod.toml
 RuntimeDirectory=recent-messages2
 RuntimeDirectoryMode=0777
 KillSignal=SIGINT
