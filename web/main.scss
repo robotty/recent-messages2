@@ -3,3 +3,12 @@
   width: 20px;
   margin-right: 10px;
 }
+
+.bootstrap-dark pre code {
+  color: #d3d3d3;
+}
+
+body {
+  // always show scrollbar, to prevent page from jumping around when users navigate between pages that have/dont have scrollbar
+  overflow-y: scroll;
+}

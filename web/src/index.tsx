@@ -5,7 +5,7 @@ import { Container } from 'reactstrap';
 import { AuthorizedWithRouter, LoginWithRouter, Logout, revalidateLogin } from './login';
 import { NavWithRouter } from './nav';
 import { Settings } from './settings';
-import { API, Home } from './static';
+import { API, DonationThankYou, Home } from './static';
 
 export interface AuthMissing {
     type: 'missing'
@@ -29,18 +29,37 @@ export interface AuthPresent {
 
 export type AuthState = AuthMissing | AuthLoading | AuthPresent;
 
-export class App extends React.Component<{}, { auth: AuthState }> {
+export class App extends React.Component<{}, { auth: AuthState, darkMode: boolean }> {
     private runningTicker: number | undefined;
     constructor(props) {
         super(props);
         this.state = {
             auth: {
                 type: 'missing'
-            }
+            },
+            darkMode: false
         };
         this.runningTicker = undefined;
 
+        this.updateDarkMode = this.updateDarkMode.bind(this);
         this.updateAuthState = this.updateAuthState.bind(this);
+    }
+
+    updateDarkMode(isDark) {
+        if (isDark) {
+            console.log('updating to dark mode');
+            document.body.classList.add("bootstrap-dark");
+            document.body.classList.remove("bootstrap");
+        } else {
+            console.log('updating to light mode');
+            document.body.classList.remove("bootstrap-dark");
+            document.body.classList.add("bootstrap");
+        }
+        this.setState(() => {
+            return {
+                "darkMode": isDark
+            };
+        });
     }
 
     updateAuthState(newAuthState?: AuthState) {
@@ -87,6 +106,12 @@ export class App extends React.Component<{}, { auth: AuthState }> {
     }
 
     componentDidMount() {
+        let mqList = window.matchMedia("(prefers-color-scheme: dark)");
+        this.updateDarkMode(mqList.matches);
+        mqList.onchange = (event) => {
+            this.updateDarkMode(event.matches);
+        };
+
         let storedAuthRaw = window.localStorage.getItem('auth');
         if (storedAuthRaw != null) {
             console.log('loaded auth from localStorage');
@@ -134,8 +159,10 @@ export class App extends React.Component<{}, { auth: AuthState }> {
                     <Route path="/logout">
                         <Logout auth={this.state.auth} updateAuthState={this.updateAuthState}/>
                     </Route>
+                    <Route path="/donation-thank-you">
+                        <DonationThankYou />
+                    </Route>
                     <Route exact path="/">
-                        <h1>recent-messages Home</h1>
                         <Home/>
                     </Route>
                     <Route path="/">

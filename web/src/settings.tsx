@@ -150,12 +150,12 @@ class SettingsLoggedIn extends React.Component<{ auth: AuthPresent, updateAuthSt
 
     render() {
         return <>
-            <Row>
+            <section>
                 <p>
                     You can make the following privacy settings for your own channel:
                 </p>
-            </Row>
-            <Row>
+            </section>
+            <section>
                 <Form>
                     <FormGroup>
                         <div>
@@ -209,7 +209,7 @@ class SettingsLoggedIn extends React.Component<{ auth: AuthPresent, updateAuthSt
                             action. Purging messages cannot be undone.</small>
                     </FormGroup>
                 </Form>
-            </Row>
+            </section>
         </>;
     }
 }
