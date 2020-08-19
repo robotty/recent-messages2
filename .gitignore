@@ -1,3 +1,9 @@
+/venv
 /target
 /.idea
-config.*.toml
+/config.*.toml
+
+/web/node_modules/
+/web/dist/
+/web/.cache/
+/web/.idea/

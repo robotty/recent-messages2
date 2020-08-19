@@ -1,2 +1,3 @@
 github: RAnders00
-custom: ["https://paypal.me/RAnders00", "https://recent-messages.robotty.de/#donate"]
+custom:
+  ["https://paypal.me/RAnders00", "https://recent-messages.robotty.de/#donate"]
