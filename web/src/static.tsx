@@ -111,7 +111,7 @@ export function Home() {
             </p>
         </section>
         <section>
-            <h4>Donate</h4>
+            <h4 id="donate">Donate</h4>
             <p>I made and run this project in my free time, and I don't want to collect money for doing that.
                 However <em>running</em> the service requires a server, which is not free. I currently pay about
                 26€ per month to run this service (that's just the server costs). If you are feeling generous, you can
