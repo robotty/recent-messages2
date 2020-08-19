@@ -88,13 +88,7 @@ async fn main() {
         data_storage,
         config,
     )));
-    let res = irc_listener
-        .join_channels_and_start_part_task(config, data_storage)
-        .await;
-    if let Err(e) = res {
-        log::error!("Failed to query for initial set of channels to join: {}", e);
-        std::process::exit(1);
-    }
+
     tokio::spawn(data_storage.clone().run_task_vacuum_old_messages(config));
     tokio::spawn(web::run(
         listener,

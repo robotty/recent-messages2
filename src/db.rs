@@ -5,7 +5,7 @@ use itertools::Itertools;
 use mobc::Pool;
 use mobc_postgres::PgConnectionManager;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
-use std::collections::{HashMap, VecDeque};
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::ops::RangeTo;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
@@ -95,20 +95,6 @@ pub struct DataStorage {
     messages_stored: Arc<AtomicU64>,
 }
 
-/// This is used for "channels to join" and "channels to part" queries.
-/// From experience with version 1 of recent messages, the number of channels that are not
-/// joined over time greatly overpowers the number of joined channels.
-///
-/// If "channels to part" returned all channels since the beginning of time, the query response
-/// and therefore the resulting workload would grow extremely large.
-///
-/// However, to our advantage, we know the exact `now()`-time used during the "channels to join"
-/// or "channels to part" query. With this information, it is possible to query
-/// a list of "channels to part", but only the channels whose status has changed since the
-/// last query.
-#[derive(Debug, Clone, Copy)]
-pub struct IterationTimestamp(DateTime<Utc>);
-
 impl DataStorage {
     pub fn new(db: PgPool) -> DataStorage {
         DataStorage {
@@ -121,16 +107,11 @@ impl DataStorage {
     pub async fn get_channel_logins_to_join(
         &self,
         channel_expiry: Duration,
-    ) -> Result<(Vec<String>, IterationTimestamp), StorageError> {
-        let mut db_conn = self.db.get().await?;
-        let transaction = db_conn.transaction().await?;
-
-        let current_time_rows = transaction.query("SELECT now()", &[]).await?;
-        let current_time: DateTime<Utc> = current_time_rows[0].get(0);
-        let next_query_token = IterationTimestamp(current_time);
+    ) -> Result<HashSet<String>, StorageError> {
+        let db_conn = self.db.get().await?;
 
         // TODO figure out whether this has to be sped up using an index.
-        let rows = transaction
+        let rows = db_conn
             .query(
                 r"SELECT channel_login
 FROM channel
@@ -140,14 +121,9 @@ ORDER BY last_access DESC",
                 &[&channel_expiry.as_secs_f64()],
             )
             .await?;
-        let channels = rows
-            .into_iter()
-            .map(|row| row.get("channel_login"))
-            .collect_vec();
+        let channels = rows.into_iter().map(|row| row.get(0)).collect();
 
-        transaction.commit().await?;
-
-        Ok((channels, next_query_token))
+        Ok(channels)
     }
 
     pub async fn touch_or_add_channel(&self, channel_login: &str) -> Result<(), StorageError> {
@@ -201,50 +177,6 @@ ON CONFLICT ON CONSTRAINT channel_pkey DO UPDATE
             )
             .await?;
         Ok(())
-    }
-
-    /// List of channels that we DON'T join. The exact opposite of `get_channel_logins_to_join`.
-    pub async fn get_channel_logins_to_part(
-        &self,
-        last_iteration_timestamp: IterationTimestamp,
-        channel_expiry: Duration,
-    ) -> Result<(Vec<String>, IterationTimestamp), StorageError> {
-        let mut db_conn = self.db.get().await?;
-        let transaction = db_conn.transaction().await?;
-
-        let current_time_rows = transaction.query("SELECT now()", &[]).await?;
-        let current_time: DateTime<Utc> = current_time_rows[0].get(0);
-        let next_query_token = IterationTimestamp(current_time);
-
-        // has_not_been_accessed_for := now() - last_access
-        // channel_expiry := make_interval(secs => $1)
-        // channel_is_expired := has_not_been_accessed_for >= channel_expiry
-
-        // last_iteration_timestamp := $2
-        // last_iteration_had_not_been_accessed_for := last_iteration_timestamp - last_access
-        // channel_was_considered_expired_on_last_check := last_iteration_had_not_been_accessed_for >= channel_expiry
-
-        // resulting condition: channel_is_expired AND NOT channel_was_considered_expired_on_last_check
-
-        // additionally we check the ignored status, but the check is simple: If the time the channel
-        // was ignored is after the last check, it is returned.
-        let rows = transaction
-            .query(
-                r"SELECT channel_login
-FROM channel
-WHERE ignored_at >= $2
-  OR (now() - last_access >= make_interval(secs => $1) AND NOT $2 - last_access >= make_interval(secs => $1))",
-                &[&channel_expiry.as_secs_f64(), &last_iteration_timestamp.0],
-            )
-            .await?;
-        let channels = rows
-            .into_iter()
-            .map(|row| row.get("channel_login"))
-            .collect_vec();
-
-        transaction.commit().await?;
-
-        Ok((channels, next_query_token))
     }
 
     pub async fn append_user_authorization(
