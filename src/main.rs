@@ -1,3 +1,5 @@
+#![type_length_limit="99999999"]
+
 mod config;
 mod db;
 mod irc_listener;
