@@ -218,59 +218,32 @@ export function API() {
           <code>{config.api_base_url}/</code>.
         </p>
         <p>
-          When talking to the API, you must set the{" "}
-          <strong>
-            <code>User-Agent</code>
-          </strong>{" "}
-          header to something meaningful. See the{" "}
-          <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/User-Agent">
-            MDN documentation
-          </a>{" "}
-          for the acceptable format of the <code>User-Agent</code> header. For
-          example, <a href="https://chatterino.com/">Chatterino</a> sends{" "}
-          <code>User-Agent: chatterino/2.1.7 (845c8fa63)</code>, and{" "}
-          <a href="https://play.google.com/store/apps/details?id=com.flxrs.dankchat&hl=de">
-            DankChat
-          </a>{" "}
-          uses the format <code>dankchat/1.9.16</code>. Your application's{" "}
-          <code>User-Agent</code> header should at the very least include its
-          name and the version. Note this also applies to web apps where the
-          user's browser makes the request directly. I am also aware that there
-          is currently a bug in Chrome that prevents one from overriding the{" "}
-          <code>User-Agent</code> header. Nevertheless, you should still specify
-          the overridden value for the <code>User-Agent</code> header in your
-          code, and whether it works in certain browsers is nothing you or me
-          can do anything about.
-        </p>
-        <p>
           CORS is enabled for the entire API, for all origins. You are free to
           use this API from client-side web apps and applications.
         </p>
         <p>
-          If you are developing an application and planning to integrate with
-          this service, follow these basic guidelines please:
-          <ul>
-            <li>
-              Provide a short section containing a short section about this
-              service being used, somewhere in the settings, preferences, or
-              similar place.
-            </li>
-            <li>
-              Link your users to this website (
-              <code>https://recent-messages.robotty.de/</code>).
-            </li>
-            <li>
-              If the service is not integral to how your application works, also
-              allow them to disable the integration with the service.
-            </li>
-            <li>
-              If feasible, you should always prefer to get user's consent via a
-              opt-in before the integration is enabled for them.{" "}
-              <a href="">
-                See this example for an idea about how that might look like.
-              </a>
-            </li>
-          </ul>
+          If you are developing a user-facing application and planning to
+          integrate with this service, you must follow these basic guidelines:
+          <br />
+          If feasible, you should always prefer to get user's consent via a
+          opt-in before the integration is enabled for them. On the Opt-in
+          dialog, include a short paragraph about what the service does and what
+          feature(s) it provides in your application, and give a link to this
+          website (<code>https://recent-messages.robotty.de/</code>).{" "}
+          <a href="https://imgur.com/a/VjPxPBE">
+            Here is a good example that you can follow.
+          </a>
+        </p>
+        <p>
+          If it's not realistic/possible to use an opt-in system, you must at
+          the very least have an opt-out settings section with the same sort of
+          information that would otherwise be shown on the opt-in dialog (info
+          text, opt-out toggle, link to website).
+        </p>
+        <p>
+          If in doubt, please contact me about your integration and ask for
+          help/confirmation before going forward. Contact details can be found
+          on the <Link to="/">home page</Link>.
         </p>
       </section>
       <h4>Endpoints</h4>
@@ -348,7 +321,12 @@ export function API() {
             more than <code>n</code> messages are available for the requested
             channel, the response is limited to the <code>n</code> newest
             messages. Optional, defaults to no limit (up to{" "}
-            {config.max_buffer_size} messages).
+            {config.max_buffer_size} messages).{" "}
+            <strong>
+              It is strongly recommended that you set this to some reasonable
+              number based on your application, e.g. 50 or 100 tends to be more
+              than enough for general-purpose chat clients.
+            </strong>
           </li>
         </ul>
         <h6>Response format:</h6>
