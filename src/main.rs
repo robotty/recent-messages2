@@ -1,4 +1,4 @@
-#![type_length_limit="99999999"]
+#![type_length_limit = "99999999"]
 
 mod config;
 mod db;
