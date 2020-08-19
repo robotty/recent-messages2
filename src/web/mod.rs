@@ -164,13 +164,8 @@ pub async fn run(
         .or(get_ignored)
         .or(set_ignored)
         .or(purge_messages)
-        .recover(handle_api_rejection);
-
-    let app = path!("api" / "v2" / ..).and(api);
-
-    let app = warp::options()
-        .map(|| warp::reply())
-        .or(app)
+        .or(warp::options().map(|| warp::reply()))
+        .recover(handle_api_rejection)
         .map(|r| warp::reply::with_header(r, "Access-Control-Allow-Methods", "GET, POST"))
         .map(|r| {
             warp::reply::with_header(
@@ -179,8 +174,9 @@ pub async fn run(
                 "Content-Type, Authorization",
             )
         })
-        .map(|r| warp::reply::with_header(r, "Access-Control-Allow-Origin", "*"))
-        .with(collect_timings());
+        .map(|r| warp::reply::with_header(r, "Access-Control-Allow-Origin", "*"));
+
+    let app = path!("api" / "v2" / ..).and(api).with(collect_timings());
 
     match listener {
         Listener::Tcp(tcp_listener) => warp::serve(app).serve_incoming(tcp_listener).await,
