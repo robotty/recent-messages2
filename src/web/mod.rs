@@ -8,7 +8,7 @@ use crate::config::{Config, ListenAddr};
 use crate::db::{DataStorage, StorageError};
 use crate::irc_listener::IrcListener;
 use http::status::StatusCode;
-use metrics::timing;
+use metrics::{counter, timing};
 use metrics_runtime::Controller;
 use serde::Serialize;
 use std::convert::Infallible;
@@ -199,6 +199,10 @@ fn collect_timings() -> Log<impl Fn(Info) + Clone> {
         timing!("http_request_duration_nanoseconds", info.elapsed(),
             "method" =>  info.method().as_str().to_owned(),
             "status_code" => info.status().as_str().to_owned(), // FIXME this can be without .to_owned() if only http fixed their API to specify 'static.
+        );
+        counter!("http_request", 1,
+            "method" =>  info.method().as_str().to_owned(),
+            "status_code" => info.status().as_str().to_owned(),
         );
     })
 }
