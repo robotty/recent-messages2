@@ -25,7 +25,7 @@
     "@forevolve/bootstrap-dark": "^1.0.0-alpha.1091",
     "@fortawesome/fontawesome-free": "^5.14.0",
     "array-buffer-to-hex": "^1.0.0",
-    "axios": "^0.19.2",
+    "axios": "^0.20.0",
     "bootstrap": "^4.5.2",
     "marked": "^1.1.1",
     "qs": "^6.9.4",
