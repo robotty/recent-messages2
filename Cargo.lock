@@ -2503,9 +2503,9 @@ dependencies = [
 
 [[package]]
 name = "twitch-irc"
-version = "0.1.2"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8221dc23eec2f7c08936ebc429d62bde9b6c4eec5399da78ba49c778cc3f3542"
+checksum = "876df1947b40c13ffbfe76384f4ae6406339511f4ff1754d202dd4f9db676339"
 dependencies = [
  "async-trait",
  "bytes",
