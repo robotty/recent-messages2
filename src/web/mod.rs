@@ -95,27 +95,27 @@ pub async fn run(
         .and_then(move |query_opts: auth::GetAuthorizationQueryOptions| {
             auth::create_token(
                 data_storage,
-                config.app.twitch_api_credentials.clone(),
-                config.app.sessions_expire_after,
-                config.app.recheck_twitch_auth_after,
+                config.web.twitch_api_credentials.clone(),
+                config.web.sessions_expire_after,
+                config.web.recheck_twitch_auth_after,
                 query_opts.code,
             )
         });
-    let recheck_twitch_auth_after = config.app.recheck_twitch_auth_after;
+    let recheck_twitch_auth_after = config.web.recheck_twitch_auth_after;
 
     let extend_token = path!("auth" / "extend")
         .and(warp::post())
         .and(auth::with_authorization(
             data_storage,
-            config.app.twitch_api_credentials.clone(),
+            &config.web.twitch_api_credentials,
             recheck_twitch_auth_after,
         ))
         .and_then(move |auth| {
             auth::extend_token(
                 auth,
                 data_storage,
-                config.app.sessions_expire_after,
-                config.app.recheck_twitch_auth_after,
+                config.web.sessions_expire_after,
+                config.web.recheck_twitch_auth_after,
             )
         });
 
@@ -123,7 +123,7 @@ pub async fn run(
         .and(warp::post())
         .and(auth::with_authorization(
             data_storage,
-            config.app.twitch_api_credentials.clone(),
+            &config.web.twitch_api_credentials,
             recheck_twitch_auth_after,
         ))
         .and_then(move |auth| auth::revoke_token(auth, data_storage));
@@ -132,7 +132,7 @@ pub async fn run(
         .and(warp::get())
         .and(auth::with_authorization(
             data_storage,
-            config.app.twitch_api_credentials.clone(),
+            &config.web.twitch_api_credentials,
             recheck_twitch_auth_after,
         ))
         .and_then(move |auth| ignored::get_ignored(auth, data_storage));
@@ -142,7 +142,7 @@ pub async fn run(
         .and(warp::filters::body::json())
         .and(auth::with_authorization(
             data_storage,
-            config.app.twitch_api_credentials.clone(),
+            &config.web.twitch_api_credentials,
             recheck_twitch_auth_after,
         ))
         .and_then(move |body, auth| ignored::set_ignored(auth, data_storage, irc_listener, body));
@@ -151,7 +151,7 @@ pub async fn run(
         .and(warp::post())
         .and(auth::with_authorization(
             data_storage,
-            config.app.twitch_api_credentials.clone(),
+            &config.web.twitch_api_credentials,
             recheck_twitch_auth_after,
         ))
         .and_then(move |auth| purge::purge_messages(auth, data_storage));
@@ -164,7 +164,7 @@ pub async fn run(
         .or(get_ignored)
         .or(set_ignored)
         .or(purge_messages)
-        .or(warp::options().map(|| warp::reply()))
+        .or(warp::options().map(warp::reply))
         .recover(handle_api_rejection)
         .map(|r| warp::reply::with_header(r, "Access-Control-Allow-Methods", "GET, POST"))
         .map(|r| {
