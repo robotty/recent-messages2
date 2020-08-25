@@ -1,4 +1,6 @@
 #![type_length_limit = "99999999"]
+#![deny(clippy::all)]
+#![deny(clippy::cargo)]
 
 mod config;
 mod db;

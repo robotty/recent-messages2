@@ -5,7 +5,6 @@ use std::time::Duration;
 use structopt::StructOpt;
 use thiserror::Error;
 use tokio_postgres as postgres;
-use toml;
 
 const DEFAULT_CONFIG_PATH: &str = "config.toml";
 
@@ -26,9 +25,9 @@ pub struct Args {
 /// Config file options
 #[derive(Debug, Clone, Deserialize)]
 pub struct Config {
+    #[serde(default)]
     pub app: AppConfig,
 
-    #[serde(default)]
     pub web: WebConfig,
 
     #[serde(default)]
@@ -37,48 +36,31 @@ pub struct Config {
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct AppConfig {
-    #[serde(with = "humantime_serde", default = "thirty_minutes")]
+    #[serde(with = "humantime_serde")]
     pub vacuum_channels_every: Duration,
-    #[serde(with = "humantime_serde", default = "one_day")]
+    #[serde(with = "humantime_serde")]
     pub channels_expire_after: Duration,
-    #[serde(with = "humantime_serde", default = "thirty_minutes")]
+    #[serde(with = "humantime_serde")]
     pub vacuum_messages_every: Duration,
-    #[serde(with = "humantime_serde", default = "one_day")]
+    #[serde(with = "humantime_serde")]
     pub messages_expire_after: Duration,
-    #[serde(default = "default_buffer_size")]
     pub max_buffer_size: usize,
-    #[serde(default = "default_save_file_directory")]
     pub save_file_directory: PathBuf,
-    #[serde(flatten)]
-    pub twitch_api_credentials: TwitchApiClientCredentials,
-    #[serde(default = "seven_days")]
-    pub sessions_expire_after: Duration,
-    #[serde(default = "one_hour")]
-    pub recheck_twitch_auth_after: Duration,
-    #[serde(default = "sixty_four")]
     pub db_pool_max_size: u64,
 }
 
-fn thirty_minutes() -> Duration {
-    Duration::from_secs(30 * 60)
-}
-fn one_hour() -> Duration {
-    Duration::from_secs(60 * 60)
-}
-fn one_day() -> Duration {
-    Duration::from_secs(24 * 60 * 60)
-}
-fn seven_days() -> Duration {
-    Duration::from_secs(7 * 24 * 60 * 60)
-}
-fn default_buffer_size() -> usize {
-    500
-}
-fn default_save_file_directory() -> PathBuf {
-    "messages".into()
-}
-fn sixty_four() -> u64 {
-    64
+impl Default for AppConfig {
+    fn default() -> Self {
+        AppConfig {
+            vacuum_channels_every: Duration::from_secs(30 * 60), // 30 minutes
+            channels_expire_after: Duration::from_secs(24 * 60 * 60), // 24 hours
+            vacuum_messages_every: Duration::from_secs(30 * 60), // 30 minutes
+            messages_expire_after: Duration::from_secs(24 * 60 * 60), // 24 hours
+            max_buffer_size: 500,
+            save_file_directory: "messages".into(),
+            db_pool_max_size: 64,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -89,9 +71,29 @@ pub struct TwitchApiClientCredentials {
 }
 
 #[derive(Debug, Clone, Deserialize)]
-#[serde(default)] // uses the Default impl.
 pub struct WebConfig {
+    #[serde(default = "default_listen_addr")]
     pub listen_address: ListenAddr,
+    #[serde(flatten)]
+    pub twitch_api_credentials: TwitchApiClientCredentials,
+    #[serde(default = "seven_days")]
+    pub sessions_expire_after: Duration,
+    #[serde(default = "one_hour")]
+    pub recheck_twitch_auth_after: Duration,
+}
+
+fn default_listen_addr() -> ListenAddr {
+    ListenAddr::Tcp {
+        address: "127.0.0.1:2790".parse().unwrap(),
+    }
+}
+
+fn seven_days() -> Duration {
+    Duration::from_secs(7 * 24 * 60 * 60)
+}
+
+fn one_hour() -> Duration {
+    Duration::from_secs(60 * 60)
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -110,17 +112,6 @@ impl std::fmt::Display for ListenAddr {
             ListenAddr::Tcp { address } => write!(f, "{}", address),
             #[cfg(unix)]
             ListenAddr::Unix { path } => write!(f, "{}", path.to_string_lossy()),
-        }
-    }
-}
-
-// provides a WebConfig when the [web] section is missing altogether
-impl Default for WebConfig {
-    fn default() -> Self {
-        WebConfig {
-            listen_address: ListenAddr::Tcp {
-                address: "127.0.0.1:2790".parse().unwrap(),
-            },
         }
     }
 }
@@ -206,11 +197,11 @@ impl From<postgres::Config> for DatabaseConfig {
                 config.get_hosts().len(),
             ))
         } else {
-            Box::new(itertools::cloned(config.get_ports().into_iter()))
+            Box::new(itertools::cloned(config.get_ports().iter()))
         };
 
         let mut hosts = vec![];
-        for (host, port) in config.get_hosts().into_iter().zip(ports) {
+        for (host, port) in config.get_hosts().iter().zip(ports) {
             let new_host = match host {
                 postgres::config::Host::Tcp(hostname) => PgHost::Tcp {
                     hostname: hostname.to_owned(),
@@ -298,7 +289,7 @@ impl From<DatabaseConfig> for postgres::Config {
         }
 
         if let Some(ref connect_timeout) = config.connect_timeout {
-            new_cfg.connect_timeout(connect_timeout.clone());
+            new_cfg.connect_timeout(*connect_timeout);
         }
         new_cfg.keepalives(config.keepalives);
         new_cfg.keepalives_idle(config.keepalives_idle);

@@ -8,6 +8,5 @@ use metrics_runtime::Controller;
 pub fn get_metrics(metrics_controller: &Controller) -> String {
     let mut prom_observer = PrometheusBuilder::new().build();
     metrics_controller.observe(&mut prom_observer);
-    let response_text = prom_observer.drain();
-    response_text
+    prom_observer.drain()
 }
