@@ -5,24 +5,18 @@ on: [push, pull_request]
 jobs:
   check-format:
     runs-on: ubuntu-latest
-    container: rust:latest
     steps:
       - uses: actions/checkout@v2
-      - name: install rustfmt
-        run: rustup component add rustfmt
-      - name: Check format
-        run: cargo fmt -- --check
+      - run: cargo fmt -- --check
   build:
-    runs-on: ubuntu-latest
-    container: rust:latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macOS-latest]
+        rust: [stable, nightly]
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/cache@v2
+      - uses: hecrj/setup-rust-action@v1
         with:
-          path: |
-            /usr/local/cargo/registry
-            /usr/local/cargo/git
-            target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-      - name: Build
-        run: cargo build
+          rust-version: ${{ matrix.rust }}
+      - run: cargo build
