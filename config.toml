@@ -15,12 +15,6 @@
 # will be deleted to make room.
 #max_buffer_size = 500
 
-client_id = "abc"
-client_secret = "def"
-redirect_uri = "https://example.com/"
-
-#sessions_expire_after = "7 days"
-#recheck_twitch_auth_after = "1 hour"
 #save_file_directory = "messages"
 
 # maximum number of connections the DB connection will create
@@ -28,11 +22,23 @@ redirect_uri = "https://example.com/"
 # and increase max_connections_count on the PostgreSQL server config (as needed) as well
 #db_pool_max_size = 64
 
-# Configure the built-in web server
+# Configure the built-in web server and API service
 [web]
 # address the web server should bind to. Supports IPv4, IPv6 and Unix sockets. Defaults to TCP, 127.0.0.1:2790
 #listen_address = { type = "tcp", address = "127.0.0.1:2790" }
 #listen_address = { type = "unix", path = "/var/run/recent_messages2/server.sock" }
+
+# Twitch API access credentials, register an application at https://dev.twitch.tv/
+# Must be specified, otherwise application will not start
+client_id = "abc"
+client_secret = "def"
+redirect_uri = "https://example.com/"
+
+# Settings for API authorization (used by web frontend).
+# Sessions totally expire after this period (no refresh possible after this).
+#sessions_expire_after = "7 days"
+# Re-validate that the user has not disconnected the Twitch integration after this period.
+#recheck_twitch_auth_after = "1 hour"
 
 # Specify how we should connect to the PostgreSQL database server
 # most options are additionally documented here: https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-PARAMKEYWORDS

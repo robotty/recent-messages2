@@ -1,28 +1,34 @@
 name: Rust
 
-on: [push]
+on: [push, pull_request]
 
 jobs:
   check-format:
     runs-on: ubuntu-latest
-    container: rust:latest
     steps:
       - uses: actions/checkout@v2
-      - name: install rustfmt
-        run: rustup component add rustfmt
-      - name: Check format
-        run: cargo fmt -- --check
-  build:
+      # stable rust toolchain
+      - run: rustup update
+      - run: rustup component add rustfmt
+      - run: cargo fmt -- --check
+  lint-clippy:
     runs-on: ubuntu-latest
-    container: rust:latest
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/cache@v2
+      # nightly toolchain
+      - run: rustup update
+      - run: rustup default nightly
+      - run: rustup component add clippy
+      - run: cargo clippy
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        rust: [stable, nightly]
+    steps:
+      - uses: actions/checkout@v2
+      - uses: hecrj/setup-rust-action@v1
         with:
-          path: |
-            /usr/local/cargo/registry
-            /usr/local/cargo/git
-            target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-      - name: Build
-        run: cargo build
+          rust-version: ${{ matrix.rust }}
+      - run: cargo build

@@ -318,7 +318,7 @@ impl UserAuthorization {
 
 pub fn with_authorization(
     data_storage: &'static DataStorage,
-    credentials: TwitchApiClientCredentials,
+    credentials: &'static TwitchApiClientCredentials,
     recheck_twitch_auth_after: Duration,
 ) -> impl warp::Filter<Extract = (UserAuthorization,), Error = warp::Rejection> + Clone {
     lazy_static! {
