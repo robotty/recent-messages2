@@ -7,7 +7,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      # stable rust toolchain
+      - run: rustup update
+      - run: rustup component add rustfmt
       - run: cargo fmt -- --check
+  lint-clippy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      # nightly toolchain
+      - run: rustup update
+      - run: rustup default nightly
+      - run: rustup component add clippy
+      - run: cargo clippy
   build:
     runs-on: ${{ matrix.os }}
     strategy:

@@ -105,7 +105,7 @@ impl ServerMessageExt for ServerMessage {
             ServerMessage::ClearMsg(m) => Some(&m.channel_login),
             ServerMessage::HostTarget(m) => Some(&m.channel_login),
             ServerMessage::Join(m) => Some(&m.channel_login),
-            ServerMessage::Notice(m) => m.channel_login.as_ref().map(|s| s.as_str()),
+            ServerMessage::Notice(m) => m.channel_login.as_deref(),
             ServerMessage::Part(m) => Some(&m.channel_login),
             ServerMessage::Privmsg(m) => Some(&m.channel_login),
             ServerMessage::RoomState(m) => Some(&m.channel_login),

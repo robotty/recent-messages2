@@ -1,5 +1,10 @@
 [package]
 name = "recent-messages2"
+license = "AGPL-3.0-or-later"
+repository = "https://github.com/robotty/recent-messages2"
+keywords = ["twitch", "api", "irc", "chat"]
+description = "Service to provide historical messages to Twitch chat clients"
+categories = ["web-programming"]
 version = "0.1.0"
 authors = ["Ruben Anders <ruben.anders@robotty.de>"]
 edition = "2018"

@@ -5,7 +5,6 @@ use std::time::Duration;
 use structopt::StructOpt;
 use thiserror::Error;
 use tokio_postgres as postgres;
-use toml;
 
 const DEFAULT_CONFIG_PATH: &str = "config.toml";
 
@@ -198,11 +197,11 @@ impl From<postgres::Config> for DatabaseConfig {
                 config.get_hosts().len(),
             ))
         } else {
-            Box::new(itertools::cloned(config.get_ports().into_iter()))
+            Box::new(itertools::cloned(config.get_ports().iter()))
         };
 
         let mut hosts = vec![];
-        for (host, port) in config.get_hosts().into_iter().zip(ports) {
+        for (host, port) in config.get_hosts().iter().zip(ports) {
             let new_host = match host {
                 postgres::config::Host::Tcp(hostname) => PgHost::Tcp {
                     hostname: hostname.to_owned(),
@@ -290,7 +289,7 @@ impl From<DatabaseConfig> for postgres::Config {
         }
 
         if let Some(ref connect_timeout) = config.connect_timeout {
-            new_cfg.connect_timeout(connect_timeout.clone());
+            new_cfg.connect_timeout(*connect_timeout);
         }
         new_cfg.keepalives(config.keepalives);
         new_cfg.keepalives_idle(config.keepalives_idle);

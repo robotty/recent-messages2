@@ -91,6 +91,7 @@ impl From<mobc::Error<PgError>> for StorageError {
 #[derive(Clone)]
 pub struct DataStorage {
     db: PgPool,
+    #[allow(clippy::type_complexity)] // type is not used anywhere except here
     messages: Arc<RwLock<HashMap<String, Arc<Mutex<VecDeque<StoredMessage>>>>>>,
     messages_stored: Arc<AtomicU64>,
 }
@@ -393,7 +394,7 @@ WHERE access_token = $1",
         messages_expire_after: Duration,
     ) {
         let channels_with_messages = self.messages.read().await.keys().cloned().collect_vec();
-        if channels_with_messages.len() == 0 {
+        if channels_with_messages.is_empty() {
             return; // dont want to divide by 0
         }
 
@@ -406,51 +407,46 @@ WHERE access_token = $1",
             let messages_map = self.messages.read().await;
             let channel_messages = messages_map.get(&channel).map(|e| Arc::clone(&e));
             drop(messages_map); // unlock mutex
-            match channel_messages {
-                Some(channel_messages) => {
-                    let mut channel_messages = channel_messages.lock().await;
+            if let Some(channel_messages) = channel_messages {
+                let mut channel_messages = channel_messages.lock().await;
 
-                    // iter() begins at the front of the list, which is where the oldest message lives
-                    let cutoff_time =
-                        Utc::now() - chrono::Duration::from_std(messages_expire_after).unwrap();
-                    let mut remove_until = None;
-                    for (i, StoredMessage { time_received, .. }) in
-                        channel_messages.iter().enumerate()
-                    {
-                        if time_received < &cutoff_time {
-                            // this message should be deleted
-                            remove_until = Some(i);
-                        } else {
-                            // message should be preserved
-                            // no point further looking since all following messages will be
-                            // younger
-                            break;
-                        }
+                // iter() begins at the front of the list, which is where the oldest message lives
+                let cutoff_time =
+                    Utc::now() - chrono::Duration::from_std(messages_expire_after).unwrap();
+                let mut remove_until = None;
+                for (i, StoredMessage { time_received, .. }) in channel_messages.iter().enumerate()
+                {
+                    if time_received < &cutoff_time {
+                        // this message should be deleted
+                        remove_until = Some(i);
+                    } else {
+                        // message should be preserved
+                        // no point further looking since all following messages will be
+                        // younger
+                        break;
                     }
-
-                    if let Some(remove_until) = remove_until {
-                        channel_messages.drain(RangeTo {
-                            end: remove_until + 1,
-                        });
-
-                        let messages_deleted = (remove_until + 1) as u64;
-                        metrics::counter!("recent_messages_messages_vacuumed", messages_deleted);
-
-                        let new_gauge_value = self
-                            .messages_stored
-                            .fetch_sub(messages_deleted, Ordering::SeqCst)
-                            - messages_deleted;
-                        metrics::gauge!("recent_messages_messages_stored", new_gauge_value as i64);
-
-                        // remove the mapping from the map if there are no more messages.
-                        if channel_messages.len() == 0 {
-                            self.messages.write().await.remove(&channel);
-                        }
-                    }
-                    // else: (None) no messages to delete.
                 }
-                None => {} // channel does not have messages
-            };
+
+                if let Some(remove_until) = remove_until {
+                    channel_messages.drain(RangeTo {
+                        end: remove_until + 1,
+                    });
+
+                    let messages_deleted = (remove_until + 1) as u64;
+                    metrics::counter!("recent_messages_messages_vacuumed", messages_deleted);
+
+                    let new_gauge_value = self
+                        .messages_stored
+                        .fetch_sub(messages_deleted, Ordering::SeqCst)
+                        - messages_deleted;
+                    metrics::gauge!("recent_messages_messages_stored", new_gauge_value as i64);
+
+                    // remove the mapping from the map if there are no more messages.
+                    if channel_messages.len() == 0 {
+                        self.messages.write().await.remove(&channel);
+                    }
+                }
+            } // else: (None) no messages stored for that channel.
 
             metrics::counter!("recent_messages_message_vacuum_runs", 1);
         }
