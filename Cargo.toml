@@ -1,5 +1,10 @@
 [package]
 name = "recent-messages2"
+license = "AGPL-3.0-or-later"
+repository = "https://github.com/robotty/recent-messages2"
+keywords = ["twitch", "api", "irc", "chat"]
+description = "Service to provide historical messages to Twitch chat clients"
+categories = ["web-programming"]
 version = "0.1.0"
 authors = ["Ruben Anders <ruben.anders@robotty.de>"]
 edition = "2018"
@@ -9,7 +14,7 @@ edition = "2018"
 [dependencies]
 tokio = { version = "0.2.22", features = ["full"] }
 serde = { version ="1.0.114", features = ["derive"] }
-twitch-irc = { version = "0.1.0", features = ["transport-tcp", "metrics-collection"] }
+twitch-irc = { version = "0.2.0", features = ["transport-tcp", "metrics-collection"] }
 futures = "0.3.5"
 toml = "0.5.6"
 structopt = "0.3.15"

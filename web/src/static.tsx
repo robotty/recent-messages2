@@ -1,6 +1,5 @@
 import * as React from "react";
 import { Link } from "react-router-dom";
-import { Button } from "reactstrap";
 import * as config from "../config";
 
 function rot13(s) {
@@ -154,42 +153,36 @@ export function Home() {
           collect money for doing that. However <em>running</em> the service
           requires a server, which is not free. I currently pay about 26€ per
           month to run this service (that's just the server costs). If you are
-          feeling generous, you can help pay for the server costs using the
-          following donation options:
+          feeling generous, you can help pay for the server costs by becoming a
+          monthly sponsor through GitHub Sponsors, or by giving a one-time
+          donation:
         </p>
         <div
           className="d-flex flex-row flex-wrap"
           style={{ margin: "-0.25rem" }}
         >
-          <form
-            action="https://www.paypal.com/cgi-bin/webscr"
-            method="post"
-            target="_top"
-          >
-            <input type="hidden" name="cmd" value="_s-xclick" />
-            <input
-              type="hidden"
-              name="hosted_button_id"
-              value="FRX6DNYSEPLA8"
-            />
-            <Button className="m-1" color="success">
-              Donate with PayPal
-            </Button>
-          </form>
-          <form
-            action="https://streamelements.com/randers/tip"
-            method="get"
+          <a
+            href="https://github.com/sponsors/RAnders00"
             target="_blank"
+            className="btn btn-primary m-1"
           >
-            <Button color="success" className="m-1">
-              Donate with StreamElements
-            </Button>
-          </form>
+            Become a GitHub sponsor
+          </a>
+          <a
+            href="https://paypal.me/RAnders00"
+            target="_blank"
+            className="btn btn-outline-primary m-1"
+          >
+            Donate using PayPal
+          </a>
+          <a
+            href="https://streamelements.com/randers/tip"
+            target="_blank"
+            className="btn btn-outline-primary m-1"
+          >
+            Donate using StreamElements
+          </a>
         </div>
-        <p>
-          (StreamElements is available for countries and people that can't/don't
-          want to use PayPal.)
-        </p>
       </section>
       <section>
         <h4>Rent servers at netcup</h4>
