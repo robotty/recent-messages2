@@ -10,7 +10,7 @@ jobs:
       - uses: hecrj/setup-rust-action@v1
         with:
           rust-version: stable
-          components: 'rustfmt'
+          components: "rustfmt"
       - run: cargo fmt -- --check
   build:
     runs-on: ${{ matrix.os }}
@@ -23,6 +23,6 @@ jobs:
       - uses: hecrj/setup-rust-action@v1
         with:
           rust-version: ${{ matrix.rust }}
-          components: 'clippy'
+          components: "clippy"
       - run: cargo build
       - run: cargo clippy
