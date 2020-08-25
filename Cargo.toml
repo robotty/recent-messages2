@@ -37,7 +37,7 @@ lazy_static = "1.4.0"
 humantime = "2.0.1"
 derivative = "2.1.1"
 env_logger = "0.7.1"
-simple-process-stats = "0.1.0"
+simple-process-stats = "0.2.0"
 mobc = { version = "0.5.12", features = ["tokio"] }
 mobc-postgres = "0.5.0"
 tokio-postgres = { version = "0.5.5", features = ["with-chrono-0_4"] }

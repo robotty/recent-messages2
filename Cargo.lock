@@ -345,6 +345,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "darwin-libproc"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cc629b7cf42586fee31dae31f9ab73fa5ff5f0170016aa61be5fcbc12a90c516"
+dependencies = [
+ "darwin-libproc-sys",
+ "libc",
+ "memchr",
+]
+
+[[package]]
+name = "darwin-libproc-sys"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ef0aa083b94c54aa4cfd9bbfd37856714c139d1dc511af80270558c7ba3b4816"
+dependencies = [
+ "libc",
+]
+
+[[package]]
 name = "derivative"
 version = "2.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2125,10 +2145,11 @@ dependencies = [
 
 [[package]]
 name = "simple-process-stats"
-version = "0.1.0"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "21e6a8e1456ff08e9b1c9082f0dd433596e455810ffec66a3c452406c20fcdfd"
+checksum = "da0f0739087b937c67be861acadce3e04d84fcee2ed1e786b1e00770dccfc48e"
 dependencies = [
+ "darwin-libproc",
  "libc",
  "procfs",
  "thiserror",
