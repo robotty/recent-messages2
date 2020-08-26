@@ -27,7 +27,7 @@ jobs:
       - run: cargo build ${{ (matrix.rust == 'stable') && '--release' || '' }}
       - run: cargo clippy
       - uses: actions/upload-artifact@v2
-        if: ${{ matrix.rust === "stable" }}
+        if: ${{ matrix.rust == 'stable' }}
         with:
           name: app-${{ matrix.os }}
           path: |
