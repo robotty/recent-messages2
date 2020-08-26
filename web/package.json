@@ -19,7 +19,7 @@
     "parcel-bundler": "^1.12.4",
     "prettier": "^2.0.5",
     "sass": "^1.26.10",
-    "typescript": "^3.9.7"
+    "typescript": "^4.0.2"
   },
   "dependencies": {
     "@forevolve/bootstrap-dark": "^1.0.0-alpha.1091",
