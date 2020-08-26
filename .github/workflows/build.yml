@@ -1,9 +1,9 @@
-name: Rust
+name: Build
 
 on: [push, pull_request]
 
 jobs:
-  check-format:
+  check-format-rustfmt:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -12,7 +12,7 @@ jobs:
           rust-version: stable
           components: "rustfmt"
       - run: cargo fmt -- --check
-  build:
+  build-rust:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -26,3 +26,20 @@ jobs:
           components: "clippy"
       - run: cargo build
       - run: cargo clippy
+  check-format-prettier:
+    runs-on: ubuntu-latest
+    container: node:14-stretch
+    steps:
+      - uses: actions/checkout@v2
+      - run: cd web && npm i
+      - run: ./web/node_modules/.bin/prettier --check --ignore-path ".gitignore" "**/*.md" "**/*.js" "**/*.tsx" "**/*.yml" "**/*.json"
+  build-web:
+    runs-on: ubuntu-latest
+    container: node:${{ matrix.node }}-stretch
+    strategy:
+      matrix:
+        node: [10, 12, 14]
+    steps:
+      - uses: actions/checkout@v2
+      - run: cd web && npm i
+      - run: cd web && npm run build
