@@ -2,6 +2,7 @@
 name = "recent-messages2"
 license = "AGPL-3.0-or-later"
 repository = "https://github.com/robotty/recent-messages2"
+homepage = "https://recent-messages.robotty.de/"
 keywords = ["twitch", "api", "irc", "chat"]
 description = "Service to provide historical messages to Twitch chat clients"
 categories = ["web-programming"]
