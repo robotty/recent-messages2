@@ -364,7 +364,7 @@ WHERE access_token = $1",
         }
     }
 
-    pub async fn run_task_vacuum_old_messages(self, config: &'static Config) {
+    pub async fn run_task_vacuum_old_messages(&'static self, config: &'static Config) {
         metrics::counter!("recent_messages_messages_vacuumed", 0);
         // initialize to 0
         metrics::counter!("recent_messages_message_vacuum_runs", 0); // initialize to 0
@@ -377,11 +377,9 @@ WHERE access_token = $1",
 
         loop {
             check_interval.tick().await;
-            let self_clone = self.clone();
             tokio::spawn(async move {
                 log::info!("Running vacuum for old messages");
-                self_clone
-                    .run_message_vacuum(vacuum_messages_every, message_expire_after)
+                self.run_message_vacuum(vacuum_messages_every, message_expire_after)
                     .await;
             });
         }
@@ -457,8 +455,8 @@ WHERE access_token = $1",
         config: &'static Config,
     ) -> Result<(), FileStorageError> {
         log::info!("Loading snapshot of messages from disk...");
-        let save_file_directory = config.app.save_file_directory.clone();
-        let directory_contents_res = tokio::fs::read_dir(&save_file_directory).await;
+        let save_file_directory = &config.app.save_file_directory;
+        let directory_contents_res = tokio::fs::read_dir(save_file_directory).await;
         let mut directory_contents = match directory_contents_res {
             Ok(directory_contents) => directory_contents,
             Err(e) => {
@@ -516,9 +514,9 @@ WHERE access_token = $1",
         config: &'static Config,
     ) -> Result<(), FileStorageError> {
         log::info!("Saving snapshot of messages to disk...");
-        let save_file_directory = config.app.save_file_directory.clone();
+        let save_file_directory = &config.app.save_file_directory;
         let mkdir_result = tokio::fs::DirBuilder::new()
-            .create(&save_file_directory)
+            .create(save_file_directory)
             .await;
         if let Err(e) = mkdir_result {
             // it's not an error condition if the directory already exists.
@@ -528,7 +526,7 @@ WHERE access_token = $1",
         }
 
         // delete files that were there previously
-        let mut directory_contents = tokio::fs::read_dir(&save_file_directory).await?;
+        let mut directory_contents = tokio::fs::read_dir(save_file_directory).await?;
         while let Some(dir_entry) = directory_contents.next_entry().await? {
             tokio::fs::remove_file(&dir_entry.path()).await?;
         }

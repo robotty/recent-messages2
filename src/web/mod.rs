@@ -95,7 +95,7 @@ pub async fn run(
         .and_then(move |query_opts: auth::GetAuthorizationQueryOptions| {
             auth::create_token(
                 data_storage,
-                config.web.twitch_api_credentials.clone(),
+                &config.web.twitch_api_credentials,
                 config.web.sessions_expire_after,
                 config.web.recheck_twitch_auth_after,
                 query_opts.code,

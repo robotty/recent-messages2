@@ -98,7 +98,7 @@ pub struct GetAuthorizationQueryOptions {
 // POST /api/v2/auth/create?code=abcdef123456
 pub async fn create_token(
     data_storage: &'static DataStorage,
-    credentials: TwitchApiClientCredentials,
+    credentials: &'static TwitchApiClientCredentials,
     sessions_expire_after: Duration,
     recheck_twitch_auth_after: Duration,
     code: String,
@@ -106,11 +106,11 @@ pub async fn create_token(
     let user_access_token = HTTP_CLIENT
         .post("https://id.twitch.tv/oauth2/token")
         .query(&[
-            ("client_id", credentials.client_id.clone()),
-            ("client_secret", credentials.client_secret),
-            ("redirect_uri", credentials.redirect_uri),
-            ("code", code),
-            ("grant_type", "authorization_code".to_owned()),
+            ("client_id", credentials.client_id.as_str()),
+            ("client_secret", &credentials.client_secret.as_str()),
+            ("redirect_uri", &credentials.redirect_uri.as_str()),
+            ("code", code.as_str()),
+            ("grant_type", "authorization_code"),
         ])
         .send()
         .await
@@ -129,7 +129,7 @@ pub async fn create_token(
 
     let user_api_response = HTTP_CLIENT
         .get("https://api.twitch.tv/helix/users")
-        .header("Client-ID", credentials.client_id)
+        .header("Client-ID", credentials.client_id.as_str())
         .header(
             "Authorization",
             format!("Bearer {}", user_access_token.access_token),
@@ -243,7 +243,7 @@ impl UserAuthorization {
             let user_api_response_result = async {
                 Ok(HTTP_CLIENT
                     .get("https://api.twitch.tv/helix/users")
-                    .header("Client-ID", credentials.client_id.clone())
+                    .header("Client-ID", &credentials.client_id)
                     .header(
                         "Authorization",
                         format!("Bearer {}", self.twitch_token.access_token),
@@ -327,9 +327,6 @@ pub fn with_authorization(
 
     warp::filters::header::header::<String>("Authorization").and_then(
         move |authorization_header: String| {
-            let data_storage = data_storage.clone();
-            let credentials = credentials.clone();
-
             async move {
                 let access_token = RE_AUTHORIZATION_HEADER
                     .captures(&authorization_header)

@@ -40,11 +40,10 @@ impl IrcListener {
         max_buffer_size: usize,
     ) {
         while let Some(message) = incoming_messages.next().await {
-            let message_storage = data_storage.clone();
             tokio::spawn(async move {
                 if let Some(channel_login) = message.channel_login() {
                     let message_source = message.source().as_raw_irc();
-                    message_storage
+                    data_storage
                         .append_message(channel_login.to_owned(), message_source, max_buffer_size)
                         .await;
                 }

@@ -93,7 +93,7 @@ async fn main() {
         config,
     )));
 
-    tokio::spawn(data_storage.clone().run_task_vacuum_old_messages(config));
+    tokio::spawn(data_storage.run_task_vacuum_old_messages(config));
     tokio::spawn(web::run(
         listener,
         metrics_controller,
