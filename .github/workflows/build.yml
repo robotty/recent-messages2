@@ -24,7 +24,7 @@ jobs:
         with:
           rust-version: ${{ matrix.rust }}
           components: "clippy"
-      - run: cargo build ${{ (matrix.rust == "stable") && "--release" }}
+      - run: cargo build ${{ (matrix.rust == 'stable') && '--release' || '' }}
       - run: cargo clippy
       - uses: actions/upload-artifact@v2
         if: ${{ matrix.rust === "stable" }}
