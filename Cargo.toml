@@ -30,7 +30,7 @@ warp = { git = "https://github.com/RAnders00/warp", branch = "v023-backports" }
 http = "0.2.1"
 hyper = "0.13.8"
 chrono = { version = "0.4.18", features = ["serde"] }
-serde_json = "1.0.56"
+serde_json = "1.0.58"
 itertools = "0.9.0"
 humantime-serde = "1.0.1"
 refinery = { version = "0.3.0", features = ["tokio-postgres"] }
