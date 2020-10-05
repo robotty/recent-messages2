@@ -32,9 +32,9 @@ checksum = "4d25d88fd6b8041580a654f9d0c581a047baee2b3efee13275f2fc392fc75034"
 
 [[package]]
 name = "async-trait"
-version = "0.1.38"
+version = "0.1.41"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6e1a4a2f97ce50c9d0282c1468816208588441492b40d813b2e0419c22c05e7f"
+checksum = "b246867b8b3b6ae56035f1eb1ed557c1d8eae97f0d53696138a50fa0e3a3b8c0"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2511,9 +2511,9 @@ dependencies = [
 
 [[package]]
 name = "twitch-irc"
-version = "0.2.0"
+version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "876df1947b40c13ffbfe76384f4ae6406339511f4ff1754d202dd4f9db676339"
+checksum = "13a608a2b8f304f05d85517ff1e948b74458a3f2b7cb65e4d4885d8f21ffaadb"
 dependencies = [
  "async-trait",
  "bytes",
