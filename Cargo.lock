@@ -1864,9 +1864,9 @@ checksum = "41cc0f7e4d5d4544e8861606a285bb08d3e70712ccc7d2b84d7c0ccfaf4b05ce"
 
 [[package]]
 name = "refinery"
-version = "0.3.0"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "432021bd2eb60a8851757fdd145907be1a96c70961da167a3fb362001f2f397c"
+checksum = "3d34d324a0627219489ebdda4ddad5397902fb9d38777bf499223373aeaaba91"
 dependencies = [
  "refinery-core",
  "refinery-macros",
@@ -1874,9 +1874,9 @@ dependencies = [
 
 [[package]]
 name = "refinery-core"
-version = "0.3.1"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f9f670a4f4d6450ce53ecf0dd55324e0a3b684c24693e5cd68fdeca2294b875a"
+checksum = "eed7c0812dfc4ec2596a474e175002cc99576e8c78dd0a2c41aea5a451ad0216"
 dependencies = [
  "async-trait",
  "cfg-if",
@@ -1889,14 +1889,15 @@ dependencies = [
  "thiserror",
  "tokio-postgres",
  "toml",
+ "url",
  "walkdir",
 ]
 
 [[package]]
 name = "refinery-macros"
-version = "0.3.0"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f397c4dfbcf0b298e8b10e5702d69852829636ee121215c42efe421dd16126e1"
+checksum = "4a80f45b9c4c99b4268ce14305f16b129f6c40b392c9fcaa350da5e805ad7c64"
 dependencies = [
  "proc-macro2",
  "quote",
