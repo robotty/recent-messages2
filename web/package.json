@@ -30,7 +30,7 @@
     "marked": "^1.2.0",
     "qs": "^6.9.4",
     "react": "^16.14.0",
-    "react-dom": "^16.13.1",
+    "react-dom": "^16.14.0",
     "react-ob": "^1.0.3",
     "react-router-dom": "^5.2.0",
     "reactstrap": "^8.6.0"
