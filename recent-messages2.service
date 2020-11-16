@@ -1,5 +1,6 @@
 [Unit]
 Description=Recent messages buffer service, version 2
+After=postgresql.service
 
 [Service]
 Type=simple
