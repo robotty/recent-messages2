@@ -10,7 +10,6 @@
   "license": "AGPL-3.0-or-later",
   "devDependencies": {
     "@types/history": "^4.7.8",
-    "@types/marked": "^1.1.0",
     "@types/qs": "^6.9.5",
     "@types/react": "^16.9.56",
     "@types/react-dom": "^16.9.9",
@@ -27,11 +26,9 @@
     "array-buffer-to-hex": "^1.0.0",
     "axios": "^0.21.0",
     "bootstrap": "^4.5.3",
-    "marked": "^1.2.3",
     "qs": "^6.9.4",
     "react": "^16.14.0",
     "react-dom": "^16.14.0",
-    "react-ob": "^1.0.3",
     "react-router-dom": "^5.2.0",
     "reactstrap": "^8.7.1"
   }
