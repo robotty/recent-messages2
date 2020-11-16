@@ -35,6 +35,7 @@ pub struct Config {
 }
 
 #[derive(Debug, Clone, Deserialize)]
+#[serde(default)]
 pub struct AppConfig {
     #[serde(with = "humantime_serde")]
     pub vacuum_channels_every: Duration,
