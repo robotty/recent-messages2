@@ -298,12 +298,6 @@ impl ApiError {
 
 impl Reject for ApiError {}
 
-impl From<ApiError> for warp::Rejection {
-    fn from(err: ApiError) -> warp::Rejection {
-        warp::reject::custom(err)
-    }
-}
-
 #[derive(Debug, Serialize)]
 struct ApiErrorResponse {
     status: u16,

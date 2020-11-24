@@ -16,7 +16,7 @@ edition = "2018"
 [dependencies]
 tokio = { version = "0.2.22", features = ["full"] }
 serde = { version ="1.0.117", features = ["derive"] }
-twitch-irc = { version = "0.2.1", features = ["transport-tcp", "metrics-collection"] }
+twitch-irc = { git = "https://github.com/robotty/twitch-irc-rs.git", branch = "tokio-0.2-compat", features = ["transport-tcp", "metrics-collection"] }
 futures = "0.3.8"
 toml = "0.5.7"
 structopt = "0.3.20"
@@ -26,7 +26,7 @@ metrics = "0.12.1"
 metrics-runtime = "0.13.0"
 metrics-observer-prometheus = "0.1.4"
 metrics-core = "0.5.2"
-warp = { git = "https://github.com/RAnders00/warp", branch = "v023-backports" }
+warp = { git = "https://github.com/RAnders00/warp", branch = "v025-backports" }
 http = "0.2.1"
 hyper = "0.13.9"
 chrono = { version = "0.4.19", features = ["serde"] }
