@@ -10,3 +10,5 @@ npm run build
 ```
 
 Output will be created in `dist`.
+
+A sample nginx config file is available as `nginx-example.conf`
