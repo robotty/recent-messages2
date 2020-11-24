@@ -134,14 +134,10 @@ ORDER BY last_access DESC",
         // channels this massively cuts down on the amount of writes the DB has to do
         db_conn
             .query(
-                r"INSERT INTO channel (channel_login)
-(
-	SELECT channel_login FROM channel
-	WHERE channel_login = $1
-	AND last_access < now() - INTERVAL '30 minutes'
-)
+                r"INSERT INTO channel (channel_login) VALUES ($1)
 ON CONFLICT ON CONSTRAINT channel_pkey DO UPDATE
-    SET last_access = now()",
+    SET last_access = now()
+    WHERE excluded.last_access < now() - INTERVAL '30 minutes'",
                 &[&channel_login],
             )
             .await?;
