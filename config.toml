@@ -60,7 +60,7 @@ dbname = "recent_messages2"
 # A unix socket can be specified like this:
 #     { path = "/var/run/postgresql", port = 5432 }
 #     { path = "/var/run/postgresql" }     (uses default port 5432)
-# Unix sockets can only be specified on Unix systems. On Windows and other systems the a config specifying Unix
+# Unix sockets can only be specified on Unix systems. On Windows and other systems a config specifying Unix
 # sockets will fail to parse.
 host = [ { path = "/var/run/postgresql" } ]
 
