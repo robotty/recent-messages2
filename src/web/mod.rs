@@ -164,7 +164,9 @@ pub async fn run(
         .or(get_ignored)
         .or(set_ignored)
         .or(purge_messages)
-        .or(warp::options().map(warp::reply))
+        .or(warp::options()
+            .map(warp::reply)
+            .or_else(|_| std::future::ready(Err(warp::reject::not_found()))))
         .recover(handle_api_rejection)
         .map(|r| warp::reply::with_header(r, "Access-Control-Allow-Methods", "GET, POST"))
         .map(|r| {
