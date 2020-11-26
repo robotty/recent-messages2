@@ -133,11 +133,11 @@ ORDER BY last_access DESC",
         // the last time the last_access was updated for that channel. For high traffic
         // channels this massively cuts down on the amount of writes the DB has to do
         db_conn
-            .query(
+            .execute(
                 r"INSERT INTO channel (channel_login) VALUES ($1)
 ON CONFLICT ON CONSTRAINT channel_pkey DO UPDATE
     SET last_access = now()
-    WHERE excluded.last_access < now() - INTERVAL '30 minutes'",
+    WHERE channel.last_access < now() - INTERVAL '30 minutes'",
                 &[&channel_login],
             )
             .await?;
