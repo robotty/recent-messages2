@@ -7,7 +7,7 @@ Type=simple
 Restart=always
 User=recent_messages
 Group=recent_messages
-Environment=RUST_LOG=twitch_irc=info,recent_messages2=info
+Environment=RUST_LOG=twitch_irc=debug,recent_messages2=debug,info
 WorkingDirectory=/opt/recent-messages2
 ExecStart=/opt/recent-messages2/target/release/recent-messages2 --config config.prod.toml
 RuntimeDirectory=recent-messages2
