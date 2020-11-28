@@ -94,7 +94,7 @@ async fn main() {
     )));
 
     tokio::spawn(data_storage.run_task_vacuum_old_messages(config));
-    tokio::spawn(web::run(
+    let web_join_handle = tokio::spawn(web::run(
         listener,
         metrics_controller,
         data_storage,
@@ -103,10 +103,16 @@ async fn main() {
     ));
 
     // await termination.
-    tokio::signal::ctrl_c()
-        .await
-        .expect("Failed to listen to Ctrl-C event");
-    log::info!("Interrupted by Ctrl-C, shutting down");
+    tokio::select! {
+        ctrl_c_result = tokio::signal::ctrl_c() => {
+            ctrl_c_result.expect("Failed to listen to Ctrl-C event");
+            log::info!("Interrupted by Ctrl-C, shutting down");
+        }
+        _ = web_join_handle => {
+            log::error!("Web task ended with some sort of error (see log output above!) - Shutting down!")
+        }
+    }
+
     let res = data_storage.save_messages_to_disk(config).await;
     match res {
         Ok(()) => log::info!("Finished saving stored messages"),

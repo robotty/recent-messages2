@@ -69,7 +69,7 @@ pub async fn run(
     data_storage: &'static DataStorage,
     irc_listener: &'static IrcListener,
     config: &'static Config,
-) -> ! {
+) {
     let get_recent_messages = path!("recent-messages" / String)
         .and(warp::get())
         .and_then(get_recent_messages::validate_channel_login)
@@ -185,7 +185,6 @@ pub async fn run(
         #[cfg(unix)]
         Listener::Unix(unix_listener) => warp::serve(app).serve_incoming(unix_listener).await,
     }
-    unreachable!()
 }
 
 fn collect_timings() -> Log<impl Fn(Info) + Clone> {
