@@ -4,9 +4,11 @@ use chrono::{DateTime, Utc};
 use humantime::format_duration;
 use itertools::Itertools;
 use lazy_static::lazy_static;
+use std::collections::HashSet;
 use std::convert::TryFrom;
 use twitch_irc::message::{
-    AsRawIRC, ClearChatAction, ClearMsgMessage, IRCMessage, IRCPrefix, IRCTags, ServerMessage,
+    AsRawIRC, ClearChatAction, ClearMsgMessage, IRCMessage, IRCPrefix, IRCTags, NoticeMessage,
+    ServerMessage,
 };
 
 #[derive(Debug)]
@@ -110,13 +112,16 @@ struct MessageContainer {
 }
 
 lazy_static! {
-    static ref IGNORED_NOTICE_IDS: Vec<&'static str> = vec![
+    static ref IGNORED_NOTICE_IDS: HashSet<&'static str> = [
         "no_permission",
         "host_on",
         "host_off",
         "host_target_went_offline",
         "msg_channel_suspended"
-    ];
+    ]
+    .iter()
+    .cloned()
+    .collect();
 }
 
 impl MessageContainer {
@@ -160,6 +165,15 @@ impl MessageContainer {
                         _ => false,
                     })
                     .for_each(|frame| frame.deleted_by_moderation = true);
+            }
+            ServerMessage::Notice(NoticeMessage {
+                message_id: Some(message_id),
+                ..
+            }) => {
+                // Don't export ignored NOTICE types
+                if IGNORED_NOTICE_IDS.contains(&message_id.as_str()) {
+                    return;
+                }
             }
             _ => {}
         }
