@@ -11,9 +11,9 @@ mod web;
 
 use crate::config::{Args, Config};
 use crate::db::DataStorage;
+use futures::prelude::*;
 use metrics_runtime::Receiver;
 use structopt::StructOpt;
-use futures::prelude::*;
 
 #[tokio::main]
 async fn main() {
@@ -113,7 +113,8 @@ async fn main() {
         futures::stream::select(sigint, sigterm).next().await
     };
     #[cfg(not(unix))]
-    let ctrl_c_event = tokio::signal::ctrl_c().map(|res| res.expect("Failed to listen to Ctrl-C event"));
+    let ctrl_c_event =
+        tokio::signal::ctrl_c().map(|res| res.expect("Failed to listen to Ctrl-C event"));
 
     // await termination.
     tokio::select! {
