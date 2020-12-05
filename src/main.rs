@@ -13,6 +13,7 @@ use crate::config::{Args, Config};
 use crate::db::DataStorage;
 use metrics_runtime::Receiver;
 use structopt::StructOpt;
+use futures::prelude::*;
 
 #[tokio::main]
 async fn main() {
@@ -102,11 +103,22 @@ async fn main() {
         config,
     ));
 
+    #[cfg(unix)]
+    let ctrl_c_event = async {
+        use tokio::signal::unix::{signal, SignalKind};
+
+        let sigint = signal(SignalKind::interrupt()).unwrap();
+        let sigterm = signal(SignalKind::terminate()).unwrap();
+
+        futures::stream::select(sigint, sigterm).next().await
+    };
+    #[cfg(not(unix))]
+    let ctrl_c_event = tokio::signal::ctrl_c().map(|res| res.expect("Failed to listen to Ctrl-C event"));
+
     // await termination.
     tokio::select! {
-        ctrl_c_result = tokio::signal::ctrl_c() => {
-            ctrl_c_result.expect("Failed to listen to Ctrl-C event");
-            log::info!("Interrupted by Ctrl-C, shutting down");
+        _ = ctrl_c_event => {
+            log::info!("Interrupted, shutting down");
         }
         _ = web_join_handle => {
             log::error!("Web task ended with some sort of error (see log output above!) - Shutting down!")
