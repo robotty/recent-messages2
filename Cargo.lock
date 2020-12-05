@@ -2515,8 +2515,9 @@ dependencies = [
 
 [[package]]
 name = "twitch-irc"
-version = "0.3.0"
-source = "git+https://github.com/robotty/twitch-irc-rs.git?branch=tokio-0.2-compat#2c375b46fc9b9ff8bd90e6e8626b1db27e0235af"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "22ddd068a5f1a5ee5e89055ec7fc3905d853f6197ac45c6feb0520ed1335dd67"
 dependencies = [
  "async-trait",
  "bytes",
