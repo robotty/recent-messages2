@@ -43,7 +43,7 @@ simple-process-stats = "=0.2.0"
 mobc = { version = "0.5.12", features = ["tokio"] }
 mobc-postgres = "0.5.0"
 tokio-postgres = { version = "0.5.5", features = ["with-chrono-0_4"] }
-rmp-serde = "0.14.3"
+rmp-serde = "0.15.0"
 reqwest = { version = "0.10.9", features = ["json"] }
 rand = "0.7.3"
 
