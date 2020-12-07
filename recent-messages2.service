@@ -12,7 +12,6 @@ WorkingDirectory=/opt/recent-messages2
 ExecStart=/opt/recent-messages2/target/release/recent-messages2 --config config.prod.toml
 RuntimeDirectory=recent-messages2
 RuntimeDirectoryMode=0777
-KillSignal=SIGINT
 TimeoutStopSec=infinity
 
 [Install]
