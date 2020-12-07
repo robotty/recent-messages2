@@ -314,6 +314,7 @@ async fn handle_api_rejection(err: Rejection) -> Result<impl Reply, Infallible> 
 
     if let Some(custom_api_error) = err.find::<ApiError>() {
         // custom errors
+        log::error!("API error: {}", custom_api_error);
         status = custom_api_error.status();
         error_string = custom_api_error.user_message();
         error_code = custom_api_error.error_code();
