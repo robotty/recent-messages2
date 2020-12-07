@@ -19,6 +19,10 @@ use structopt::StructOpt;
 async fn main() {
     env_logger::init();
 
+    // unix: increase NOFILE rlimit
+    #[cfg(unix)]
+    increase_nofile_rlimit();
+
     // init metrics system
     let metrics_receiver = Receiver::builder()
         .build()
@@ -133,5 +137,38 @@ async fn main() {
             log::error!("Failed to save messages: {}", e);
             std::process::exit(1);
         }
+    }
+}
+
+#[cfg(unix)]
+fn increase_nofile_rlimit() {
+    use rlimit::Resource;
+    let (soft, hard) = match Resource::NOFILE.get() {
+        Ok((soft, hard)) => (soft, hard),
+        Err(e) => {
+            log::error!(
+                "Failed to get NOFILE rlimit, will not attempt to increase rlimit: {}",
+                e
+            );
+            return;
+        }
+    };
+    log::debug!(
+        "NOFILE rlimit: process was started with limits set to {} soft, {} hard",
+        soft,
+        hard
+    );
+
+    if soft < hard {
+        match Resource::NOFILE.set(hard, hard) {
+            Ok(()) => log::info!(
+                "Successfully increased NOFILE rlimit to {}, was at {}",
+                hard,
+                soft
+            ),
+            Err(e) => log::error!("Failed to increase NOFILE rlimit to {}: {}", hard, e),
+        }
+    } else {
+        log::debug!("NOFILE rlimit: no need to increase (soft limit is not below hard limit)")
     }
 }
