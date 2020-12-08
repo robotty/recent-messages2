@@ -13,6 +13,9 @@ ExecStart=/opt/recent-messages2/target/release/recent-messages2 --config config.
 RuntimeDirectory=recent-messages2
 RuntimeDirectoryMode=0777
 TimeoutStopSec=infinity
+# Default on my default debian was 1024 open file descriptors (too low for large setups)
+# This raises both hard and soft NOFILE limits significantly
+LimitNOFILE=infinity
 
 [Install]
 WantedBy=multi-user.target
