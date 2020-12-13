@@ -452,3 +452,183 @@ export function DonationThankYou() {
     </>
   );
 }
+
+export function Privacy() {
+  return (
+    <>
+      <h1>Privacy Policy</h1>
+      <p>
+        This privacy policy will explain how I use your personal data I collect
+        from you when you use my website and service.
+      </p>
+      <h4>
+        What data do I collect? How do I collect your data? How will I use your
+        data? How do I store your data?
+      </h4>
+      I collect the following data:
+      <ul>
+        <li>
+          Individual chat messages sent to Twitch.tv channels that this service
+          is actively listening to.
+          <br />
+          These chat messages are received from a public Twitch.tv messaging API
+          (https://dev.twitch.tv/docs/irc).
+          <br />
+          The service only collects messages for a channel given that any user
+          has requested the messages for that channel within the last{" "}
+          {config.channels_expire_after}.<br />
+          The service automatically stops listening to the messages sent to a
+          Twitch.tv channel within the next 30 minutes once the channel's
+          historical messages have not been accessed by anyone for{" "}
+          {config.channels_expire_after}. A stored chat message is automatically
+          permanently deleted within the next 30 minutes once it becomes older
+          than {config.messages_expire_after}.
+        </li>
+        <li>
+          Your basic Twitch.tv profile data (Twitch username, Twitch user ID,
+          Link to profile picture).
+          <br />
+          This information is collected from the public Twitch.tv API
+          (https://dev.twitch.tv/docs/api/).
+          <br />
+          This information is only collected if and when you complete the Login
+          feature of the website.
+          <br />
+          User name and ID are only used to confirm your authorization as the
+          owner of a given Twitch.tv channel (authorization).
+          <br />
+          The link to the profile picture is only used for the website to be
+          able to show you your own profile picture. The actual profile picture
+          image is not downloaded or stored at any time.
+          <br />
+          This information is stored on my server. Additionally, the information
+          is stored in your browser's local storage to allow you to revisit the
+          website without having to log in again. The information is
+          automatically permanently deleted from your browser's local storage in
+          case you visit the website after not having visited the website for{" "}
+          {config.sessions_expire_after}. On the server-side, the information
+          automatically becomes expired and inaccessible once{" "}
+          {config.sessions_expire_after} have passed without you having visited
+          the website with the same browser. Additionally, the information is
+          also permanently from both the server as well as the browser's local
+          storage if you explicitly "Log out" on the website.
+        </li>
+      </ul>
+      <p>
+        I justify my collection of chat messages (first point above) with
+        Article 6 Section 1 Point (e) of the GDPR: "Processing shall be lawful
+        only if and to the extent that at least one of the following applies:
+        [...] (e) processing is necessary for the performance of a task carried
+        out in the public interest or in the exercise of official authority
+        vested in the controller".
+        <br />I justify my collection of basic Twitch.tv user data (second point
+        above) because this information is strictly necessary to provide the
+        user with the service and to automatically identify them.
+      </p>
+      <h4>How do I store your data?</h4>
+      The collected data described above is securely stored at a server hosted
+      in Nuremberg (Nürnberg), Germany at my hosting provider netcup GmbH
+      (netcup GmbH, Daimlerstraße 25, 76185 Karlsruhe, Germany, Tel.
+      +4972175407550, E-Mail mail@netcup.de -
+      https://www.netcup.eu/kontakt/impressum.php). Netcup employs the necessary
+      security measures to ensure all data is kept safe. Netcup's data center is
+      subject to physical access control, 24/7 video surveillance and
+      supervision by an independent security company
+      (https://www.netcup.eu/ueber-netcup/rechenzentrum.php).
+      <h4>What are your data protection rights?</h4>I would like to make sure
+      you are fully aware of all of your data protection rights. Every user is
+      entitled to the following:
+      <ul>
+        <li>
+          <em>The right to access</em> – You have the right to request me for
+          copies of your personal data. I may charge you a small fee for this
+          service.
+        </li>
+        <li>
+          <em>The right to rectification</em> – You have the right to request
+          that I correct any information you believe is inaccurate. You also
+          have the right to request me to complete the information you believe
+          is incomplete.
+        </li>
+        <li>
+          <em>The right to erasure</em> – You have the right to request that I
+          erase your personal data, under certain conditions.
+        </li>
+        <li>
+          <em>The right to restrict processing</em> – You have the right to
+          request that I restrict the processing of your personal data, under
+          certain conditions.
+        </li>
+        <li>
+          <em>The right to object to processing</em> – You have the right to
+          object to my processing of your personal data, under certain
+          conditions.
+        </li>
+        <li>
+          <em>The right to data portability</em> – You have the right to request
+          that I transfer the data that I have collected to another
+          organization, or directly to you, under certain conditions.
+        </li>
+      </ul>
+      <p>
+        If you make a request, I have one month to respond to you. If you would
+        like to exercise any of these rights, please contact me at my email:{" "}
+        {rot13("ehora.naqref@ebobggl.qr")}
+      </p>
+      <p>
+        Regardless of these rights, this service offers an automated opt-out
+        service that allows you to delete the historical messages for your own
+        Twitch.tv channel(s), as well as to blacklist your channel so that the
+        service will not collect messages from it anymore. Please visit the{" "}
+        <Link to="/settings">Settings</Link> page linked above to use this
+        feature.
+      </p>
+      <h4>Privacy policies of other websites</h4>
+      This website contains links to other websites. My privacy policy applies
+      only to my website, so if you click on a link to another website, you
+      should read their privacy policy.
+      <h4>Changes to our privacy policy</h4>I keeps mys privacy policy under
+      regular review and place any updates on this web page. This privacy policy
+      was last updated on 13 December 2020.
+      <h4>How to contact me</h4>
+      If you have any questions about my privacy policy, the data I hold on you,
+      or you would like to exercise one of your data protection rights, please
+      do not hesitate to contact me. Email me at:{" "}
+      {rot13("ehora.naqref@ebobggl.qr")}
+    </>
+  );
+}
+
+export function LegalNotice() {
+  return (
+    <>
+      <h1>Legal Notice (Impressum)</h1>
+      <h4>According to § 5 TMG</h4>
+      <img alt="name and address" src="/static/address_legal.png" />
+      <h4>Contact</h4>
+      <img alt="contact info" src="/static/contact_legal.png" />
+      <h4>Disclaimer: Liability for content</h4>
+      The contents of our pages were created with care. However, we can not
+      assume any liability for the accuracy, completeness and timeliness of the
+      content. As a service provider we are responsible according to § 7 Abs.1
+      TMG for our own contents on these pages according to the general laws.
+      According to §§ 8 to 10 TMG, however, we as a service provider are not
+      obliged to monitor transmitted or stored external information or to
+      investigate circumstances that indicate illegal activity. Obligations to
+      remove or block the use of information under general law remain
+      unaffected. A liability in this regard, however, is only possible from the
+      date of knowledge of a specific infringement. Upon notification of
+      appropriate violations, we will remove this content immediately.
+      <h4>Disclaimer: Liability for links</h4>
+      Our offer contains links to external websites of third parties on whose
+      contents we have no influence. Therefore, we can not assume any liability
+      for these external contents. The respective provider or operator of the
+      pages is always responsible for the contents of the linked pages. The
+      linked pages were checked for possible legal violations at the time of
+      linking. Illegal content was not recognizable at the time of linking.
+      However, a permanent content control of the linked pages is not reasonable
+      without concrete evidence of an infringement. Upon notification of
+      violations, we will remove such links immediately.
+    </>
+  );
+}
