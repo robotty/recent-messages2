@@ -10,7 +10,7 @@ import {
 } from "./login";
 import { NavWithRouter } from "./nav";
 import { Settings } from "./settings";
-import { API, DonationThankYou, Home } from "./static";
+import { API, DonationThankYou, Home, LegalNotice, Privacy } from "./static";
 
 export interface AuthMissing {
   type: "missing";
@@ -179,6 +179,12 @@ export class App extends React.Component<
                 auth={this.state.auth}
                 updateAuthState={this.updateAuthState}
               />
+            </Route>
+            <Route path="/privacy">
+              <Privacy />
+            </Route>
+            <Route path="/legal-notice">
+              <LegalNotice />
             </Route>
             <Route path="/donation-thank-you">
               <DonationThankYou />
