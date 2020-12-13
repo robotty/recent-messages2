@@ -4,6 +4,7 @@ module.exports = {
   // human readable strings for the home page and API documentation
   messages_expire_after: "24 hours",
   channels_expire_after: "24 hours",
+  sessions_expire_after: "7 days",
   max_buffer_size: "800",
   github_link: "https://github.com/robotty/recent-messages2",
   // used for both the documentation as well as the actual API calls made by the web app. Don't include a trailing slash
