@@ -587,7 +587,7 @@ export function Privacy() {
       This website contains links to other websites. My privacy policy applies
       only to my website, so if you click on a link to another website, you
       should read their privacy policy.
-      <h4>Changes to our privacy policy</h4>I keeps mys privacy policy under
+      <h4>Changes to our privacy policy</h4>I keep mys privacy policy under
       regular review and place any updates on this web page. This privacy policy
       was last updated on 13 December 2020.
       <h4>How to contact me</h4>
