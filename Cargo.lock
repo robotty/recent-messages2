@@ -840,9 +840,9 @@ dependencies = [
 
 [[package]]
 name = "hyper"
-version = "0.14.1"
+version = "0.14.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b7b980c7bc75203b968f06374cbde00bf1818e02e156b8e5b6ccf440fb53b6d0"
+checksum = "12219dc884514cb4a6a03737f4413c0e01c23a1b059b0156004b23f1e19dccbe"
 dependencies = [
  "bytes 1.0.0",
  "futures-channel",
@@ -1892,7 +1892,7 @@ dependencies = [
  "http",
  "humantime",
  "humantime-serde",
- "hyper 0.14.1",
+ "hyper 0.14.2",
  "itertools 0.10.0",
  "lazy_static",
  "log",
