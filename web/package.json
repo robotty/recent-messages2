@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "scripts": {
     "watch": "parcel index.html",
-    "build": "parcel build index.html && cp -a static dist/",
+    "build": "parcel build index.html",
     "clean": "rm -rf .cache dist"
   },
   "license": "AGPL-3.0-or-later",
