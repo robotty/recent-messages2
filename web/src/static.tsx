@@ -598,37 +598,3 @@ export function Privacy() {
     </>
   );
 }
-
-export function LegalNotice() {
-  return (
-    <>
-      <h1>Legal Notice (Impressum)</h1>
-      <h4>According to § 5 TMG</h4>
-      <img alt="name and address" src="/static/address_legal.png" />
-      <h4>Contact</h4>
-      <img alt="contact info" src="/static/contact_legal.png" />
-      <h4>Disclaimer: Liability for content</h4>
-      The contents of our pages were created with care. However, we can not
-      assume any liability for the accuracy, completeness and timeliness of the
-      content. As a service provider we are responsible according to § 7 Abs.1
-      TMG for our own contents on these pages according to the general laws.
-      According to §§ 8 to 10 TMG, however, we as a service provider are not
-      obliged to monitor transmitted or stored external information or to
-      investigate circumstances that indicate illegal activity. Obligations to
-      remove or block the use of information under general law remain
-      unaffected. A liability in this regard, however, is only possible from the
-      date of knowledge of a specific infringement. Upon notification of
-      appropriate violations, we will remove this content immediately.
-      <h4>Disclaimer: Liability for links</h4>
-      Our offer contains links to external websites of third parties on whose
-      contents we have no influence. Therefore, we can not assume any liability
-      for these external contents. The respective provider or operator of the
-      pages is always responsible for the contents of the linked pages. The
-      linked pages were checked for possible legal violations at the time of
-      linking. Illegal content was not recognizable at the time of linking.
-      However, a permanent content control of the linked pages is not reasonable
-      without concrete evidence of an infringement. Upon notification of
-      violations, we will remove such links immediately.
-    </>
-  );
-}

@@ -137,11 +137,6 @@ export class Nav extends React.Component<
                   Privacy
                 </NavLink>
               </NavItem>
-              <NavItem>
-                <NavLink tag={RRNavLink} to="/legal-notice">
-                  Legal notice
-                </NavLink>
-              </NavItem>
             </BsNav>
             <BsNav navbar>{loginSection}</BsNav>
           </Collapse>
