@@ -75,19 +75,19 @@ export function Home() {
       </section>
       <section>
         <h4>Contact and Owner information</h4>
-        {config.serviceOwnerInfo} You can contact me, if you need:
+        {config.service_owner_info} You can contact me, if you need:
         <ul>
-          {config.issuesURL != null ? (
+          {config.issues_url != null ? (
             <li>
               If it's about some general issue with the service, please use the{" "}
-              <a href={config.issuesURL}>GitHub issue tracker</a>.
+              <a href={config.issues_url}>GitHub issue tracker</a>.
             </li>
           ) : null}
           <li>
             {/* the rot13 thing is to prevent plain email scraping from GitHub/hosted JS files, to reduce spam :) */}
             For everything else, send an email:{" "}
-            <a href={"mailto:" + rot13(config.generalContactEmailRot13)}>
-              {rot13(config.generalContactEmailRot13)}
+            <a href={"mailto:" + rot13(config.general_contact_email_rot13)}>
+              {rot13(config.general_contact_email_rot13)}
             </a>
             )
           </li>
@@ -97,11 +97,11 @@ export function Home() {
         <h4>About the service</h4>
         <p>
           Everything about this service is free and open source. You can find
-          the source code <a href={config.repoURL}>on GitHub</a>.
+          the source code <a href={config.repo_url}>on GitHub</a>.
           <br />
           This web service is written in Rust and licensed under the GNU Affero
           General Public License (
-          <a href={`${config.repoURL}/blob/master/LICENSE`}>
+          <a href={`${config.repo_url}/blob/master/LICENSE`}>
             GNU AGPL
           </a>
           ) version 3 or later.
@@ -114,7 +114,7 @@ export function Home() {
           .
         </p>
       </section>
-      {config.enableDonationSection ? (
+      {config.enable_donation_section ? (
         <>
           <section>
             <h4 id="donate">Donate</h4>
@@ -427,6 +427,7 @@ export function DonationThankYou() {
 }
 
 export function Privacy() {
+  // Remember to update privacy_last_updated_on in config.js when making changes here!
   return (
     <>
       <h1>Privacy Policy</h1>
@@ -499,7 +500,7 @@ export function Privacy() {
         user with the service and to automatically identify them.
       </p>
       <h4>How do I store your data?</h4>
-      {config.privacyHowDoIStoreYourData}
+      {config.privacy_how_do_i_store_your_data}
       <h4>What are your data protection rights?</h4>I would like to make sure
       you are fully aware of all of your data protection rights. Every user is
       entitled to the following:
@@ -538,7 +539,7 @@ export function Privacy() {
       <p>
         If you make a request, I have one month to respond to you. If you would
         like to exercise any of these rights, please contact me at my email:{" "}
-        {rot13(config.privacyContactEmailRot13)}
+        {rot13(config.privacy_contact_email_rot13)}
       </p>
       <p>
         Regardless of these rights, this service offers an automated opt-out
@@ -554,12 +555,12 @@ export function Privacy() {
       should read their privacy policy.
       <h4>Changes to our privacy policy</h4>I keep my privacy policy under
       regular review and place any updates on this web page. This privacy policy
-      was last updated on {config.privacyLastUpdatedOn}.
+      was last updated on {config.privacy_last_updated_on}.
       <h4>How to contact me</h4>
       If you have any questions about my privacy policy, the data I hold on you,
       or you would like to exercise one of your data protection rights, please
       do not hesitate to contact me. Email me at:{" "}
-      {rot13(config.privacyContactEmailRot13)}
+      {rot13(config.privacy_contact_email_rot13)}
     </>
   );
 }
