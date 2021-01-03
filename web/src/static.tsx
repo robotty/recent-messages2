@@ -75,37 +75,19 @@ export function Home() {
       </section>
       <section>
         <h4>Contact and Owner information</h4>
-        The recent-messages service is created and run by me, randers. You can
-        contact me, if you need:
+        {config.serviceOwnerInfo} You can contact me, if you need:
         <ul>
-          <li>
-            If it's about some general issue with the service, please use the{" "}
-            <a href="https://github.com/robotty/recent-messages2/issues">
-              GitHub issue tracker
-            </a>
-            .
-          </li>
-          <li>
-            If you want to reach me quickly & directly, you can probably do that
-            best via a direct message on Discord: <code>randers#9216</code>
-          </li>
-          <li>
-            You can also send me a whisper on Twitch - My username is{" "}
-            <a href="https://twitch.tv/randers">
-              <code>randers</code>
-            </a>
-            .
-          </li>
+          {config.issuesURL != null ? (
+            <li>
+              If it's about some general issue with the service, please use the{" "}
+              <a href={config.issuesURL}>GitHub issue tracker</a>.
+            </li>
+          ) : null}
           <li>
             {/* the rot13 thing is to prevent plain email scraping from GitHub/hosted JS files, to reduce spam :) */}
-            For everything else, or bigger/more formal things, send an E-Mail:{" "}
-            <a href={"mailto:" + rot13("ehora.naqref@ebobggl.qr")}>
-              {rot13("ehora.naqref@ebobggl.qr")}
-            </a>
-            <br />
-            (You can also send me encrypted email if you want:{" "}
-            <a href="/static/publickey.ruben.anders@robotty.de.asc">
-              public key
+            For everything else, send an email:{" "}
+            <a href={"mailto:" + rot13(config.generalContactEmailRot13)}>
+              {rot13(config.generalContactEmailRot13)}
             </a>
             )
           </li>
@@ -115,88 +97,79 @@ export function Home() {
         <h4>About the service</h4>
         <p>
           Everything about this service is free and open source. You can find
-          the source code{" "}
-          <a href="https://github.com/robotty/recent-messages2">on GitHub</a>.
+          the source code <a href={config.repoURL}>on GitHub</a>.
           <br />
           This web service is written in Rust and licensed under the GNU Affero
           General Public License (
-          <a href="https://github.com/robotty/recent-messages2/blob/master/LICENSE">
+          <a href={`${config.repoURL}/blob/master/LICENSE`}>
             GNU AGPL
           </a>
           ) version 3 or later.
-          <br />I also wrote a Rust Twitch IRC library for this service,{" "}
-          <a href="https://github.com/robotty/twitch-irc-rs">twitch-irc-rs</a>,
-          which is also open source, released under the{" "}
-          <a href="https://github.com/robotty/twitch-irc-rs/blob/master/LICENSE">
-            MIT License
-          </a>
-          .
         </p>
         <p>
           This version of the recent-messages service is a rewrite of the{" "}
           <a href="https://github.com/robotty/recent-messages">
             "version 1" of the service
           </a>
-          , which was written in JavaScript and ran on Node.js. This rewritten
-          version is currently in beta. For version 1, I also wrote a Twitch IRC
-          library, which is called{" "}
-          <a href="https://github.com/robotty/dank-twitch-irc">
-            dank-twitch-irc
-          </a>
-          .{/* TODO: remove beta notice once out of beta */}
+          .
         </p>
       </section>
-      <section>
-        <h4 id="donate">Donate</h4>
-        <p>
-          I made and run this project in my free time, and I don't want to
-          collect money for doing that. However <em>running</em> the service
-          requires a server, which is not free. I currently pay about 26€ per
-          month to run this service (that's just the server costs). If you are
-          feeling generous, you can help pay for the server costs by becoming a
-          monthly sponsor through GitHub Sponsors, or by giving a one-time
-          donation:
-        </p>
-        <div
-          className="d-flex flex-row flex-wrap"
-          style={{ margin: "-0.25rem" }}
-        >
-          <a
-            href="https://github.com/sponsors/RAnders00"
-            target="_blank"
-            className="btn btn-primary m-1"
-          >
-            Become a GitHub sponsor
-          </a>
-          <a
-            href="https://paypal.me/RAnders00"
-            target="_blank"
-            className="btn btn-outline-primary m-1"
-          >
-            Donate using PayPal
-          </a>
-          <a
-            href="https://streamelements.com/randers/tip"
-            target="_blank"
-            className="btn btn-outline-primary m-1"
-          >
-            Donate using StreamElements
-          </a>
-        </div>
-      </section>
-      <section>
-        <h4>Rent servers at netcup</h4>
-        <p>
-          You can also, at no additional cost, use my referral code when renting
-          out servers from my hosting provider <strong>netcup</strong>, you save
-          5€ on your first order, and you are giving me a small comission:{" "}
-          <a href="https://www.netcup.eu" target="_blank">
-            Visit netcup
-          </a>
-          . Use promo code <code>36nc15963703760</code> on your first order to
-          get 5€ off.
-        </p>
-      </section>
+      {config.enableDonationSection ? (
+        <>
+          <section>
+            <h4 id="donate">Donate</h4>
+            <p>
+              I made and run this project in my free time, and I don't want to
+              collect money for doing that. However <em>running</em> the service
+              requires a server, which is not free. I currently pay about 26€
+              per month to run this service (that's just the server costs). If
+              you are feeling generous, you can help pay for the server costs by
+              becoming a monthly sponsor through GitHub Sponsors, or by giving a
+              one-time donation:
+            </p>
+            <div
+              className="d-flex flex-row flex-wrap"
+              style={{ margin: "-0.25rem" }}
+            >
+              <a
+                href="https://github.com/sponsors/RAnders00"
+                target="_blank"
+                className="btn btn-primary m-1"
+              >
+                Become a GitHub sponsor
+              </a>
+              <a
+                href="https://paypal.me/RAnders00"
+                target="_blank"
+                className="btn btn-outline-primary m-1"
+              >
+                Donate using PayPal
+              </a>
+              <a
+                href="https://streamelements.com/randers/tip"
+                target="_blank"
+                className="btn btn-outline-primary m-1"
+              >
+                Donate using StreamElements
+              </a>
+            </div>
+          </section>
+          <section>
+            <h4>Rent servers at netcup</h4>
+            <p>
+              You can also, at no additional cost, use my referral code when
+              renting out servers from my hosting provider{" "}
+              <strong>netcup</strong>, you save 5€ on your first order, and you
+              are giving me a small comission:{" "}
+              <a href="https://www.netcup.eu" target="_blank">
+                Visit netcup
+              </a>
+              . Use promo code <code>36nc15963703760</code> on your first order
+              to get 5€ off.
+            </p>
+          </section>
+        </>
+      ) : null}
     </>
   );
 }
@@ -526,15 +499,7 @@ export function Privacy() {
         user with the service and to automatically identify them.
       </p>
       <h4>How do I store your data?</h4>
-      The collected data described above is securely stored at a server hosted
-      in Nuremberg (Nürnberg), Germany at my hosting provider netcup GmbH
-      (netcup GmbH, Daimlerstraße 25, 76185 Karlsruhe, Germany, Tel.
-      +4972175407550, E-Mail mail@netcup.de -
-      https://www.netcup.eu/kontakt/impressum.php). Netcup employs the necessary
-      security measures to ensure all data is kept safe. Netcup's data center is
-      subject to physical access control, 24/7 video surveillance and
-      supervision by an independent security company
-      (https://www.netcup.eu/ueber-netcup/rechenzentrum.php).
+      {config.privacyHowDoIStoreYourData}
       <h4>What are your data protection rights?</h4>I would like to make sure
       you are fully aware of all of your data protection rights. Every user is
       entitled to the following:
@@ -573,7 +538,7 @@ export function Privacy() {
       <p>
         If you make a request, I have one month to respond to you. If you would
         like to exercise any of these rights, please contact me at my email:{" "}
-        {rot13("ehora.naqref@ebobggl.qr")}
+        {rot13(config.privacyContactEmailRot13)}
       </p>
       <p>
         Regardless of these rights, this service offers an automated opt-out
@@ -587,14 +552,14 @@ export function Privacy() {
       This website contains links to other websites. My privacy policy applies
       only to my website, so if you click on a link to another website, you
       should read their privacy policy.
-      <h4>Changes to our privacy policy</h4>I keeps mys privacy policy under
+      <h4>Changes to our privacy policy</h4>I keep my privacy policy under
       regular review and place any updates on this web page. This privacy policy
-      was last updated on 13 December 2020.
+      was last updated on {config.privacyLastUpdatedOn}.
       <h4>How to contact me</h4>
       If you have any questions about my privacy policy, the data I hold on you,
       or you would like to exercise one of your data protection rights, please
       do not hesitate to contact me. Email me at:{" "}
-      {rot13("ehora.naqref@ebobggl.qr")}
+      {rot13(config.privacyContactEmailRot13)}
     </>
   );
 }
