@@ -101,10 +101,8 @@ export function Home() {
           <br />
           This web service is written in Rust and licensed under the GNU Affero
           General Public License (
-          <a href={`${config.repo_url}/blob/master/LICENSE`}>
-            GNU AGPL
-          </a>
-          ) version 3 or later.
+          <a href={`${config.repo_url}/blob/master/LICENSE`}>GNU AGPL</a>)
+          version 3 or later.
         </p>
         <p>
           This version of the recent-messages service is a rewrite of the{" "}
