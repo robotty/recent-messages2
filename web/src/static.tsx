@@ -89,7 +89,6 @@ export function Home() {
             <a href={"mailto:" + rot13(config.general_contact_email_rot13)}>
               {rot13(config.general_contact_email_rot13)}
             </a>
-            )
           </li>
         </ul>
       </section>
