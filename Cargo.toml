@@ -44,7 +44,7 @@ mobc = { version = "0.5.12", features = ["tokio"] }
 mobc-postgres = "0.5.0"
 tokio-postgres = { version = "0.5.5", features = ["with-chrono-0_4"] }
 rmp-serde = "0.15.1"
-reqwest = { version = "0.10.10", features = ["json"] }
+reqwest = { version = "0.11.0", features = ["json"] }
 rand = "0.8.0"
 
 [target.'cfg(unix)'.dependencies]
