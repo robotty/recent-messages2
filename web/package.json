@@ -26,7 +26,7 @@
     "array-buffer-to-hex": "^1.0.0",
     "axios": "^0.21.1",
     "bootstrap": "^4.5.3",
-    "qs": "^6.9.4",
+    "qs": "^6.9.6",
     "react": "^16.14.0",
     "react-dom": "^16.14.0",
     "react-router-dom": "^5.2.0",
