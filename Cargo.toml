@@ -17,7 +17,7 @@ edition = "2018"
 tokio = { version = "0.2.22", features = ["full"] }
 serde = { version = "1.0.118", features = ["derive"] }
 twitch-irc = { version = "1.0.0", features = ["transport-tcp", "metrics-collection"] }
-futures = "0.3.10"
+futures = "0.3.11"
 toml = "0.5.8"
 structopt = "0.3.21"
 thiserror = "1.0.23"
