@@ -30,6 +30,6 @@
     "react": "^16.14.0",
     "react-dom": "^16.14.0",
     "react-router-dom": "^5.2.0",
-    "reactstrap": "^8.8.1"
+    "reactstrap": "^8.9.0"
   }
 }
