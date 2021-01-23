@@ -4,15 +4,37 @@ use tokio::time::Duration;
 
 /// Provides metrics for CPU and memory usage.
 pub fn spawn_system_monitoring() {
-    metrics::gauge!("process_start_time_seconds", Utc::now().timestamp());
+    metrics::register_gauge!(
+        "process_start_time_seconds",
+        "UTC timestamp (in seconds) of when the process started."
+    );
+    metrics::gauge!("process_start_time_seconds", Utc::now().timestamp() as f64);
+
+    metrics::register_gauge!(
+        "process_cpu_user_seconds_total",
+        metrics::Unit::Seconds,
+        "Cumulative number of seconds spent executing in user mode"
+    );
+    metrics::register_gauge!(
+        "process_cpu_system_seconds_total",
+        metrics::Unit::Seconds,
+        "Cumulative number of seconds spent executing in kernel mode"
+    );
+    metrics::register_gauge!(
+        "process_cpu_seconds_total",
+        metrics::Unit::Seconds,
+        "Cumulative number of seconds spent executing in either kernel or user mode"
+    );
+    metrics::register_gauge!(
+        "process_resident_memory_bytes",
+        metrics::Unit::Bytes,
+        "Resident memory usage size as reported by the kernel, in bytes"
+    );
     tokio::spawn(run_system_monitoring());
 }
 
 async fn run_system_monitoring() {
     let mut interval = tokio::time::interval(Duration::from_secs(10));
-    let mut last_seconds_user: u64 = 0;
-    let mut last_seconds_kernel: u64 = 0;
-    let mut last_seconds_total: u64 = 0;
     loop {
         interval.tick().await;
 
@@ -25,23 +47,16 @@ async fn run_system_monitoring() {
             }
         };
 
-        // we do this retarded delta calculation because the `metrics` crate only has functionality
-        // to _increment_ a counter. Additionally, it only supports whole numbers (i64).
-        // For this reason, we simply calculate how many seconds to add since the last run.
-        let user_seconds = system_stats.cpu_time_user.as_secs() - last_seconds_user;
-        let kernel_seconds = system_stats.cpu_time_kernel.as_secs() - last_seconds_kernel;
-        let total_seconds = (system_stats.cpu_time_user + system_stats.cpu_time_kernel).as_secs()
-            - last_seconds_total;
-        metrics::counter!("process_cpu_user_seconds_total", user_seconds);
-        metrics::counter!("process_cpu_system_seconds_total", kernel_seconds);
-        metrics::counter!("process_cpu_seconds_total", total_seconds);
-        last_seconds_user += user_seconds;
-        last_seconds_kernel += kernel_seconds;
-        last_seconds_total += total_seconds;
-
+        let user_seconds = system_stats.cpu_time_user.as_secs_f64();
+        let kernel_seconds = system_stats.cpu_time_kernel.as_secs_f64();
+        let total_seconds =
+            (system_stats.cpu_time_user + system_stats.cpu_time_kernel).as_secs_f64();
+        metrics::gauge!("process_cpu_user_seconds_total", user_seconds);
+        metrics::gauge!("process_cpu_system_seconds_total", kernel_seconds);
+        metrics::gauge!("process_cpu_seconds_total", total_seconds);
         metrics::gauge!(
             "process_resident_memory_bytes",
-            system_stats.memory_usage_bytes as i64
+            system_stats.memory_usage_bytes as f64
         );
     }
 }

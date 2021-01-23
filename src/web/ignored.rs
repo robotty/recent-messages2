@@ -53,7 +53,7 @@ pub async fn set_ignored(
 
         data_storage.purge_messages(&authorization.user_login).await;
         tokio::spawn(async move {
-            tokio::time::delay_for(Duration::from_secs(3)).await;
+            tokio::time::sleep(Duration::from_secs(3)).await;
             data_storage.purge_messages(&authorization.user_login).await;
         });
     } else {

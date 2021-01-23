@@ -12,7 +12,7 @@ mod web;
 use crate::config::{Args, Config};
 use crate::db::DataStorage;
 use futures::prelude::*;
-use metrics_runtime::Receiver;
+use metrics_exporter_prometheus::PrometheusBuilder;
 use structopt::StructOpt;
 
 #[tokio::main]
@@ -24,12 +24,11 @@ async fn main() {
     increase_nofile_rlimit();
 
     // init metrics system
-    let metrics_receiver = Receiver::builder()
-        .build()
-        .expect("failed to create receiver");
-    let metrics_controller = metrics_receiver.controller();
-    metrics_receiver.install();
+    let prom_recorder = Box::leak(Box::new(PrometheusBuilder::new().build()));
+    let prom_handle = prom_recorder.handle();
+    metrics::set_recorder(prom_recorder).unwrap();
     system_monitoring::spawn_system_monitoring();
+    register_application_metrics();
 
     // args and config parsing
     let args = Args::from_args();
@@ -101,7 +100,7 @@ async fn main() {
     tokio::spawn(data_storage.run_task_vacuum_old_messages(config));
     let web_join_handle = tokio::spawn(web::run(
         listener,
-        metrics_controller,
+        prom_handle,
         data_storage,
         irc_listener,
         config,
@@ -171,4 +170,30 @@ fn increase_nofile_rlimit() {
     } else {
         log::debug!("NOFILE rlimit: no need to increase (soft limit is not below hard limit)")
     }
+}
+
+/// Register all created metrics to initialize them as zero and give them their description.
+fn register_application_metrics() {
+    metrics::register_counter!(
+        "recent_messages_messages_appended",
+        "Total number of messages appended to storage"
+    );
+    metrics::register_gauge!(
+        "recent_messages_messages_stored",
+        "Number of messages currently stored in storage"
+    );
+    metrics::register_counter!(
+        "recent_messages_messages_vacuumed",
+        "Total number of messages that were removed by the automatic vacuum runner"
+    );
+    metrics::register_counter!(
+        "recent_messages_message_vacuum_runs",
+        "Total number of times the automatic vacuum runner has been started for a certain channel"
+    );
+    metrics::register_histogram!(
+        "http_request_duration_nanoseconds",
+        metrics::Unit::Nanoseconds,
+        "Distribution of how many nanoseconds incoming web requests took to answer them"
+    );
+    metrics::register_counter!("http_request", "Total number of incoming HTTP requests");
 }
