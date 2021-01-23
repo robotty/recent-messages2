@@ -11,6 +11,7 @@ mod web;
 
 use crate::config::{Args, Config};
 use crate::db::DataStorage;
+#[cfg(not(unix))]
 use futures::prelude::*;
 use metrics_exporter_prometheus::PrometheusBuilder;
 use structopt::StructOpt;
@@ -110,10 +111,13 @@ async fn main() {
     let ctrl_c_event = async {
         use tokio::signal::unix::{signal, SignalKind};
 
-        let sigint = signal(SignalKind::interrupt()).unwrap();
-        let sigterm = signal(SignalKind::terminate()).unwrap();
+        let mut sigint = signal(SignalKind::interrupt()).unwrap();
+        let mut sigterm = signal(SignalKind::terminate()).unwrap();
 
-        futures::stream::select(sigint, sigterm).next().await
+        tokio::select! {
+            _ = sigint.recv() => {},
+            _ = sigterm.recv() => {}
+        }
     };
     #[cfg(not(unix))]
     let ctrl_c_event =

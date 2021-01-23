@@ -189,7 +189,14 @@ pub async fn run(
             warp::serve(app).serve_incoming(tcp_listener).await
         }
         #[cfg(unix)]
-        Listener::Unix(unix_listener) => warp::serve(app).serve_incoming(unix_listener).await,
+        Listener::Unix(unix_listener) => {
+            let unix_listener = async_stream::stream! {
+                loop {
+                    yield unix_listener.accept().await.map(|(sock, _addr)| sock);
+                }
+            };
+            warp::serve(app).serve_incoming(unix_listener).await
+        },
     }
 }
 
