@@ -978,8 +978,9 @@ dependencies = [
 
 [[package]]
 name = "metrics"
-version = "0.13.0"
-source = "git+https://github.com/RAnders00/metrics?branch=fix-prometheus-exporter-no-default-features-build#68fbbf867cab30436884af1fb5dabc749b648cbd"
+version = "0.13.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b6d31b8f6fe04ed4ac33f735f97576b37750df3baf684107d545a8d30efcf584"
 dependencies = [
  "metrics-macros",
  "proc-macro-hack",
@@ -987,8 +988,9 @@ dependencies = [
 
 [[package]]
 name = "metrics-exporter-prometheus"
-version = "0.1.0"
-source = "git+https://github.com/RAnders00/metrics?branch=fix-prometheus-exporter-no-default-features-build#68fbbf867cab30436884af1fb5dabc749b648cbd"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "628ef73c9e68a2ab6714e0e6bbdaaca4f9434bfedd1c18ee5b6b2ac18ca1cd0c"
 dependencies = [
  "metrics",
  "metrics-util",
@@ -1000,7 +1002,8 @@ dependencies = [
 [[package]]
 name = "metrics-macros"
 version = "0.1.0"
-source = "git+https://github.com/RAnders00/metrics?branch=fix-prometheus-exporter-no-default-features-build#68fbbf867cab30436884af1fb5dabc749b648cbd"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "487119a99660e9b2879132f1b84e067b6d68c85cc228e31789567c14bcaa6a1a"
 dependencies = [
  "lazy_static",
  "proc-macro-hack",
@@ -1012,8 +1015,9 @@ dependencies = [
 
 [[package]]
 name = "metrics-util"
-version = "0.4.1"
-source = "git+https://github.com/RAnders00/metrics?branch=fix-prometheus-exporter-no-default-features-build#68fbbf867cab30436884af1fb5dabc749b648cbd"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "95aca29dc6f2378e20d3f19a2ac599fa0aae5a4ffbc7a64a5c8a5f03f6228ba7"
 dependencies = [
  "aho-corasick",
  "atomic-shim",
@@ -1843,18 +1847,18 @@ checksum = "388a1df253eca08550bef6c72392cfe7c30914bf41df5269b68cbd6ff8f570a3"
 
 [[package]]
 name = "serde"
-version = "1.0.120"
+version = "1.0.121"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "166b2349061381baf54a58e4b13c89369feb0ef2eaa57198899e2312aac30aab"
+checksum = "6159e3c76cab06f6bc466244d43b35e77e9500cd685da87620addadc2a4c40b1"
 dependencies = [
  "serde_derive",
 ]
 
 [[package]]
 name = "serde_derive"
-version = "1.0.120"
+version = "1.0.121"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0ca2a8cb5805ce9e3b95435e3765b7b553cecc762d938d409434338386cb5775"
+checksum = "f3fcab8778dc651bc65cfab2e4eb64996f3c912b74002fb379c94517e1f27c46"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2302,7 +2306,7 @@ dependencies = [
 [[package]]
 name = "twitch-irc"
 version = "2.1.0"
-source = "git+https://github.com/robotty/twitch-irc-rs?branch=master#745a2eed01cf65faf8c47cac1388e5c7e670ffd8"
+source = "git+https://github.com/robotty/twitch-irc-rs#745a2eed01cf65faf8c47cac1388e5c7e670ffd8"
 dependencies = [
  "async-stream",
  "async-trait",

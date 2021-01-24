@@ -22,8 +22,8 @@ toml = "0.5"
 structopt = "0.3"
 thiserror = "1.0"
 log = "0.4"
-metrics = { git = "https://github.com/RAnders00/metrics", branch = "fix-prometheus-exporter-no-default-features-build" }
-metrics-exporter-prometheus = { git = "https://github.com/RAnders00/metrics", branch = "fix-prometheus-exporter-no-default-features-build", default-features = false, features = [] }
+metrics = "0.13"
+metrics-exporter-prometheus = { version = "0.2", default-features = false }
 warp = { git = "https://github.com/RAnders00/warp", branch = "v030-backports" }
 http = "0.2"
 hyper = "0.14"
@@ -45,9 +45,6 @@ rmp-serde = "0.15"
 reqwest = { version = "0.11", features = ["json"] }
 rand = "0.8"
 async-stream = "0.3.0"
-
-[patch.crates-io]
-metrics = { git = "https://github.com/RAnders00/metrics", branch = "fix-prometheus-exporter-no-default-features-build" }
 
 [target.'cfg(unix)'.dependencies]
 rlimit = "0.5"
