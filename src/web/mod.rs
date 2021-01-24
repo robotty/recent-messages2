@@ -196,7 +196,7 @@ pub async fn run(
                 }
             };
             warp::serve(app).serve_incoming(unix_listener).await
-        },
+        }
     }
 }
 
