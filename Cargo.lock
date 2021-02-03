@@ -1052,6 +1052,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "metrics"
+version = "0.14.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ee607b70506ed8dbabe467f24ce0a4d0568980993f94c0a7652d2d50e8b51fd1"
+dependencies = [
+ "metrics-macros",
+ "proc-macro-hack",
+]
+
+[[package]]
 name = "metrics-core"
 version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1077,6 +1087,20 @@ dependencies = [
  "log",
  "metrics-core",
  "tokio",
+]
+
+[[package]]
+name = "metrics-macros"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "11ac60cd4d3a869fd39d57baf0ed7f79fb677580d8d6655c4330d4f1126bc27b"
+dependencies = [
+ "lazy_static",
+ "proc-macro-hack",
+ "proc-macro2",
+ "quote",
+ "regex",
+ "syn",
 ]
 
 [[package]]
@@ -1124,7 +1148,7 @@ dependencies = [
  "atomic-shim",
  "crossbeam-utils",
  "im",
- "metrics",
+ "metrics 0.12.1",
  "metrics-core",
  "metrics-exporter-http",
  "metrics-exporter-log",
@@ -1858,7 +1882,7 @@ dependencies = [
  "itertools 0.10.0",
  "lazy_static",
  "log",
- "metrics",
+ "metrics 0.14.1",
  "metrics-core",
  "metrics-observer-prometheus",
  "metrics-runtime",
@@ -2585,7 +2609,7 @@ dependencies = [
  "futures",
  "itertools 0.9.0",
  "log",
- "metrics",
+ "metrics 0.12.1",
  "native-tls",
  "smallvec",
  "thiserror",
