@@ -32,7 +32,10 @@ impl ContainerFrame {
         }
 
         if options.hide_moderation_messages
-            && matches!(self.original_message, ServerMessage::ClearChat(_) | ServerMessage::ClearMsg(_))
+            && matches!(
+                self.original_message,
+                ServerMessage::ClearChat(_) | ServerMessage::ClearMsg(_)
+            )
         {
             return None;
         }
@@ -131,8 +134,15 @@ impl MessageContainer {
             ServerMessage::try_from(IRCMessage::parse(&message.message_source).unwrap()).unwrap();
 
         // we export PRIVMSG, CLEARCHAT, CLEARMSG, USERNOTICE, NOTICE and ROOMSTATE
-        if !matches!(server_message, ServerMessage::Privmsg(_) | ServerMessage::ClearChat(_) | ServerMessage::ClearMsg(_) | ServerMessage::UserNotice(_) | ServerMessage::Notice(_) | ServerMessage::RoomState(_))
-        {
+        if !matches!(
+            server_message,
+            ServerMessage::Privmsg(_)
+                | ServerMessage::ClearChat(_)
+                | ServerMessage::ClearMsg(_)
+                | ServerMessage::UserNotice(_)
+                | ServerMessage::Notice(_)
+                | ServerMessage::RoomState(_)
+        ) {
             return;
         }
 
