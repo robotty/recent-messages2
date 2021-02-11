@@ -1,5 +1,4 @@
 pub mod auth;
-pub mod get_metrics;
 pub mod get_recent_messages;
 pub mod ignored;
 pub mod purge;
@@ -8,8 +7,6 @@ use crate::config::{Config, ListenAddr};
 use crate::db::{DataStorage, StorageError};
 use crate::irc_listener::IrcListener;
 use http::status::StatusCode;
-use metrics::{counter, timing};
-use metrics_runtime::Controller;
 use serde::Serialize;
 use std::convert::Infallible;
 use thiserror::Error;
@@ -19,6 +16,7 @@ use warp::reject::{IsReject, Reject};
 use warp::Filter;
 use warp::{path, Rejection, Reply};
 
+use metrics_exporter_prometheus::PrometheusHandle;
 #[cfg(unix)]
 use {
     std::fs::Permissions, std::os::unix::fs::PermissionsExt, std::path::PathBuf,
@@ -65,7 +63,7 @@ pub async fn bind(config: &Config) -> Result<Listener, WebServerStartError> {
 
 pub async fn run(
     listener: Listener,
-    metrics_controller: Controller,
+    prom_handle: PrometheusHandle,
     data_storage: &'static DataStorage,
     irc_listener: &'static IrcListener,
     config: &'static Config,
@@ -87,7 +85,7 @@ pub async fn run(
 
     let get_metrics = path!("metrics")
         .and(warp::get())
-        .map(move || get_metrics::get_metrics(&metrics_controller));
+        .map(move || prom_handle.render());
 
     let create_token = path!("auth" / "create")
         .and(warp::post())
@@ -181,9 +179,24 @@ pub async fn run(
     let app = path!("api" / "v2" / ..).and(api).with(collect_timings());
 
     match listener {
-        Listener::Tcp(tcp_listener) => warp::serve(app).serve_incoming(tcp_listener).await,
+        Listener::Tcp(tcp_listener) => {
+            // TODO remove this again when tokio gets stream support back
+            let tcp_listener = async_stream::stream! {
+                loop {
+                    yield tcp_listener.accept().await.map(|(sock, _addr)| sock);
+                }
+            };
+            warp::serve(app).serve_incoming(tcp_listener).await
+        }
         #[cfg(unix)]
-        Listener::Unix(unix_listener) => warp::serve(app).serve_incoming(unix_listener).await,
+        Listener::Unix(unix_listener) => {
+            let unix_listener = async_stream::stream! {
+                loop {
+                    yield unix_listener.accept().await.map(|(sock, _addr)| sock);
+                }
+            };
+            warp::serve(app).serve_incoming(unix_listener).await
+        }
     }
 }
 
@@ -197,11 +210,11 @@ fn collect_timings() -> Log<impl Fn(Info) + Clone> {
             info.status().as_u16(),
             humantime::format_duration(info.elapsed())
         );
-        timing!("http_request_duration_nanoseconds", info.elapsed(),
+        metrics::histogram!("http_request_duration_nanoseconds", info.elapsed(),
             "method" =>  info.method().as_str().to_owned(),
             "status_code" => info.status().as_str().to_owned(), // FIXME this can be without .to_owned() if only http fixed their API to specify 'static.
         );
-        counter!("http_request", 1,
+        metrics::increment_counter!("http_request",
             "method" =>  info.method().as_str().to_owned(),
             "status_code" => info.status().as_str().to_owned(),
         );

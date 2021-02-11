@@ -83,7 +83,7 @@ pub async fn get_recent_messages(
 
         if !is_confirmed_joined {
             // wait 5 seconds then check again
-            tokio::time::delay_for(Duration::from_secs(5)).await;
+            tokio::time::sleep(Duration::from_secs(5)).await;
             is_confirmed_joined = irc_listener.is_join_confirmed(channel_login.clone()).await;
         }
 

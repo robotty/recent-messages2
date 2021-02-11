@@ -356,7 +356,7 @@ WHERE access_token = $1",
             channel_messages.pop_front();
         } else {
             let new_gauge_value = self.messages_stored.fetch_add(1, Ordering::SeqCst) + 1;
-            metrics::gauge!("recent_messages_messages_stored", new_gauge_value as i64);
+            metrics::gauge!("recent_messages_messages_stored", new_gauge_value as f64);
         }
     }
 
@@ -433,7 +433,7 @@ WHERE access_token = $1",
                         .messages_stored
                         .fetch_sub(messages_deleted, Ordering::SeqCst)
                         - messages_deleted;
-                    metrics::gauge!("recent_messages_messages_stored", new_gauge_value as i64);
+                    metrics::gauge!("recent_messages_messages_stored", new_gauge_value as f64);
 
                     // remove the mapping from the map if there are no more messages.
                     if channel_messages.len() == 0 {
@@ -497,7 +497,7 @@ WHERE access_token = $1",
                 .messages_stored
                 .fetch_add(messages_added, Ordering::SeqCst)
                 + messages_added;
-            metrics::gauge!("recent_messages_messages_stored", new_gauge_value as i64);
+            metrics::gauge!("recent_messages_messages_stored", new_gauge_value as f64);
 
             messages_map.insert(channel_login, Arc::new(Mutex::new(channel_messages)));
         }

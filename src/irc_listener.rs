@@ -1,6 +1,5 @@
 use crate::config::Config;
 use crate::db::DataStorage;
-use futures::prelude::*;
 use std::borrow::Cow;
 use tokio::sync::mpsc;
 use twitch_irc::login::StaticLoginCredentials;
@@ -39,7 +38,7 @@ impl IrcListener {
         data_storage: &'static DataStorage,
         max_buffer_size: usize,
     ) {
-        while let Some(message) = incoming_messages.next().await {
+        while let Some(message) = incoming_messages.recv().await {
             tokio::spawn(async move {
                 if let Some(channel_login) = message.channel_login() {
                     let message_source = message.source().as_raw_irc();
