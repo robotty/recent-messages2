@@ -16,14 +16,14 @@ edition = "2018"
 [dependencies]
 tokio = { version = "1.0", features = ["full"] }
 serde = { version = "1.0", features = ["derive"] }
-twitch-irc = { git = "https://github.com/robotty/twitch-irc-rs", branch = "master", features = ["transport-tcp", "metrics-collection"] }
+twitch-irc = { version = "2.2", features = ["transport-tcp", "metrics-collection"] }
 futures = "0.3"
 toml = "0.5"
 structopt = "0.3"
 thiserror = "1.0"
 log = "0.4"
-metrics = "0.13"
-metrics-exporter-prometheus = { version = "0.2", default-features = false }
+metrics = "0.14"
+metrics-exporter-prometheus = { version = "0.3", default-features = false }
 warp = { git = "https://github.com/RAnders00/warp", branch = "v030-backports" }
 http = "0.2"
 hyper = "0.14"
