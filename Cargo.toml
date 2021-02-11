@@ -14,37 +14,37 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-tokio = { version = "1.0", features = ["full"] }
-serde = { version = "1.0", features = ["derive"] }
-twitch-irc = { version = "2.2", features = ["transport-tcp", "metrics-collection"] }
+async-stream = "0.3.0"
+chrono = { version = "0.4", features = ["serde"] }
+derivative = "2.1"
+env_logger = "0.8"
 futures = "0.3"
-toml = "0.5"
-structopt = "0.3"
-thiserror = "1.0"
+http = "0.2"
+humantime = "2.1"
+humantime-serde = "1.0"
+hyper = "0.14"
+itertools = "0.10"
+lazy_static = "1.4"
 log = "0.4"
 metrics = "0.14"
 metrics-exporter-prometheus = { version = "0.3", default-features = false }
-warp = { git = "https://github.com/RAnders00/warp", branch = "v030-backports" }
-http = "0.2"
-hyper = "0.14"
-chrono = { version = "0.4", features = ["serde"] }
-serde_json = "1.0"
-itertools = "0.10"
-humantime-serde = "1.0"
-refinery = { version = "0.5", features = ["tokio-postgres"] }
-regex = "1.4"
-lazy_static = "1.4"
-humantime = "2.1"
-derivative = "2.1"
-env_logger = "0.8"
-simple-process-stats = "1.0"
 mobc = { version = "0.7", features = ["tokio"] }
 mobc-postgres = "0.7"
-tokio-postgres = { version = "0.7", features = ["with-chrono-0_4"] }
-rmp-serde = "0.15"
-reqwest = { version = "0.11", features = ["json"] }
 rand = "0.8"
-async-stream = "0.3.0"
+refinery = { version = "0.5", features = ["tokio-postgres"] }
+regex = "1.4"
+reqwest = { version = "0.11", features = ["json"] }
+rmp-serde = "0.15"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+simple-process-stats = "1.0"
+structopt = "0.3"
+thiserror = "1.0"
+tokio = { version = "1.0", features = ["full"] }
+tokio-postgres = { version = "0.7", features = ["with-chrono-0_4"] }
+toml = "0.5"
+twitch-irc = { version = "2.2", features = ["transport-tcp", "metrics-collection"] }
+warp = { git = "https://github.com/RAnders00/warp", branch = "v030-backports" }
 
 [target.'cfg(unix)'.dependencies]
 rlimit = "0.5"
