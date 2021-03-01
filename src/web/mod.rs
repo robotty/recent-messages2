@@ -210,7 +210,7 @@ fn collect_timings() -> Log<impl Fn(Info) + Clone> {
             info.status().as_u16(),
             humantime::format_duration(info.elapsed())
         );
-        metrics::histogram!("http_request_duration_nanoseconds", info.elapsed(),
+        metrics::histogram!("http_request_duration_milliseconds", info.elapsed().as_millis() as f64,
             "method" =>  info.method().as_str().to_owned(),
             "status_code" => info.status().as_str().to_owned(), // FIXME this can be without .to_owned() if only http fixed their API to specify 'static.
         );

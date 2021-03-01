@@ -16,7 +16,7 @@
   "gnetId": null,
   "graphTooltip": 1,
   "id": 46,
-  "iteration": 1614161818622,
+  "iteration": 1614606746585,
   "links": [],
   "panels": [
     {
@@ -912,7 +912,7 @@
       },
       "paceLength": 10,
       "percentage": false,
-      "pluginVersion": "7.4.1",
+      "pluginVersion": "7.4.3",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -1025,7 +1025,7 @@
       },
       "paceLength": 10,
       "percentage": false,
-      "pluginVersion": "7.4.1",
+      "pluginVersion": "7.4.3",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -1131,7 +1131,7 @@
       },
       "paceLength": 10,
       "percentage": false,
-      "pluginVersion": "7.4.1",
+      "pluginVersion": "7.4.3",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -1247,7 +1247,7 @@
       },
       "paceLength": 10,
       "percentage": false,
-      "pluginVersion": "7.4.1",
+      "pluginVersion": "7.4.3",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -1348,7 +1348,7 @@
         "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "7.4.1",
+      "pluginVersion": "7.4.3",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -1447,7 +1447,7 @@
         "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "7.4.1",
+      "pluginVersion": "7.4.3",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -1548,7 +1548,7 @@
         "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "7.4.1",
+      "pluginVersion": "7.4.3",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -1645,7 +1645,7 @@
         "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "7.4.1",
+      "pluginVersion": "7.4.3",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -1743,7 +1743,7 @@
         "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "7.4.1",
+      "pluginVersion": "7.4.3",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -1841,7 +1841,7 @@
         "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "7.4.1",
+      "pluginVersion": "7.4.3",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -1939,7 +1939,7 @@
         "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "7.4.1",
+      "pluginVersion": "7.4.3",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -2052,7 +2052,7 @@
       },
       "paceLength": 10,
       "percentage": false,
-      "pluginVersion": "7.4.1",
+      "pluginVersion": "7.4.3",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -2169,7 +2169,7 @@
       },
       "paceLength": 10,
       "percentage": false,
-      "pluginVersion": "7.4.1",
+      "pluginVersion": "7.4.3",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -2286,7 +2286,7 @@
       },
       "paceLength": 10,
       "percentage": false,
-      "pluginVersion": "7.4.1",
+      "pluginVersion": "7.4.3",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -2296,7 +2296,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "rate(http_request_duration_nanoseconds_sum{instance=~\"$instance\",job=~\"$job\"}[5m]) / rate(http_request_duration_nanoseconds_count{instance=~\"$instance\",job=~\"$job\"}[5m])",
+          "expr": "rate(http_request_duration_milliseconds_sum{instance=~\"$instance\",job=~\"$job\"}[5m]) / rate(http_request_duration_milliseconds_count{instance=~\"$instance\",job=~\"$job\"}[5m])",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -2325,7 +2325,8 @@
       "yaxes": [
         {
           "$$hashKey": "object:680",
-          "format": "ns",
+          "decimals": null,
+          "format": "ms",
           "label": null,
           "logBase": 1,
           "max": null,
@@ -2388,7 +2389,7 @@
       },
       "paceLength": 10,
       "percentage": false,
-      "pluginVersion": "7.4.1",
+      "pluginVersion": "7.4.3",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -2499,7 +2500,7 @@
       },
       "paceLength": 10,
       "percentage": false,
-      "pluginVersion": "7.4.1",
+      "pluginVersion": "7.4.3",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -2509,7 +2510,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "avg_over_time(sum without(method, status_code) (http_request_duration_nanoseconds{instance=~\"$instance\",job=~\"$job\",quantile!=\"1\"})[5m:])",
+          "expr": "avg_over_time(http_request_duration_milliseconds{instance=~\"$instance\",job=~\"$job\",quantile!=\"1\",method=\"GET\",status_code=\"200\"}[5m:])",
           "hide": false,
           "interval": "",
           "legendFormat": "{{quantile}}",
@@ -2538,10 +2539,10 @@
         {
           "$$hashKey": "object:1504",
           "decimals": null,
-          "format": "ns",
+          "format": "ms",
           "label": "",
           "logBase": 1,
-          "max": "100000000",
+          "max": null,
           "min": "0",
           "show": true
         },
@@ -2600,7 +2601,7 @@
       },
       "paceLength": 10,
       "percentage": false,
-      "pluginVersion": "7.4.1",
+      "pluginVersion": "7.4.3",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -2610,7 +2611,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rate(http_request_duration_nanoseconds_count{instance=~\"$instance\",job=~\"$job\",status_code=~\"^[45].*\"}[1m])) by (status_code)",
+          "expr": "sum(rate(http_request_duration_milliseconds_count{instance=~\"$instance\",job=~\"$job\",status_code=~\"^[45].*\"}[1m])) by (status_code)",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -2706,7 +2707,7 @@
       },
       "paceLength": 10,
       "percentage": false,
-      "pluginVersion": "7.4.1",
+      "pluginVersion": "7.4.3",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -2935,5 +2936,5 @@
   "timezone": "",
   "title": "recent-messages2",
   "uid": "t2kvE74Gk",
-  "version": 56
+  "version": 59
 }

@@ -195,9 +195,9 @@ fn register_application_metrics() {
         "Total number of times the automatic vacuum runner has been started for a certain channel"
     );
     metrics::register_histogram!(
-        "http_request_duration_nanoseconds",
-        metrics::Unit::Nanoseconds,
-        "Distribution of how many nanoseconds incoming web requests took to answer them"
+        "http_request_duration_milliseconds",
+        metrics::Unit::Milliseconds,
+        "Distribution of how many milliseconds incoming web requests took to answer them"
     );
     metrics::register_counter!("http_request", "Total number of incoming HTTP requests");
 }
