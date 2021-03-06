@@ -21,7 +21,7 @@
     "typescript": "^4.2.3"
   },
   "dependencies": {
-    "@forevolve/bootstrap-dark": "^1.0.0-alpha.1091",
+    "@forevolve/bootstrap-dark": "^1.0.0",
     "@fortawesome/fontawesome-free": "^5.15.2",
     "array-buffer-to-hex": "^1.0.0",
     "axios": "^0.21.1",
