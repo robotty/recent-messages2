@@ -22,7 +22,7 @@
   },
   "dependencies": {
     "@forevolve/bootstrap-dark": "^1.0.0",
-    "@fortawesome/fontawesome-free": "^5.15.2",
+    "@fortawesome/fontawesome-free": "^5.15.3",
     "array-buffer-to-hex": "^1.0.0",
     "axios": "^0.21.1",
     "bootstrap": "^4.6.0",
