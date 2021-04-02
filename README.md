@@ -54,9 +54,9 @@ Also, wherever you placed the service's working directory, ensure there is a dir
 
 ## Web
 
-Instructions for setting up the static website (like the "official" https://github.com/robotty/recent-messages) are found in the [README in the `./web` directory of this repo](./web/README.md).
+Instructions for setting up the static website (like the "official" https://recent-messages.robotty.de/) are found in the [README in the `./web` directory of this repo](./web/README.md).
 There you can also find an example nginx config.
 
 ## Monitoring
 
-A prometheus metrics endpoint is exposed at `/metrics`. You can import the `grafana-dashboard.json` in the repository as a dashboard template into a Grafana instance.
+A prometheus metrics endpoint is exposed at `/api/v2/metrics`. You can import the `grafana-dashboard.json` in the repository as a dashboard template into a Grafana instance.
