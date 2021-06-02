@@ -12,7 +12,7 @@
     "@types/history": "^4.7.8",
     "@types/qs": "^6.9.6",
     "@types/react": "^17.0.5",
-    "@types/react-dom": "^17.0.3",
+    "@types/react-dom": "^17.0.6",
     "@types/react-router-dom": "^5.1.7",
     "@types/reactstrap": "^8.7.2",
     "parcel-bundler": "^1.12.5",
