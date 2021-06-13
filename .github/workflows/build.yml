@@ -6,7 +6,7 @@ jobs:
   check-format-rustfmt:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v2.3.4
       - uses: hecrj/setup-rust-action@v1
         with:
           rust-version: stable
@@ -18,7 +18,7 @@ jobs:
       matrix:
         os: [ubuntu, windows, macOS]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v2.3.4
       - uses: hecrj/setup-rust-action@v1
         with:
           rust-version: stable
@@ -33,7 +33,7 @@ jobs:
       matrix:
         os: [ubuntu, windows, macOS]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v2.3.4
       - uses: hecrj/setup-rust-action@v1
         with:
           rust-version: stable
@@ -48,7 +48,7 @@ jobs:
     runs-on: ubuntu-latest
     container: node:14-stretch
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v2.3.4
       - run: cd web && npm i
       - run: ./web/node_modules/.bin/prettier --check --ignore-path ".gitignore" "**/*.md" "**/*.js" "**/*.tsx" "**/*.yml" "**/*.json"
   build-web:
@@ -58,7 +58,7 @@ jobs:
       matrix:
         node: [10, 12, 14]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v2.3.4
       - run: cd web && npm i
       - run: cd web && npm run build
       - uses: actions/upload-artifact@v2

@@ -330,7 +330,7 @@ pub fn with_authorization(
             async move {
                 let access_token = RE_AUTHORIZATION_HEADER
                     .captures(&authorization_header)
-                    .ok_or_else(|| ApiError::MalformedAuthorizationHeader)?
+                    .ok_or(ApiError::MalformedAuthorizationHeader)?
                     .get(1)
                     .unwrap()
                     .as_str();
@@ -340,7 +340,7 @@ pub fn with_authorization(
                     .get_user_authorization(access_token)
                     .await
                     .map_err(ApiError::QueryAccessToken)?
-                    .ok_or_else(|| ApiError::Unauthorized)?;
+                    .ok_or(ApiError::Unauthorized)?;
 
                 // and then this ensures that the user has not revoked the connection from the Twitch side
                 let pre_validation_auth = authorization.clone();
