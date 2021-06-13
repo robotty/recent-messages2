@@ -320,6 +320,9 @@ export function API() {
           , <code>NOTICE</code> and <code>ROOMSTATE</code> messages.
         </p>
         <p>
+          All messages returned carry the <code>historical=1</code> tag.
+        </p>
+        <p>
           In addition to the IRC tags originally sent by the Twitch IRC server,
           all messages additionally carry the <code>rm-received-ts</code> tag.
           Its format is similar to the <code>tmi-sent-ts</code> tag sent by
