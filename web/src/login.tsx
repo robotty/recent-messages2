@@ -272,8 +272,9 @@ export function Logout(props: {
   }, []);
 
   let location = useLocation();
-  let returnTo = qs.parse(location.search, { ignoreQueryPrefix: true })
-    .returnTo;
+  let returnTo = qs.parse(location.search, {
+    ignoreQueryPrefix: true,
+  }).returnTo;
   if (typeof returnTo !== "string") {
     returnTo = "/";
   }
