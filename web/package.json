@@ -16,16 +16,16 @@
     "@types/react-router-dom": "^5.1.7",
     "@types/reactstrap": "^8.7.2",
     "parcel-bundler": "^1.12.5",
-    "prettier": "^2.3.1",
-    "sass": "^1.34.1",
-    "typescript": "^4.3.2"
+    "prettier": "^2.2.1",
+    "sass": "^1.32.8",
+    "typescript": "^4.2.4"
   },
   "dependencies": {
-    "@forevolve/bootstrap-dark": "^1.2.0-g6c89781692",
+    "@forevolve/bootstrap-dark": "^1.0.0",
     "@fortawesome/fontawesome-free": "^5.15.3",
     "array-buffer-to-hex": "^1.0.0",
     "axios": "^0.21.1",
-    "bootstrap": "^5.0.1",
+    "bootstrap": "^4.6.0",
     "qs": "^6.10.1",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
