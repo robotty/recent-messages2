@@ -560,3 +560,11 @@ pub enum FileStorageError {
     #[error("Error while decoding: {0}")]
     Decode(#[from] rmp_serde::decode::Error),
 }
+
+#[cfg(test)]
+pub mod test {
+    #[test]
+    pub fn dump_migrations() {
+        dbg!(super::migrations::migrations::runner().get_migrations());
+    }
+}
