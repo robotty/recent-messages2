@@ -92,11 +92,11 @@ impl IrcListener {
 }
 
 trait ServerMessageExt {
+    /// Get the channel login if this message was sent to a channel.
     fn channel_login(&self) -> Option<&str>;
 }
 
 impl ServerMessageExt for ServerMessage {
-    /// Get the channel login if this message was sent to a channel.
     fn channel_login(&self) -> Option<&str> {
         match self {
             ServerMessage::ClearChat(m) => Some(&m.channel_login),
