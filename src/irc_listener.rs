@@ -4,11 +4,11 @@ use std::borrow::Cow;
 use tokio::sync::mpsc;
 use twitch_irc::login::StaticLoginCredentials;
 use twitch_irc::message::{AsRawIRC, ServerMessage};
-use twitch_irc::{ClientConfig, TCPTransport, TwitchIRCClient};
+use twitch_irc::{ClientConfig, SecureTCPTransport, TwitchIRCClient};
 
 #[derive(Debug, Clone)]
 pub struct IrcListener {
-    pub irc_client: TwitchIRCClient<TCPTransport, StaticLoginCredentials>,
+    pub irc_client: TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
 }
 
 impl IrcListener {
@@ -53,7 +53,7 @@ impl IrcListener {
 
     /// Start background loop to vacuum/part channels that are not used.
     pub async fn run_channel_join_parter(
-        irc_client: TwitchIRCClient<TCPTransport, StaticLoginCredentials>,
+        irc_client: TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
         config: &'static Config,
         data_storage: &'static DataStorage,
     ) {
