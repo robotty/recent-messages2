@@ -4,28 +4,29 @@ use tokio::time::Duration;
 
 /// Provides metrics for CPU and memory usage.
 pub fn spawn_system_monitoring() {
-    metrics::register_gauge!(
+    // TODO gauges -> counters
+    metrics::describe_gauge!(
         "process_start_time_seconds",
         "UTC timestamp (in seconds) of when the process started."
     );
     metrics::gauge!("process_start_time_seconds", Utc::now().timestamp() as f64);
 
-    metrics::register_gauge!(
+    metrics::describe_gauge!(
         "process_cpu_user_seconds_total",
         metrics::Unit::Seconds,
         "Cumulative number of seconds spent executing in user mode"
     );
-    metrics::register_gauge!(
+    metrics::describe_gauge!(
         "process_cpu_system_seconds_total",
         metrics::Unit::Seconds,
         "Cumulative number of seconds spent executing in kernel mode"
     );
-    metrics::register_gauge!(
+    metrics::describe_gauge!(
         "process_cpu_seconds_total",
         metrics::Unit::Seconds,
         "Cumulative number of seconds spent executing in either kernel or user mode"
     );
-    metrics::register_gauge!(
+    metrics::describe_gauge!(
         "process_resident_memory_bytes",
         metrics::Unit::Bytes,
         "Resident memory usage size as reported by the kernel, in bytes"
