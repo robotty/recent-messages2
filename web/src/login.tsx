@@ -1,8 +1,7 @@
 import arrayBufferToHex from "array-buffer-to-hex";
-import { Location } from "history";
 import * as qs from "qs";
 import * as React from "react";
-import { Link, Redirect, useLocation, withRouter } from "react-router-dom";
+import { Link, Navigate, useLocation } from "react-router-dom";
 import { Alert, Button, Spinner } from "reactstrap";
 import config from "../config";
 import { AuthState, AuthPresent } from "./index";
@@ -244,7 +243,7 @@ export class Authorized extends React.Component<
           </Alert>
         );
       case "finished":
-        return <Redirect to={this.state.returnTo} />;
+        return <Navigate to={this.state.returnTo} />;
     }
   }
 }
@@ -282,7 +281,7 @@ export function Logout(props: {
     returnTo = "/";
   }
 
-  return <Redirect to={returnTo} />;
+  return <Navigate to={returnTo} />;
 }
 
 export function revalidateLogin(

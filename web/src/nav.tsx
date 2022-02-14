@@ -5,7 +5,6 @@ import {
   matchPath,
   NavLink as RRNavLink,
   useLocation,
-  withRouter,
 } from "react-router-dom";
 import {
   Collapse,

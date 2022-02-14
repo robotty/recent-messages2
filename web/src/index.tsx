@@ -1,6 +1,6 @@
 import * as React from "react";
 import * as ReactDOM from "react-dom";
-import { BrowserRouter as Router, Route, Switch } from "react-router-dom";
+import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import { Container } from "reactstrap";
 import { Authorized, Login, Logout, revalidateLogin } from "./login";
 import { Nav } from "./nav";
@@ -151,7 +151,7 @@ export class App extends React.Component<
         <Router>
           <Nav auth={this.state.auth} />
           <Container className="pt-3">
-            <Switch>
+            <Routes>
               <Route path="/api">
                 <h1>API</h1>
                 <API />
@@ -183,14 +183,14 @@ export class App extends React.Component<
               <Route path="/donation-thank-you">
                 <DonationThankYou />
               </Route>
-              <Route exact path="/">
+              <Route path="/">
                 <Home />
               </Route>
-              <Route path="/">
+              <Route path="*">
                 <h1>Not Found</h1>
                 The page you were trying to access does not exist.
               </Route>
-            </Switch>
+            </Routes>
           </Container>
         </Router>
       </React.StrictMode>

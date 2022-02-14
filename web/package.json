@@ -16,7 +16,6 @@
     "@types/qs": "6",
     "@types/react": "17",
     "@types/react-dom": "17",
-    "@types/react-router-dom": "5",
     "parcel": "2",
     "prettier": "2",
     "sass": "1",
@@ -30,7 +29,7 @@
     "qs": "6",
     "react": "17",
     "react-dom": "17",
-    "react-router-dom": "5",
+    "react-router-dom": "6",
     "reactstrap": "8"
   }
 }
