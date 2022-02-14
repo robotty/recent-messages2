@@ -6,25 +6,29 @@ jobs:
   check-format-rustfmt:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2.3.4
-      - uses: hecrj/setup-rust-action@v1
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
         with:
-          rust-version: stable
-          components: rustfmt
-      - run: cargo fmt -- --check
+          toolchain: stable
+      - name: cargo fmt -- --check
+        uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: -- --check
   check-rust:
     runs-on: ${{ matrix.os }}-latest
     strategy:
       matrix:
         os: [ubuntu, windows, macOS]
     steps:
-      - uses: actions/checkout@v2.3.4
-      - uses: hecrj/setup-rust-action@v1
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
         with:
-          rust-version: stable
-          components: clippy
-      - run: cargo check
-      - run: cargo clippy
+          toolchain: stable
+      - name: cargo check
+        uses: actions-rs/cargo@v1
+        with:
+          command: check
   build-rust-artifacts:
     # only master branch
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
@@ -33,11 +37,15 @@ jobs:
       matrix:
         os: [ubuntu, windows, macOS]
     steps:
-      - uses: actions/checkout@v2.3.4
-      - uses: hecrj/setup-rust-action@v1
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
         with:
-          rust-version: stable
-      - run: cargo build --release
+          toolchain: stable
+      - name: cargo build --release
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --release
       - uses: actions/upload-artifact@v2
         with:
           name: app-${{ matrix.os }}
@@ -46,9 +54,9 @@ jobs:
             target/release/recent-messages2.exe
   check-format-prettier:
     runs-on: ubuntu-latest
-    container: node:14-stretch
+    container: node:16-stretch
     steps:
-      - uses: actions/checkout@v2.3.4
+      - uses: actions/checkout@v2
       - run: cd web && npm i
       - run: ./web/node_modules/.bin/prettier --check --ignore-path ".gitignore" "**/*.md" "**/*.js" "**/*.tsx" "**/*.yml" "**/*.json"
   build-web:
@@ -56,9 +64,9 @@ jobs:
     container: node:${{ matrix.node }}-stretch
     strategy:
       matrix:
-        node: [10, 12, 14]
+        node: [12, 14, 16]
     steps:
-      - uses: actions/checkout@v2.3.4
+      - uses: actions/checkout@v2
       - run: cd web && npm i
       - run: cd web && npm run build
       - uses: actions/upload-artifact@v2
