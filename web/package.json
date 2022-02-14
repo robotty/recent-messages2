@@ -9,6 +9,8 @@
   },
   "license": "AGPL-3.0-or-later",
   "devDependencies": {
+    "@parcel/transformer-sass": "2",
+    "@parcel/transformer-typescript-tsc": "2",
     "@types/qs": "6",
     "@types/react": "17",
     "@types/react-dom": "17",
