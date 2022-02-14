@@ -25,7 +25,9 @@ async fn main() {
     increase_nofile_rlimit();
 
     // init metrics system
-    let prom_handle = PrometheusBuilder::new().install_recorder().expect("failed to install prometheus recorder");
+    let prom_handle = PrometheusBuilder::new()
+        .install_recorder()
+        .expect("failed to install prometheus recorder");
     system_monitoring::spawn_system_monitoring();
     register_application_metrics();
 
