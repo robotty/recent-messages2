@@ -7,10 +7,9 @@ import { Alert, Button, Spinner } from "reactstrap";
 import config from "../config";
 import { AuthState, AuthPresent } from "./index";
 
-class Login extends React.Component<
+export class Login extends React.Component<
   {
     updateAuthState: (newAuthState: AuthState) => void;
-    location: Location<{}>;
   },
   {}
 > {
@@ -18,7 +17,7 @@ class Login extends React.Component<
     let randomBytes = window.crypto.getRandomValues(new Uint8Array(32)).buffer; // 256 bits of entropy (32 * 8 bits)
     let csrfToken = arrayBufferToHex(randomBytes);
 
-    let returnTo = qs.parse(this.props.location.search, {
+    let returnTo = qs.parse(useLocation().search, {
       ignoreQueryPrefix: true,
     }).returnTo;
     if (typeof returnTo !== "string") {
@@ -61,9 +60,6 @@ class Login extends React.Component<
   }
 }
 
-//@ts-ignore
-export const LoginWithRouter = withRouter(Login);
-
 type AuthorizedComponentState =
   | { type: "error"; message: string; returnTo: string }
   | { type: "loadToken"; code: string; returnTo: string }
@@ -71,10 +67,9 @@ type AuthorizedComponentState =
 
 type AuthorizedComponentProps = {
   updateAuthState: (newAuthState: AuthState) => void;
-  location: Location<{}>;
 };
 
-class Authorized extends React.Component<
+export class Authorized extends React.Component<
   AuthorizedComponentProps,
   AuthorizedComponentState
 > {
@@ -106,7 +101,7 @@ class Authorized extends React.Component<
       };
     }
 
-    let queryString = qs.parse(this.props.location.search, {
+    let queryString = qs.parse(useLocation().search, {
       ignoreQueryPrefix: true,
     });
 
@@ -253,9 +248,6 @@ class Authorized extends React.Component<
     }
   }
 }
-
-// @ts-ignore
-export const AuthorizedWithRouter = withRouter(Authorized);
 
 export function Logout(props: {
   auth: AuthState;
