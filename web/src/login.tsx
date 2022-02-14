@@ -1,5 +1,4 @@
 import arrayBufferToHex from "array-buffer-to-hex";
-import axios from "axios";
 import { Location } from "history";
 import * as qs from "qs";
 import * as React from "react";
@@ -171,24 +170,30 @@ class Authorized extends React.Component<
       return;
     }
 
-    axios
-      .post(`${config.api_base_url}/auth/create`, undefined, {
-        params: {
-          code: this.state.code,
-        },
-      })
-      .then((resp) => {
+    (async () => {
+      try {
+        const response = await fetch(
+          `${config.api_base_url}/auth/create?code=${encodeURIComponent(
+            this.state.code
+          )}`,
+          {
+            method: "POST",
+            headers: {
+              Accept: "application/json",
+            },
+          }
+        );
+        const json = await response.json();
+
         let newAuthState: AuthPresent = {
           type: "present",
-          accessToken: resp.data["access_token"],
-          validUntil: new Date(resp.data["valid_until"]),
-          userId: resp.data["user_id"],
-          userLogin: resp.data["user_login"],
-          userName: resp.data["user_name"],
-          userProfileImageUrl: resp.data["user_profile_image_url"],
-          userDetailsValidUntil: new Date(
-            resp.data["user_details_valid_until"]
-          ),
+          accessToken: json["access_token"],
+          validUntil: new Date(json["valid_until"]),
+          userId: json["user_id"],
+          userLogin: json["user_login"],
+          userName: json["user_name"],
+          userProfileImageUrl: json["user_profile_image_url"],
+          userDetailsValidUntil: new Date(json["user_details_valid_until"]),
           userDetailsValidating: false,
         };
         this.props.updateAuthState(newAuthState);
@@ -199,8 +204,7 @@ class Authorized extends React.Component<
             returnTo: state.returnTo,
           };
         });
-      })
-      .catch((err) => {
+      } catch (err) {
         console.error("API Request to create authorization failed", err);
         this.setState((state) => {
           return {
@@ -211,7 +215,8 @@ class Authorized extends React.Component<
         });
 
         this.props.updateAuthState({ type: "missing" });
-      });
+      }
+    })();
 
     this.props.updateAuthState({ type: "loading" });
   }
@@ -256,10 +261,14 @@ export function Logout(props: {
 }) {
   React.useEffect(() => {
     if (props.auth.type === "present") {
-      axios
-        .post(`${config.api_base_url}/auth/revoke`, undefined, {
-          headers: { Authorization: `Bearer ${props.auth.accessToken}` },
-        })
+      fetch(`${config.api_base_url}/auth/revoke`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${props.auth.accessToken}`,
+
+          Accept: "application/json",
+        },
+      })
         .then(() => {
           console.log("Successfully finished revoking token");
         })
@@ -290,31 +299,36 @@ export function revalidateLogin(
   // the Twitch auth connection is still active, and possibly also updates user details like name/profile image.
   // -> the backend returns us a new token with an extended "userDetailsValidUntil" and a fresh "validUntil"
   console.log("Revalidating authentication");
-  axios
-    .post(`${config.api_base_url}/auth/extend`, undefined, {
-      headers: {
-        Authorization: `Bearer ${authState.accessToken}`,
-      },
-    })
-    .then((resp) => {
+
+  (async () => {
+    try {
+      const resp = await fetch(`${config.api_base_url}/auth/extend`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${authState.accessToken}`,
+          Accept: "application/json",
+        },
+      });
+      const json = await resp.json();
+
       let newAuthState: AuthPresent = {
         type: "present",
-        accessToken: resp.data["access_token"],
-        validUntil: new Date(resp.data["valid_until"]),
-        userId: resp.data["user_id"],
-        userLogin: resp.data["user_login"],
-        userName: resp.data["user_name"],
-        userProfileImageUrl: resp.data["user_profile_image_url"],
-        userDetailsValidUntil: new Date(resp.data["user_details_valid_until"]),
+        accessToken: json["access_token"],
+        validUntil: new Date(json["valid_until"]),
+        userId: json["user_id"],
+        userLogin: json["user_login"],
+        userName: json["user_name"],
+        userProfileImageUrl: json["user_profile_image_url"],
+        userDetailsValidUntil: new Date(json["user_details_valid_until"]),
         userDetailsValidating: false,
       };
       updateAuthState(newAuthState);
-    })
-    .catch((err) => {
+    } catch (err) {
       console.error(
         "API Request to extend/revalidate authorization failed",
         err
       );
       updateAuthState({ type: "missing" });
-    });
+    }
+  })();
 }

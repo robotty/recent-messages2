@@ -1,4 +1,3 @@
-import axios from "axios";
 import React from "react";
 import { Link } from "react-router-dom";
 import {
@@ -56,22 +55,26 @@ class SettingsLoggedIn extends React.Component<
       };
     });
 
-    axios
-      .get(`${config.api_base_url}/ignored`, {
-        headers: {
-          Authorization: `Bearer ${this.props.auth.accessToken}`,
-        },
-      })
-      .then((resp) => {
+    (async () => {
+      try {
+        let resp = await fetch(`${config.api_base_url}/ignored`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${this.props.auth.accessToken}`,
+            Accept: "application/json",
+          },
+        });
+
+        let json = await resp.json();
+
         this.setState(() => {
           return {
-            ignored: resp.data["ignored"],
+            ignored: json["ignored"],
             loadingIgnored: false,
             loadingIgnoredFailed: false,
           };
         });
-      })
-      .catch((err) => {
+      } catch (err) {
         console.error("Failed to load `ignored` status of channel", err);
         this.setState(() => {
           return {
@@ -79,7 +82,8 @@ class SettingsLoggedIn extends React.Component<
             loadingIgnoredFailed: true,
           };
         });
-      });
+      }
+    })();
   }
 
   updateIgnored(e) {
@@ -97,25 +101,25 @@ class SettingsLoggedIn extends React.Component<
       };
     });
 
-    axios
-      .post(
-        `${config.api_base_url}/ignored`,
-        { ignored: newSetting },
-        {
+    (async () => {
+      try {
+        await fetch(`${config.api_base_url}/ignored`, {
+          method: "POST",
           headers: {
             Authorization: `Bearer ${this.props.auth.accessToken}`,
+            Accept: "application/json",
+            "Content-Type": "application/json",
           },
-        }
-      )
-      .then((resp) => {
+          body: JSON.stringify({ ignored: newSetting }),
+        });
+
         this.setState(() => {
           return {
             savingIgnored: false,
             savingIgnoredSuccess: true,
           };
         });
-      })
-      .catch((err) => {
+      } catch (err) {
         console.error("Failed to load `ignored` status of channel", err);
         this.setState(() => {
           return {
@@ -124,7 +128,8 @@ class SettingsLoggedIn extends React.Component<
             loadingIgnoredFailed: true,
           };
         });
-      });
+      }
+    })();
   }
 
   purgeMessages() {
@@ -140,12 +145,13 @@ class SettingsLoggedIn extends React.Component<
       };
     });
 
-    axios
-      .post(`${config.api_base_url}/purge`, undefined, {
-        headers: {
-          Authorization: `Bearer ${this.props.auth.accessToken}`,
-        },
-      })
+    fetch(`${config.api_base_url}/purge`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${this.props.auth.accessToken}`,
+        Accept: "application/json",
+      },
+    })
       .then((resp) => {
         this.setState(() => {
           return {
