@@ -9,27 +9,24 @@
   },
   "license": "AGPL-3.0-or-later",
   "devDependencies": {
-    "@types/history": "^4.7.8",
-    "@types/qs": "^6.9.6",
-    "@types/react": "^17.0.11",
-    "@types/react-dom": "^17.0.7",
-    "@types/react-router-dom": "^5.1.7",
-    "@types/reactstrap": "^8.7.2",
-    "parcel-bundler": "^1.12.5",
-    "prettier": "^2.2.1",
-    "sass": "^1.32.8",
-    "typescript": "^4.2.4"
+    "@types/qs": "6",
+    "@types/react": "17",
+    "@types/react-dom": "17",
+    "@types/react-router-dom": "5",
+    "parcel": "2",
+    "prettier": "2",
+    "sass": "1"
   },
   "dependencies": {
-    "@forevolve/bootstrap-dark": "^1.0.0",
-    "@fortawesome/fontawesome-free": "^5.15.3",
-    "array-buffer-to-hex": "^1.0.0",
-    "axios": "^0.21.1",
-    "bootstrap": "^4.6.0",
-    "qs": "^6.10.1",
-    "react": "^17.0.2",
-    "react-dom": "^17.0.2",
-    "react-router-dom": "^5.2.0",
-    "reactstrap": "^8.9.0"
+    "@forevolve/bootstrap-dark": "2",
+    "@fortawesome/fontawesome-free": "6",
+    "array-buffer-to-hex": "1",
+    "axios": "0.26",
+    "bootstrap": "4",
+    "qs": "6",
+    "react": "17",
+    "react-dom": "17",
+    "react-router-dom": "5",
+    "reactstrap": "8"
   }
 }
