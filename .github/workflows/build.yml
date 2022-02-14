@@ -57,7 +57,7 @@ jobs:
     container: node:16-stretch
     steps:
       - uses: actions/checkout@v2
-      - run: cd web && npm i
+      - run: cd web && npm ci
       - run: ./web/node_modules/.bin/prettier --check --ignore-path ".gitignore" "**/*.md" "**/*.js" "**/*.tsx" "**/*.yml" "**/*.json"
   build-web:
     runs-on: ubuntu-latest
@@ -67,7 +67,7 @@ jobs:
         node: [12, 14, 16]
     steps:
       - uses: actions/checkout@v2
-      - run: cd web && npm i
+      - run: cd web && npm ci
       - run: cd web && npm run build
       - uses: actions/upload-artifact@v2
         # only master branch
