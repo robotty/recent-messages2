@@ -1,10 +1,10 @@
-import { Location } from "history";
 import * as React from "react";
 import {
   Link as RRLink,
   matchPath,
   NavLink as RRNavLink,
   useLocation,
+  Location,
 } from "react-router-dom";
 import {
   Collapse,
@@ -22,7 +22,7 @@ import {
 } from "reactstrap";
 import { AuthState } from "./index";
 
-type NavComponentProps = { auth: AuthState };
+type NavComponentProps = { auth: AuthState; location: Location };
 
 export class Nav extends React.Component<
   NavComponentProps,
@@ -46,7 +46,7 @@ export class Nav extends React.Component<
     };
 
     let loginSection;
-    let location = useLocation();
+    let location = this.props.location;
 
     switch (this.props.auth.type) {
       case "missing":
@@ -146,4 +146,9 @@ export class Nav extends React.Component<
       </Navbar>
     );
   }
+}
+
+export function NavWithRouter(auth: AuthState) {
+  const location = useLocation();
+  return <Nav auth={auth} location={location}/>;
 }

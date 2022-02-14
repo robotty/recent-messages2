@@ -1,14 +1,15 @@
 import arrayBufferToHex from "array-buffer-to-hex";
 import * as qs from "qs";
 import * as React from "react";
-import { Link, Navigate, useLocation } from "react-router-dom";
+import { Link, Navigate, useLocation, Location } from "react-router-dom";
 import { Alert, Button, Spinner } from "reactstrap";
 import config from "../config";
 import { AuthState, AuthPresent } from "./index";
 
-export class Login extends React.Component<
+class Login extends React.Component<
   {
     updateAuthState: (newAuthState: AuthState) => void;
+    location: Location;
   },
   {}
 > {
@@ -16,7 +17,7 @@ export class Login extends React.Component<
     let randomBytes = window.crypto.getRandomValues(new Uint8Array(32)).buffer; // 256 bits of entropy (32 * 8 bits)
     let csrfToken = arrayBufferToHex(randomBytes);
 
-    let returnTo = qs.parse(useLocation().search, {
+    let returnTo = qs.parse(this.props.location.search, {
       ignoreQueryPrefix: true,
     }).returnTo;
     if (typeof returnTo !== "string") {
@@ -59,6 +60,11 @@ export class Login extends React.Component<
   }
 }
 
+export function LoginWithRouter(updateAuthState: (newAuthState: AuthState) => void) {
+  let location = useLocation();
+  return <Login updateAuthState={updateAuthState} location={location} />;
+}
+
 type AuthorizedComponentState =
   | { type: "error"; message: string; returnTo: string }
   | { type: "loadToken"; code: string; returnTo: string }
@@ -66,9 +72,10 @@ type AuthorizedComponentState =
 
 type AuthorizedComponentProps = {
   updateAuthState: (newAuthState: AuthState) => void;
+  location: Location;
 };
 
-export class Authorized extends React.Component<
+class Authorized extends React.Component<
   AuthorizedComponentProps,
   AuthorizedComponentState
 > {
@@ -100,7 +107,7 @@ export class Authorized extends React.Component<
       };
     }
 
-    let queryString = qs.parse(useLocation().search, {
+    let queryString = qs.parse(this.props.location.search, {
       ignoreQueryPrefix: true,
     });
 
@@ -246,6 +253,11 @@ export class Authorized extends React.Component<
         return <Navigate to={this.state.returnTo} />;
     }
   }
+}
+
+export function AuthorizedWithRouter(updateAuthState: (newAuthState: AuthState) => void) {
+  const location = useLocation();
+  return <Authorized updateAuthState={updateAuthState} location={location} />
 }
 
 export function Logout(props: {

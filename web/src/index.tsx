@@ -2,8 +2,13 @@ import * as React from "react";
 import * as ReactDOM from "react-dom";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import { Container } from "reactstrap";
-import { Authorized, Login, Logout, revalidateLogin } from "./login";
-import { Nav } from "./nav";
+import {
+  AuthorizedWithRouter,
+  LoginWithRouter,
+  Logout,
+  revalidateLogin,
+} from "./login";
+import { NavWithRouter } from "./nav";
 import { Settings } from "./settings";
 import { API, DonationThankYou, Home, Privacy } from "./static";
 
@@ -149,7 +154,9 @@ export class App extends React.Component<
     return (
       <React.StrictMode>
         <Router>
-          <Nav auth={this.state.auth} />
+          {/*
+ // @ts-ignore */}
+          <NavWithRouter auth={this.state.auth} />
           <Container className="pt-3">
             <Routes>
               <Route path="/api">
@@ -165,11 +172,15 @@ export class App extends React.Component<
               </Route>
               <Route path="/login">
                 <h1>Login</h1>
-                <Login updateAuthState={this.updateAuthState} />
+                {/*
+ // @ts-ignore */}
+                <LoginWithRouter updateAuthState={this.updateAuthState} />
               </Route>
               <Route path="/authorized">
                 <h1>Login</h1>
-                <Authorized updateAuthState={this.updateAuthState} />
+                {/*
+ // @ts-ignore */}
+                <AuthorizedWithRouter updateAuthState={this.updateAuthState} />
               </Route>
               <Route path="/logout">
                 <Logout
