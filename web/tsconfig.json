@@ -1,7 +1,12 @@
 {
+  "include": ["src/**/*", "config.js", "config.d.ts"],
   "compilerOptions": {
+    "target": "es2021",
+    "moduleResolution": "node",
     "esModuleInterop": true,
     "resolveJsonModule": true,
-    "jsx": "react"
+    "jsx": "react",
+    "strict": true,
+    "types": ["node"]
   }
 }

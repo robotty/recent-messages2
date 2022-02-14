@@ -22,11 +22,13 @@ import {
 } from "reactstrap";
 import { AuthState } from "./index";
 
+type NavComponentProps = { auth: AuthState; location: Location<{}> };
+
 export class Nav extends React.Component<
-  { auth: AuthState; location: Location<{}> },
+  NavComponentProps,
   { menuCollapsed: boolean; dropdownOpen: boolean }
 > {
-  constructor(props) {
+  constructor(props: NavComponentProps) {
     super(props);
     this.state = { menuCollapsed: true, dropdownOpen: false };
   }
@@ -146,4 +148,5 @@ export class Nav extends React.Component<
   }
 }
 
+// @ts-ignore
 export const NavWithRouter = withRouter(Nav);

@@ -38,8 +38,9 @@ export class App extends React.Component<
   {},
   { auth: AuthState; darkMode: boolean }
 > {
-  private runningTicker: number | undefined;
-  constructor(props) {
+  private runningTicker: ReturnType<typeof setTimeout> | undefined;
+
+  constructor(props: {}) {
     super(props);
     this.state = {
       auth: {
@@ -53,7 +54,7 @@ export class App extends React.Component<
     this.updateAuthState = this.updateAuthState.bind(this);
   }
 
-  updateDarkMode(isDark) {
+  updateDarkMode(isDark: boolean) {
     if (isDark) {
       console.log("updating to dark mode");
       document.body.classList.add("bootstrap-dark");
@@ -151,51 +152,59 @@ export class App extends React.Component<
 
   render() {
     return (
-      <Router>
-        <NavWithRouter auth={this.state.auth} />
-        <Container className="pt-3">
-          <Switch>
-            <Route path="/api">
-              <h1>API</h1>
-              <API />
-            </Route>
-            <Route path="/settings">
-              <h1>Settings</h1>
-              <Settings
-                auth={this.state.auth}
-                updateAuthState={this.updateAuthState}
-              />
-            </Route>
-            <Route path="/login">
-              <h1>Login</h1>
-              <LoginWithRouter updateAuthState={this.updateAuthState} />
-            </Route>
-            <Route path="/authorized">
-              <h1>Login</h1>
-              <AuthorizedWithRouter updateAuthState={this.updateAuthState} />
-            </Route>
-            <Route path="/logout">
-              <Logout
-                auth={this.state.auth}
-                updateAuthState={this.updateAuthState}
-              />
-            </Route>
-            <Route path="/privacy">
-              <Privacy />
-            </Route>
-            <Route path="/donation-thank-you">
-              <DonationThankYou />
-            </Route>
-            <Route exact path="/">
-              <Home />
-            </Route>
-            <Route path="/">
-              <h1>Not Found</h1>
-              The page you were trying to access does not exist.
-            </Route>
-          </Switch>
-        </Container>
-      </Router>
+      <React.StrictMode>
+        <Router>
+          {/*
+ // @ts-ignore */}
+          <NavWithRouter auth={this.state.auth} />
+          <Container className="pt-3">
+            <Switch>
+              <Route path="/api">
+                <h1>API</h1>
+                <API />
+              </Route>
+              <Route path="/settings">
+                <h1>Settings</h1>
+                <Settings
+                  auth={this.state.auth}
+                  updateAuthState={this.updateAuthState}
+                />
+              </Route>
+              <Route path="/login">
+                <h1>Login</h1>
+                {/*
+ // @ts-ignore */}
+                <LoginWithRouter updateAuthState={this.updateAuthState} />
+              </Route>
+              <Route path="/authorized">
+                <h1>Login</h1>
+                {/*
+ // @ts-ignore */}
+                <AuthorizedWithRouter updateAuthState={this.updateAuthState} />
+              </Route>
+              <Route path="/logout">
+                <Logout
+                  auth={this.state.auth}
+                  updateAuthState={this.updateAuthState}
+                />
+              </Route>
+              <Route path="/privacy">
+                <Privacy />
+              </Route>
+              <Route path="/donation-thank-you">
+                <DonationThankYou />
+              </Route>
+              <Route exact path="/">
+                <Home />
+              </Route>
+              <Route path="/">
+                <h1>Not Found</h1>
+                The page you were trying to access does not exist.
+              </Route>
+            </Switch>
+          </Container>
+        </Router>
+      </React.StrictMode>
     );
   }
 }

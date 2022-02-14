@@ -1,4 +1,4 @@
-import React from "react";
+import React, { ChangeEvent } from "react";
 import { Link } from "react-router-dom";
 import {
   Alert,
@@ -10,11 +10,16 @@ import {
   Spinner,
   Tooltip,
 } from "reactstrap";
-import * as config from "../config";
+import config from "../config";
 import { AuthPresent, AuthState } from "./index";
 
+type SettingsLoggedInComponentProps = {
+  auth: AuthPresent;
+  updateAuthState: (newAuthState: AuthState) => void;
+};
+
 class SettingsLoggedIn extends React.Component<
-  { auth: AuthPresent; updateAuthState: (newAuthState: AuthState) => void },
+  SettingsLoggedInComponentProps,
   {
     ignored: boolean;
     loadingIgnored: boolean;
@@ -28,7 +33,7 @@ class SettingsLoggedIn extends React.Component<
     purgeButtonTooltipOpen: boolean;
   }
 > {
-  constructor(props) {
+  constructor(props: SettingsLoggedInComponentProps) {
     super(props);
     this.state = {
       ignored: false,
@@ -86,7 +91,7 @@ class SettingsLoggedIn extends React.Component<
     })();
   }
 
-  updateIgnored(e) {
+  updateIgnored(e: ChangeEvent<HTMLInputElement>) {
     let previousSetting = this.state.ignored;
     let newSetting = e.target.checked;
 

@@ -4,7 +4,7 @@ import * as qs from "qs";
 import * as React from "react";
 import { Link, Redirect, useLocation, withRouter } from "react-router-dom";
 import { Alert, Button, Spinner } from "reactstrap";
-import * as config from "../config";
+import config from "../config";
 import { AuthState, AuthPresent } from "./index";
 
 class Login extends React.Component<
@@ -69,14 +69,16 @@ type AuthorizedComponentState =
   | { type: "loadToken"; code: string; returnTo: string }
   | { type: "finished"; returnTo: string };
 
+type AuthorizedComponentProps = {
+  updateAuthState: (newAuthState: AuthState) => void;
+  location: Location<{}>;
+};
+
 class Authorized extends React.Component<
-  {
-    updateAuthState: (newAuthState: AuthState) => void;
-    location: Location<{}>;
-  },
+  AuthorizedComponentProps,
   AuthorizedComponentState
 > {
-  constructor(props) {
+  constructor(props: AuthorizedComponentProps) {
     super(props);
     this.state = this.parseResponse();
   }
@@ -169,13 +171,12 @@ class Authorized extends React.Component<
     if (this.state.type !== "loadToken") {
       return;
     }
+    let code = this.state.code;
 
     (async () => {
       try {
         const response = await fetch(
-          `${config.api_base_url}/auth/create?code=${encodeURIComponent(
-            this.state.code
-          )}`,
+          `${config.api_base_url}/auth/create?code=${encodeURIComponent(code)}`,
           {
             method: "POST",
             headers: {
@@ -253,6 +254,7 @@ class Authorized extends React.Component<
   }
 }
 
+// @ts-ignore
 export const AuthorizedWithRouter = withRouter(Authorized);
 
 export function Logout(props: {
