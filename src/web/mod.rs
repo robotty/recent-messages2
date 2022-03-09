@@ -223,8 +223,8 @@ fn collect_timings() -> Log<impl Fn(Info) + Clone> {
 
 #[derive(Error, Debug)]
 enum ApiError {
-    #[error("Invalid channel login `{0}`")]
-    InvalidChannelLogin(String),
+    #[error("Invalid channel login: {0}")]
+    InvalidChannelLogin(twitch_irc::validate::Error),
     #[error("The channel login `{0}` is excluded from this service")]
     ChannelIgnored(String),
     #[error("Provided `code` could not be exchanged for a token, it is not valid")]

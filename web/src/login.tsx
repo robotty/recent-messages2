@@ -1,17 +1,15 @@
 import arrayBufferToHex from "array-buffer-to-hex";
-import axios from "axios";
-import { Location } from "history";
 import * as qs from "qs";
 import * as React from "react";
-import { Link, Redirect, useLocation, withRouter } from "react-router-dom";
+import { Link, Navigate, useLocation, Location } from "react-router-dom";
 import { Alert, Button, Spinner } from "reactstrap";
-import * as config from "../config";
+import config from "../config";
 import { AuthState, AuthPresent } from "./index";
 
 class Login extends React.Component<
   {
     updateAuthState: (newAuthState: AuthState) => void;
-    location: Location<{}>;
+    location: Location;
   },
   {}
 > {
@@ -51,33 +49,44 @@ class Login extends React.Component<
 
   render() {
     return (
-      <Alert fade={false} color="primary">
-        <h4 className="alert-heading">
-          <Spinner color="primary" className="mr-3" />
-          Logging in...
-        </h4>
-        Sending you to Twitch...
-      </Alert>
+      <>
+        <h1>Login</h1>
+        <Alert fade={false} color="primary">
+          <h4 className="alert-heading">
+            <Spinner color="primary" className="mr-3" />
+            Logging in...
+          </h4>
+          Sending you to Twitch...
+        </Alert>
+      </>
     );
   }
 }
 
-//@ts-ignore
-export const LoginWithRouter = withRouter(Login);
+export function LoginWithRouter({
+  updateAuthState,
+}: {
+  updateAuthState: (newAuthState: AuthState) => void;
+}) {
+  let location = useLocation();
+  return <Login updateAuthState={updateAuthState} location={location} />;
+}
 
 type AuthorizedComponentState =
   | { type: "error"; message: string; returnTo: string }
   | { type: "loadToken"; code: string; returnTo: string }
   | { type: "finished"; returnTo: string };
 
+type AuthorizedComponentProps = {
+  updateAuthState: (newAuthState: AuthState) => void;
+  location: Location;
+};
+
 class Authorized extends React.Component<
-  {
-    updateAuthState: (newAuthState: AuthState) => void;
-    location: Location<{}>;
-  },
+  AuthorizedComponentProps,
   AuthorizedComponentState
 > {
-  constructor(props) {
+  constructor(props: AuthorizedComponentProps) {
     super(props);
     this.state = this.parseResponse();
   }
@@ -170,25 +179,30 @@ class Authorized extends React.Component<
     if (this.state.type !== "loadToken") {
       return;
     }
+    let code = this.state.code;
 
-    axios
-      .post(`${config.api_base_url}/auth/create`, undefined, {
-        params: {
-          code: this.state.code,
-        },
-      })
-      .then((resp) => {
+    (async () => {
+      try {
+        const response = await fetch(
+          `${config.api_base_url}/auth/create?code=${encodeURIComponent(code)}`,
+          {
+            method: "POST",
+            headers: {
+              Accept: "application/json",
+            },
+          }
+        );
+        const json = await response.json();
+
         let newAuthState: AuthPresent = {
           type: "present",
-          accessToken: resp.data["access_token"],
-          validUntil: new Date(resp.data["valid_until"]),
-          userId: resp.data["user_id"],
-          userLogin: resp.data["user_login"],
-          userName: resp.data["user_name"],
-          userProfileImageUrl: resp.data["user_profile_image_url"],
-          userDetailsValidUntil: new Date(
-            resp.data["user_details_valid_until"]
-          ),
+          accessToken: json["access_token"],
+          validUntil: new Date(json["valid_until"]),
+          userId: json["user_id"],
+          userLogin: json["user_login"],
+          userName: json["user_name"],
+          userProfileImageUrl: json["user_profile_image_url"],
+          userDetailsValidUntil: new Date(json["user_details_valid_until"]),
           userDetailsValidating: false,
         };
         this.props.updateAuthState(newAuthState);
@@ -199,8 +213,7 @@ class Authorized extends React.Component<
             returnTo: state.returnTo,
           };
         });
-      })
-      .catch((err) => {
+      } catch (err) {
         console.error("API Request to create authorization failed", err);
         this.setState((state) => {
           return {
@@ -211,7 +224,8 @@ class Authorized extends React.Component<
         });
 
         this.props.updateAuthState({ type: "missing" });
-      });
+      }
+    })();
 
     this.props.updateAuthState({ type: "loading" });
   }
@@ -220,35 +234,48 @@ class Authorized extends React.Component<
     switch (this.state.type) {
       case "loadToken":
         return (
-          <Alert fade={false} color="primary">
-            <h4 className="alert-heading">
-              <Spinner color="primary" className="mr-3" />
-              Logging in...
-            </h4>
-            Completing login...
-          </Alert>
+          <>
+            <h1>Login</h1>
+            <Alert fade={false} color="primary">
+              <h4 className="alert-heading">
+                <Spinner color="primary" className="mr-3" />
+                Logging in...
+              </h4>
+              Completing login...
+            </Alert>
+          </>
         );
       case "error":
         return (
-          <Alert fade={false} color="danger">
-            <h4 className="alert-heading">Failed to log you in!</h4>
-            There was an unexpected error while trying to log you in. (Technical
-            error details: {this.state.message})
-            <hr />
-            Click below to go back to where you came from.
-            <br />
-            <Link to={this.state.returnTo}>
-              <Button color="primary">Go back</Button>
-            </Link>
-          </Alert>
+          <>
+            <h1>Login</h1>
+            <Alert fade={false} color="danger">
+              <h4 className="alert-heading">Failed to log you in!</h4>
+              There was an unexpected error while trying to log you in.
+              (Technical error details: {this.state.message})
+              <hr />
+              Click below to go back to where you came from.
+              <br />
+              <Link to={this.state.returnTo}>
+                <Button color="primary">Go back</Button>
+              </Link>
+            </Alert>
+          </>
         );
       case "finished":
-        return <Redirect to={this.state.returnTo} />;
+        return <Navigate to={this.state.returnTo} />;
     }
   }
 }
 
-export const AuthorizedWithRouter = withRouter(Authorized);
+export function AuthorizedWithRouter({
+  updateAuthState,
+}: {
+  updateAuthState: (newAuthState?: AuthState) => void;
+}) {
+  const location = useLocation();
+  return <Authorized updateAuthState={updateAuthState} location={location} />;
+}
 
 export function Logout(props: {
   auth: AuthState;
@@ -256,10 +283,14 @@ export function Logout(props: {
 }) {
   React.useEffect(() => {
     if (props.auth.type === "present") {
-      axios
-        .post(`${config.api_base_url}/auth/revoke`, undefined, {
-          headers: { Authorization: `Bearer ${props.auth.accessToken}` },
-        })
+      fetch(`${config.api_base_url}/auth/revoke`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${props.auth.accessToken}`,
+
+          Accept: "application/json",
+        },
+      })
         .then(() => {
           console.log("Successfully finished revoking token");
         })
@@ -279,7 +310,7 @@ export function Logout(props: {
     returnTo = "/";
   }
 
-  return <Redirect to={returnTo} />;
+  return <Navigate to={returnTo} />;
 }
 
 export function revalidateLogin(
@@ -290,31 +321,36 @@ export function revalidateLogin(
   // the Twitch auth connection is still active, and possibly also updates user details like name/profile image.
   // -> the backend returns us a new token with an extended "userDetailsValidUntil" and a fresh "validUntil"
   console.log("Revalidating authentication");
-  axios
-    .post(`${config.api_base_url}/auth/extend`, undefined, {
-      headers: {
-        Authorization: `Bearer ${authState.accessToken}`,
-      },
-    })
-    .then((resp) => {
+
+  (async () => {
+    try {
+      const resp = await fetch(`${config.api_base_url}/auth/extend`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${authState.accessToken}`,
+          Accept: "application/json",
+        },
+      });
+      const json = await resp.json();
+
       let newAuthState: AuthPresent = {
         type: "present",
-        accessToken: resp.data["access_token"],
-        validUntil: new Date(resp.data["valid_until"]),
-        userId: resp.data["user_id"],
-        userLogin: resp.data["user_login"],
-        userName: resp.data["user_name"],
-        userProfileImageUrl: resp.data["user_profile_image_url"],
-        userDetailsValidUntil: new Date(resp.data["user_details_valid_until"]),
+        accessToken: json["access_token"],
+        validUntil: new Date(json["valid_until"]),
+        userId: json["user_id"],
+        userLogin: json["user_login"],
+        userName: json["user_name"],
+        userProfileImageUrl: json["user_profile_image_url"],
+        userDetailsValidUntil: new Date(json["user_details_valid_until"]),
         userDetailsValidating: false,
       };
       updateAuthState(newAuthState);
-    })
-    .catch((err) => {
+    } catch (err) {
       console.error(
         "API Request to extend/revalidate authorization failed",
         err
       );
       updateAuthState({ type: "missing" });
-    });
+    }
+  })();
 }

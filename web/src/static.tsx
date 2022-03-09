@@ -1,8 +1,8 @@
 import * as React from "react";
 import { Link } from "react-router-dom";
-import * as config from "../config";
+import config from "../config";
 
-function rot13(s) {
+function rot13(s: string): string {
   return s.replace(
     /[A-Z]/gi,
     (c) =>
@@ -174,6 +174,7 @@ export function Home() {
 export function API() {
   return (
     <>
+      <h1>API</h1>
       <section>
         <h4>General information</h4>
         <p>

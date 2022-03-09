@@ -1,4 +1,4 @@
-module.exports = {
+let cfg = {
   client_id: "nld8y6rt7f5u7l1xuq4eni8pzp8mjo",
   redirect_uri: "https://recent-messages.robotty.de/authorized",
   // human readable strings for the home page and API documentation
@@ -33,11 +33,15 @@ module.exports = {
   privacy_last_updated_on: "13 December 2020",
 };
 
+export type Config = typeof cfg;
+
 if (process.env.NODE_ENV === "development") {
-  module.exports = {
-    ...module.exports,
+  cfg = {
+    ...cfg,
     client_id: "iwucnx8zmbzucoan8ga33j355lb7nc",
     redirect_uri: "http://localhost:1234/authorized",
     api_base_url: "http://127.0.0.1:2790/api/v2",
   };
 }
+
+export default cfg;

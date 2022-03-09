@@ -25,9 +25,9 @@ async fn main() {
     increase_nofile_rlimit();
 
     // init metrics system
-    let prom_recorder = Box::leak(Box::new(PrometheusBuilder::new().build()));
-    let prom_handle = prom_recorder.handle();
-    metrics::set_recorder(prom_recorder).unwrap();
+    let prom_handle = PrometheusBuilder::new()
+        .install_recorder()
+        .expect("failed to install prometheus recorder");
     system_monitoring::spawn_system_monitoring();
     register_application_metrics();
 
@@ -176,28 +176,28 @@ fn increase_nofile_rlimit() {
     }
 }
 
-/// Register all created metrics to initialize them as zero and give them their description.
+/// Register all created metrics to give them their description and appropriate units.
 fn register_application_metrics() {
-    metrics::register_counter!(
+    metrics::describe_counter!(
         "recent_messages_messages_appended",
         "Total number of messages appended to storage"
     );
-    metrics::register_gauge!(
+    metrics::describe_gauge!(
         "recent_messages_messages_stored",
         "Number of messages currently stored in storage"
     );
-    metrics::register_counter!(
+    metrics::describe_counter!(
         "recent_messages_messages_vacuumed",
         "Total number of messages that were removed by the automatic vacuum runner"
     );
-    metrics::register_counter!(
+    metrics::describe_counter!(
         "recent_messages_message_vacuum_runs",
         "Total number of times the automatic vacuum runner has been started for a certain channel"
     );
-    metrics::register_histogram!(
+    metrics::describe_histogram!(
         "http_request_duration_milliseconds",
         metrics::Unit::Milliseconds,
         "Distribution of how many milliseconds incoming web requests took to answer them"
     );
-    metrics::register_counter!("http_request", "Total number of incoming HTTP requests");
+    metrics::describe_counter!("http_request", "Total number of incoming HTTP requests");
 }

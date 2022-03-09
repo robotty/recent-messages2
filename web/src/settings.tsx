@@ -1,5 +1,4 @@
-import axios from "axios";
-import React from "react";
+import React, { ChangeEvent } from "react";
 import { Link } from "react-router-dom";
 import {
   Alert,
@@ -11,11 +10,16 @@ import {
   Spinner,
   Tooltip,
 } from "reactstrap";
-import * as config from "../config";
+import config from "../config";
 import { AuthPresent, AuthState } from "./index";
 
+type SettingsLoggedInComponentProps = {
+  auth: AuthPresent;
+  updateAuthState: (newAuthState: AuthState) => void;
+};
+
 class SettingsLoggedIn extends React.Component<
-  { auth: AuthPresent; updateAuthState: (newAuthState: AuthState) => void },
+  SettingsLoggedInComponentProps,
   {
     ignored: boolean;
     loadingIgnored: boolean;
@@ -29,7 +33,7 @@ class SettingsLoggedIn extends React.Component<
     purgeButtonTooltipOpen: boolean;
   }
 > {
-  constructor(props) {
+  constructor(props: SettingsLoggedInComponentProps) {
     super(props);
     this.state = {
       ignored: false,
@@ -56,22 +60,26 @@ class SettingsLoggedIn extends React.Component<
       };
     });
 
-    axios
-      .get(`${config.api_base_url}/ignored`, {
-        headers: {
-          Authorization: `Bearer ${this.props.auth.accessToken}`,
-        },
-      })
-      .then((resp) => {
+    (async () => {
+      try {
+        let resp = await fetch(`${config.api_base_url}/ignored`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${this.props.auth.accessToken}`,
+            Accept: "application/json",
+          },
+        });
+
+        let json = await resp.json();
+
         this.setState(() => {
           return {
-            ignored: resp.data["ignored"],
+            ignored: json["ignored"],
             loadingIgnored: false,
             loadingIgnoredFailed: false,
           };
         });
-      })
-      .catch((err) => {
+      } catch (err) {
         console.error("Failed to load `ignored` status of channel", err);
         this.setState(() => {
           return {
@@ -79,10 +87,11 @@ class SettingsLoggedIn extends React.Component<
             loadingIgnoredFailed: true,
           };
         });
-      });
+      }
+    })();
   }
 
-  updateIgnored(e) {
+  updateIgnored(e: ChangeEvent<HTMLInputElement>) {
     let previousSetting = this.state.ignored;
     let newSetting = e.target.checked;
 
@@ -97,25 +106,25 @@ class SettingsLoggedIn extends React.Component<
       };
     });
 
-    axios
-      .post(
-        `${config.api_base_url}/ignored`,
-        { ignored: newSetting },
-        {
+    (async () => {
+      try {
+        await fetch(`${config.api_base_url}/ignored`, {
+          method: "POST",
           headers: {
             Authorization: `Bearer ${this.props.auth.accessToken}`,
+            Accept: "application/json",
+            "Content-Type": "application/json",
           },
-        }
-      )
-      .then((resp) => {
+          body: JSON.stringify({ ignored: newSetting }),
+        });
+
         this.setState(() => {
           return {
             savingIgnored: false,
             savingIgnoredSuccess: true,
           };
         });
-      })
-      .catch((err) => {
+      } catch (err) {
         console.error("Failed to load `ignored` status of channel", err);
         this.setState(() => {
           return {
@@ -124,7 +133,8 @@ class SettingsLoggedIn extends React.Component<
             loadingIgnoredFailed: true,
           };
         });
-      });
+      }
+    })();
   }
 
   purgeMessages() {
@@ -140,12 +150,13 @@ class SettingsLoggedIn extends React.Component<
       };
     });
 
-    axios
-      .post(`${config.api_base_url}/purge`, undefined, {
-        headers: {
-          Authorization: `Bearer ${this.props.auth.accessToken}`,
-        },
-      })
+    fetch(`${config.api_base_url}/purge`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${this.props.auth.accessToken}`,
+        Accept: "application/json",
+      },
+    })
       .then((resp) => {
         this.setState(() => {
           return {
@@ -296,25 +307,31 @@ export function Settings(props: {
 }) {
   if (props.auth.type === "present") {
     return (
-      <SettingsLoggedIn
-        auth={props.auth}
-        updateAuthState={props.updateAuthState}
-      />
+      <>
+        <h1>Settings</h1>
+        <SettingsLoggedIn
+          auth={props.auth}
+          updateAuthState={props.updateAuthState}
+        />
+      </>
     );
   } else {
     return (
-      <Alert fade={false} color="warning">
-        <h4 className="alert-heading">Not logged in</h4>
-        You are currently not logged in. Use the button below or the link on the
-        navigation bar to log in.
-        <br />
-        <Link to="/login?returnTo=%2Fsettings">
-          <Button color="primary">
-            <i className="fas fa-sign-in-alt mr-1" />
-            Log in
-          </Button>
-        </Link>
-      </Alert>
+      <>
+        <h1>Settings</h1>
+        <Alert fade={false} color="warning">
+          <h4 className="alert-heading">Not logged in</h4>
+          You are currently not logged in. Use the button below or the link on
+          the navigation bar to log in.
+          <br />
+          <Link to="/login?returnTo=%2Fsettings">
+            <Button color="primary">
+              <i className="fas fa-sign-in-alt mr-1" />
+              Log in
+            </Button>
+          </Link>
+        </Alert>
+      </>
     );
   }
 }

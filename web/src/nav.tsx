@@ -1,10 +1,10 @@
-import { Location } from "history";
 import * as React from "react";
 import {
   Link as RRLink,
   matchPath,
   NavLink as RRNavLink,
-  withRouter,
+  useLocation,
+  Location,
 } from "react-router-dom";
 import {
   Collapse,
@@ -22,11 +22,13 @@ import {
 } from "reactstrap";
 import { AuthState } from "./index";
 
+type NavComponentProps = { auth: AuthState; location: Location };
+
 export class Nav extends React.Component<
-  { auth: AuthState; location: Location<{}> },
+  NavComponentProps,
   { menuCollapsed: boolean; dropdownOpen: boolean }
 > {
-  constructor(props) {
+  constructor(props: NavComponentProps) {
     super(props);
     this.state = { menuCollapsed: true, dropdownOpen: false };
   }
@@ -118,7 +120,7 @@ export class Nav extends React.Component<
           <Collapse isOpen={!this.state.menuCollapsed} navbar>
             <BsNav className="mr-auto" navbar>
               <NavItem>
-                <NavLink tag={RRNavLink} to="/" exact>
+                <NavLink tag={RRNavLink} to="/">
                   Home
                 </NavLink>
               </NavItem>
@@ -146,4 +148,7 @@ export class Nav extends React.Component<
   }
 }
 
-export const NavWithRouter = withRouter(Nav);
+export function NavWithRouter({ auth }: { auth: AuthState }) {
+  const location = useLocation();
+  return <Nav auth={auth} location={location} />;
+}
