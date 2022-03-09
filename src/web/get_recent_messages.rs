@@ -1,8 +1,6 @@
 use crate::db::DataStorage;
 use crate::irc_listener::IrcListener;
 use crate::web::ApiError;
-use lazy_static::lazy_static;
-use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 use warp::reject::Rejection;
@@ -33,16 +31,10 @@ impl Default for GetRecentMessagesQueryOptions {
 
 // this is async so we can directly plug it into a warp::Filter::and_then
 pub async fn validate_channel_login(channel_login: String) -> Result<String, Rejection> {
-    lazy_static! {
-        static ref CHANNEL_LOGIN_PATTERN: Regex = Regex::new("^[a-z0-9_]{1,25}$").unwrap();
-    }
-
-    if CHANNEL_LOGIN_PATTERN.is_match(&channel_login) {
-        Ok(channel_login)
-    } else {
-        Err(warp::reject::custom(ApiError::InvalidChannelLogin(
-            channel_login,
-        )))
+    match twitch_irc::validate::validate_login(&channel_login) {
+        Ok(()) => Ok(channel_login),
+        Err(e) =>
+            Err(warp::reject::custom(ApiError::InvalidChannelLogin(e)))
     }
 }
 

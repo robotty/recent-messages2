@@ -77,13 +77,13 @@ impl IrcListener {
                 "Checked database for channels that should be joined, now at {} channels",
                 channels.len()
             );
-            irc_client.set_wanted_channels(channels);
+            irc_client.set_wanted_channels(channels).unwrap();
         }
     }
 
     pub fn join_if_needed(&self, channel_login: String) {
         // the twitch_irc crate only does a JOIN if necessary
-        self.irc_client.join(channel_login);
+        self.irc_client.join(channel_login).unwrap();
     }
 
     pub async fn is_join_confirmed(&self, channel_login: String) -> bool {

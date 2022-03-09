@@ -57,7 +57,7 @@ pub async fn set_ignored(
             data_storage.purge_messages(&authorization.user_login).await;
         });
     } else {
-        irc_listener.irc_client.join(authorization.user_login);
+        irc_listener.irc_client.join(authorization.user_login).unwrap();
     }
 
     // 200 OK with empty body
