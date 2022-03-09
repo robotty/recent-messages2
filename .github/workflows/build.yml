@@ -58,7 +58,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - run: cd web && npm ci
-      - run: ./web/node_modules/.bin/prettier --check --ignore-path ".gitignore" "**/*.md" "**/*.js" "**/*.tsx" "**/*.yml" "**/*.json"
+      - run: ./web/node_modules/.bin/prettier --check --ignore-path ".gitignore" "**/*.md" "**/*.tsx" "**/*.yml" "**/*.json"
   build-web:
     runs-on: ubuntu-latest
     container: node:${{ matrix.node }}-stretch
