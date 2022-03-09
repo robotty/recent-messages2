@@ -33,8 +33,7 @@ impl Default for GetRecentMessagesQueryOptions {
 pub async fn validate_channel_login(channel_login: String) -> Result<String, Rejection> {
     match twitch_irc::validate::validate_login(&channel_login) {
         Ok(()) => Ok(channel_login),
-        Err(e) =>
-            Err(warp::reject::custom(ApiError::InvalidChannelLogin(e)))
+        Err(e) => Err(warp::reject::custom(ApiError::InvalidChannelLogin(e))),
     }
 }
 
