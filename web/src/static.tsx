@@ -174,6 +174,7 @@ export function Home() {
 export function API() {
   return (
     <>
+      <h1>API</h1>
       <section>
         <h4>General information</h4>
         <p>

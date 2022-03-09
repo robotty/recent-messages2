@@ -1,6 +1,6 @@
 import * as React from "react";
 import * as ReactDOM from "react-dom";
-import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Outlet, Route, Routes } from "react-router-dom";
 import { Container } from "reactstrap";
 import {
   AuthorizedWithRouter,
@@ -151,60 +151,64 @@ export class App extends React.Component<
   }
 
   render() {
+    let navAndContainer = (
+      <>
+        <NavWithRouter auth={this.state.auth} />
+        <Container className="pt-3">
+          <Outlet />
+        </Container>
+      </>
+    );
     return (
-      <React.StrictMode>
-        <Router>
-          {/*
- // @ts-ignore */}
-          <NavWithRouter auth={this.state.auth} />
-          <Container className="pt-3">
-            <Routes>
-              <Route path="/api">
-                <h1>API</h1>
-                <API />
-              </Route>
-              <Route path="/settings">
-                <h1>Settings</h1>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={navAndContainer}>
+            <Route path="/api" element={<API />} />
+            <Route
+              path="/settings"
+              element={
                 <Settings
                   auth={this.state.auth}
                   updateAuthState={this.updateAuthState}
                 />
-              </Route>
-              <Route path="/login">
-                <h1>Login</h1>
-                {/*
- // @ts-ignore */}
+              }
+            />
+            <Route
+              path="/login"
+              element={
                 <LoginWithRouter updateAuthState={this.updateAuthState} />
-              </Route>
-              <Route path="/authorized">
-                <h1>Login</h1>
-                {/*
- // @ts-ignore */}
+              }
+            />
+            <Route
+              path="/authorized"
+              element={
                 <AuthorizedWithRouter updateAuthState={this.updateAuthState} />
-              </Route>
-              <Route path="/logout">
+              }
+            />
+            <Route
+              path="/logout"
+              element={
                 <Logout
                   auth={this.state.auth}
                   updateAuthState={this.updateAuthState}
                 />
-              </Route>
-              <Route path="/privacy">
-                <Privacy />
-              </Route>
-              <Route path="/donation-thank-you">
-                <DonationThankYou />
-              </Route>
-              <Route path="/">
-                <Home />
-              </Route>
-              <Route path="*">
-                <h1>Not Found</h1>
-                The page you were trying to access does not exist.
-              </Route>
-            </Routes>
-          </Container>
-        </Router>
-      </React.StrictMode>
+              }
+            />
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="/donation-thank-you" element={<DonationThankYou />} />
+            <Route path="/" element={<Home />} />
+            <Route
+              path="*"
+              element={
+                <>
+                  <h1>Not Found</h1>
+                  The page you were trying to access does not exist.
+                </>
+              }
+            />
+          </Route>
+        </Routes>
+      </BrowserRouter>
     );
   }
 }

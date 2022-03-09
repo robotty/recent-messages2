@@ -49,18 +49,25 @@ class Login extends React.Component<
 
   render() {
     return (
-      <Alert fade={false} color="primary">
-        <h4 className="alert-heading">
-          <Spinner color="primary" className="mr-3" />
-          Logging in...
-        </h4>
-        Sending you to Twitch...
-      </Alert>
+      <>
+        <h1>Login</h1>
+        <Alert fade={false} color="primary">
+          <h4 className="alert-heading">
+            <Spinner color="primary" className="mr-3" />
+            Logging in...
+          </h4>
+          Sending you to Twitch...
+        </Alert>
+      </>
     );
   }
 }
 
-export function LoginWithRouter(updateAuthState: (newAuthState: AuthState) => void) {
+export function LoginWithRouter({
+  updateAuthState,
+}: {
+  updateAuthState: (newAuthState: AuthState) => void;
+}) {
   let location = useLocation();
   return <Login updateAuthState={updateAuthState} location={location} />;
 }
@@ -227,27 +234,33 @@ class Authorized extends React.Component<
     switch (this.state.type) {
       case "loadToken":
         return (
-          <Alert fade={false} color="primary">
-            <h4 className="alert-heading">
-              <Spinner color="primary" className="mr-3" />
-              Logging in...
-            </h4>
-            Completing login...
-          </Alert>
+          <>
+            <h1>Login</h1>
+            <Alert fade={false} color="primary">
+              <h4 className="alert-heading">
+                <Spinner color="primary" className="mr-3" />
+                Logging in...
+              </h4>
+              Completing login...
+            </Alert>
+          </>
         );
       case "error":
         return (
-          <Alert fade={false} color="danger">
-            <h4 className="alert-heading">Failed to log you in!</h4>
-            There was an unexpected error while trying to log you in. (Technical
-            error details: {this.state.message})
-            <hr />
-            Click below to go back to where you came from.
-            <br />
-            <Link to={this.state.returnTo}>
-              <Button color="primary">Go back</Button>
-            </Link>
-          </Alert>
+          <>
+            <h1>Login</h1>
+            <Alert fade={false} color="danger">
+              <h4 className="alert-heading">Failed to log you in!</h4>
+              There was an unexpected error while trying to log you in.
+              (Technical error details: {this.state.message})
+              <hr />
+              Click below to go back to where you came from.
+              <br />
+              <Link to={this.state.returnTo}>
+                <Button color="primary">Go back</Button>
+              </Link>
+            </Alert>
+          </>
         );
       case "finished":
         return <Navigate to={this.state.returnTo} />;
@@ -255,9 +268,13 @@ class Authorized extends React.Component<
   }
 }
 
-export function AuthorizedWithRouter(updateAuthState: (newAuthState: AuthState) => void) {
+export function AuthorizedWithRouter({
+  updateAuthState,
+}: {
+  updateAuthState: (newAuthState?: AuthState) => void;
+}) {
   const location = useLocation();
-  return <Authorized updateAuthState={updateAuthState} location={location} />
+  return <Authorized updateAuthState={updateAuthState} location={location} />;
 }
 
 export function Logout(props: {

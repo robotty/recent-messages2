@@ -120,7 +120,7 @@ export class Nav extends React.Component<
           <Collapse isOpen={!this.state.menuCollapsed} navbar>
             <BsNav className="mr-auto" navbar>
               <NavItem>
-                <NavLink tag={RRNavLink} to="/" exact>
+                <NavLink tag={RRNavLink} to="/">
                   Home
                 </NavLink>
               </NavItem>
@@ -148,7 +148,7 @@ export class Nav extends React.Component<
   }
 }
 
-export function NavWithRouter(auth: AuthState) {
+export function NavWithRouter({ auth }: { auth: AuthState }) {
   const location = useLocation();
-  return <Nav auth={auth} location={location}/>;
+  return <Nav auth={auth} location={location} />;
 }

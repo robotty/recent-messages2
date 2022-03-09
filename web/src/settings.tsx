@@ -307,25 +307,31 @@ export function Settings(props: {
 }) {
   if (props.auth.type === "present") {
     return (
-      <SettingsLoggedIn
-        auth={props.auth}
-        updateAuthState={props.updateAuthState}
-      />
+      <>
+        <h1>Settings</h1>
+        <SettingsLoggedIn
+          auth={props.auth}
+          updateAuthState={props.updateAuthState}
+        />
+      </>
     );
   } else {
     return (
-      <Alert fade={false} color="warning">
-        <h4 className="alert-heading">Not logged in</h4>
-        You are currently not logged in. Use the button below or the link on the
-        navigation bar to log in.
-        <br />
-        <Link to="/login?returnTo=%2Fsettings">
-          <Button color="primary">
-            <i className="fas fa-sign-in-alt mr-1" />
-            Log in
-          </Button>
-        </Link>
-      </Alert>
+      <>
+        <h1>Settings</h1>
+        <Alert fade={false} color="warning">
+          <h4 className="alert-heading">Not logged in</h4>
+          You are currently not logged in. Use the button below or the link on
+          the navigation bar to log in.
+          <br />
+          <Link to="/login?returnTo=%2Fsettings">
+            <Button color="primary">
+              <i className="fas fa-sign-in-alt mr-1" />
+              Log in
+            </Button>
+          </Link>
+        </Alert>
+      </>
     );
   }
 }
