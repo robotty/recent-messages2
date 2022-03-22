@@ -1,6 +1,7 @@
 use crate::config::Config;
 use crate::web::auth::{TwitchUserAccessToken, UserAuthorization};
 use chrono::{DateTime, TimeZone, Utc};
+use deadpool_postgres::{ManagerConfig, PoolConfig, RecyclingMethod};
 use itertools::Itertools;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::collections::{HashMap, HashSet, VecDeque};
@@ -8,7 +9,6 @@ use std::ops::{DerefMut, RangeTo};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
-use deadpool_postgres::{ManagerConfig, PoolConfig, RecyclingMethod};
 use thiserror::Error;
 use tokio::sync::{Mutex, RwLock};
 use tokio_postgres::tls::NoTls;
@@ -22,19 +22,24 @@ pub async fn connect_to_postgresql(config: &Config) -> PgPool {
     let pg_config = tokio_postgres::Config::from(config.db.clone());
     tracing::debug!("PostgreSQL config: {:#?}", pg_config);
 
-    let mgr_config = ManagerConfig { recycling_method: RecyclingMethod::Fast };
+    let mgr_config = ManagerConfig {
+        recycling_method: RecyclingMethod::Fast,
+    };
     let pool_config = PoolConfig {
         max_size: config.app.db_pool_max_size,
         // For now I've set all of these to `None` intentionally
         timeouts: deadpool_postgres::Timeouts {
             create: None,
             wait: None,
-            recycle: None
-        }
+            recycle: None,
+        },
     };
 
     let manager = deadpool_postgres::Manager::from_config(pg_config, NoTls, mgr_config);
-    PgPool::builder(manager).config(pool_config).build().unwrap()
+    PgPool::builder(manager)
+        .config(pool_config)
+        .build()
+        .unwrap()
 }
 
 mod migrations {
@@ -45,7 +50,9 @@ mod migrations {
 
 pub async fn run_migrations(db: &PgPool) -> Result<(), Box<dyn std::error::Error>> {
     let mut db = db.get().await?;
-    migrations::migrations::runner().run_async(db.as_mut().deref_mut()).await?;
+    migrations::migrations::runner()
+        .run_async(db.as_mut().deref_mut())
+        .await?;
     Ok(())
 }
 
