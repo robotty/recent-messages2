@@ -202,7 +202,7 @@ pub async fn run(
 
 fn collect_timings() -> Log<impl Fn(Info) + Clone> {
     warp::filters::log::custom(|info| {
-        log::trace!(
+        tracing::trace!(
             "{} {:?} {} - {} in {}",
             info.method().as_str(),
             info.version(),
@@ -327,7 +327,7 @@ async fn handle_api_rejection(err: Rejection) -> Result<impl Reply, Infallible> 
 
     if let Some(custom_api_error) = err.find::<ApiError>() {
         // custom errors
-        log::error!("API error: {}", custom_api_error);
+        tracing::error!("API error: {}", custom_api_error);
         status = custom_api_error.status();
         error_string = custom_api_error.user_message();
         error_code = custom_api_error.error_code();
@@ -335,14 +335,14 @@ async fn handle_api_rejection(err: Rejection) -> Result<impl Reply, Infallible> 
         // warp errors
         status = err.status();
         error_string = err.user_message().unwrap_or_else(|| {
-            log::warn!(
+            tracing::warn!(
                 "warp rejection was not an ApiError (no user_message): {0}\n{0:?}",
                 err
             );
             "Internal Server Error".to_owned()
         });
         error_code = err.error_code().unwrap_or_else(|| {
-            log::warn!(
+            tracing::warn!(
                 "warp rejection was not an ApiError (no error_code): {0}\n{0:?}",
                 err
             );

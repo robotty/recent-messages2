@@ -80,10 +80,10 @@ pub async fn get_recent_messages(
 
         // if we managed to join the channel then add/touch it in the database
         if is_confirmed_joined {
-            log::trace!("Adding/touching channel: {}", channel_login);
+            tracing::trace!("Adding/touching channel: {}", channel_login);
             let res = data_storage.touch_or_add_channel(&channel_login).await;
             if let Err(e) = res {
-                log::error!("Failed to touch_or_add_channel: {}", e);
+                tracing::error!("Failed to touch_or_add_channel: {}", e);
             }
         }
     });
