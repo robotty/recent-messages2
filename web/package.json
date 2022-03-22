@@ -3,9 +3,10 @@
   "author": "Ruben Anders <ruben.anders@robotty.de>",
   "version": "0.1.0",
   "scripts": {
-    "watch": "parcel index.html",
+    "watch": "parcel watch index.html",
+    "serve": "parcel serve index.html",
     "build": "parcel build index.html",
-    "clean": "rm -rf .cache dist"
+    "clean": "rm -rf .parcel-cache dist"
   },
   "license": "AGPL-3.0-or-later",
   "devDependencies": {
