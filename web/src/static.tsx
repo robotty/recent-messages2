@@ -496,15 +496,19 @@ export function Privacy() {
         [...] (e) processing is necessary for the performance of a task carried
         out in the public interest or in the exercise of official authority
         vested in the controller".
-        <br />I justify my collection of basic Twitch.tv user data (second point
+      </p>
+      <p>
+        I justify my collection of basic Twitch.tv user data (second point
         above) because this information is strictly necessary to provide the
         user with the service and to automatically identify them.
       </p>
       <h4>How do I store your data?</h4>
-      {config.privacy_how_do_i_store_your_data}
-      <h4>What are your data protection rights?</h4>I would like to make sure
-      you are fully aware of all of your data protection rights. Every user is
-      entitled to the following:
+      <p>{config.privacy_how_do_i_store_your_data}</p>
+      <h4>What are your data protection rights?</h4>
+      <p>
+        I would like to make sure you are fully aware of all of your data
+        protection rights. Every user is entitled to the following:
+      </p>
       <ul>
         <li>
           <em>The right to access</em> – You have the right to request me for
@@ -551,17 +555,24 @@ export function Privacy() {
         feature.
       </p>
       <h4>Privacy policies of other websites</h4>
-      This website contains links to other websites. My privacy policy applies
-      only to my website, so if you click on a link to another website, you
-      should read their privacy policy.
-      <h4>Changes to our privacy policy</h4>I keep my privacy policy under
-      regular review and place any updates on this web page. This privacy policy
-      was last updated on {config.privacy_last_updated_on}.
+      <p>
+        This website contains links to other websites. My privacy policy applies
+        only to my website, so if you click on a link to another website, you
+        should read their privacy policy.
+      </p>
+      <h4>Changes to our privacy policy</h4>
+      <p>
+        I keep my privacy policy under regular review and place any updates on
+        this web page. This privacy policy was last updated on{" "}
+        {config.privacy_last_updated_on}.
+      </p>
       <h4>How to contact me</h4>
-      If you have any questions about my privacy policy, the data I hold on you,
-      or you would like to exercise one of your data protection rights, please
-      do not hesitate to contact me. Email me at:{" "}
-      {rot13(config.privacy_contact_email_rot13)}
+      <p>
+        If you have any questions about my privacy policy, the data I hold on
+        you, or you would like to exercise one of your data protection rights,
+        please do not hesitate to contact me. Email me at:{" "}
+        {rot13(config.privacy_contact_email_rot13)}
+      </p>
     </>
   );
 }
