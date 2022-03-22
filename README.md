@@ -9,6 +9,7 @@ See https://recent-messages.robotty.de/ for all kinds of information you might w
 ## Build
 
 1. [Install Rust](https://www.rust-lang.org/tools/install)
+2. On Debian and Ubuntu: `sudo apt install build-essential`, For other operating systems I recommend you just try to proceed with step three and then try to fix the missing compiler programs/system libraries as they pop up
 3. `git clone https://github.com/robotty/recent-messages2.git && cd recent-messages2`
 4. `cargo build --release`
 5. The binary application will be ready in `./target/release/recent-messages2` (On Windows with the additional `.exe` suffix). The binary is statically linked and so can be moved to other directories or sent to remote machines without need for additional files.
