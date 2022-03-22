@@ -47,7 +47,7 @@ pub struct AppConfig {
     pub messages_expire_after: Duration,
     pub max_buffer_size: usize,
     pub save_file_directory: PathBuf,
-    pub db_pool_max_size: u64,
+    pub db_pool_max_size: usize,
 }
 
 impl Default for AppConfig {
@@ -59,7 +59,7 @@ impl Default for AppConfig {
             messages_expire_after: Duration::from_secs(24 * 60 * 60), // 24 hours
             max_buffer_size: 500,
             save_file_directory: "messages".into(),
-            db_pool_max_size: 64,
+            db_pool_max_size: num_cpus::get() * 4,
         }
     }
 }
