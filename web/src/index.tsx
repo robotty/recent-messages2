@@ -174,7 +174,7 @@ export class App extends React.Component<{}, { auth: AuthState }> {
               element={
                 <>
                   <h1>Not Found</h1>
-                  The page you were trying to access does not exist.
+                  <p>The page you were trying to access does not exist.</p>
                 </>
               }
             />
