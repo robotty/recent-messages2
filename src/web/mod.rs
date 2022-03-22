@@ -22,6 +22,7 @@ use tokio_stream::wrappers::TcpListenerStream;
 use {
     std::fs::Permissions, std::os::unix::fs::PermissionsExt, std::path::PathBuf,
     tokio::net::UnixListener,
+    tokio_stream::wrappers::UnixListenerStream
 };
 
 #[derive(Error, Debug)]
