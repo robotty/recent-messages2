@@ -34,10 +34,7 @@ export interface AuthPresent {
 
 export type AuthState = AuthMissing | AuthLoading | AuthPresent;
 
-export class App extends React.Component<
-  {},
-  { auth: AuthState; darkMode: boolean }
-> {
+export class App extends React.Component<{}, { auth: AuthState }> {
   private runningTicker: ReturnType<typeof setTimeout> | undefined;
 
   constructor(props: {}) {
@@ -46,29 +43,10 @@ export class App extends React.Component<
       auth: {
         type: "missing",
       },
-      darkMode: false,
     };
     this.runningTicker = undefined;
 
-    this.updateDarkMode = this.updateDarkMode.bind(this);
     this.updateAuthState = this.updateAuthState.bind(this);
-  }
-
-  updateDarkMode(isDark: boolean) {
-    if (isDark) {
-      console.log("updating to dark mode");
-      document.body.classList.add("bootstrap-dark");
-      document.body.classList.remove("bootstrap");
-    } else {
-      console.log("updating to light mode");
-      document.body.classList.remove("bootstrap-dark");
-      document.body.classList.add("bootstrap");
-    }
-    this.setState(() => {
-      return {
-        darkMode: isDark,
-      };
-    });
   }
 
   updateAuthState(newAuthState?: AuthState) {
@@ -119,12 +97,6 @@ export class App extends React.Component<
   }
 
   componentDidMount() {
-    let mqList = window.matchMedia("(prefers-color-scheme: dark)");
-    this.updateDarkMode(mqList.matches);
-    mqList.onchange = (event) => {
-      this.updateDarkMode(event.matches);
-    };
-
     let storedAuthRaw = window.localStorage.getItem("auth");
     if (storedAuthRaw != null) {
       console.log("loaded auth from localStorage");
