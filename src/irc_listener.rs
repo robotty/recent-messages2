@@ -68,12 +68,12 @@ impl IrcListener {
             let channels = match res {
                 Ok(channels_to_part) => channels_to_part,
                 Err(e) => {
-                    log::error!("Failed to query the DB for a list of channels that should be joined. This iteration will be skipped. Cause: {}", e);
+                    tracing::error!("Failed to query the DB for a list of channels that should be joined. This iteration will be skipped. Cause: {}", e);
                     continue;
                 }
             };
 
-            log::info!(
+            tracing::info!(
                 "Checked database for channels that should be joined, now at {} channels",
                 channels.len()
             );

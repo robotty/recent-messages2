@@ -22,7 +22,7 @@ type PgPool = Pool<PgConnectionManager<NoTls>>;
 
 pub async fn connect_to_postgresql(config: &Config) -> PgPool {
     let pg_config = tokio_postgres::Config::from(config.db.clone());
-    log::debug!("PostgreSQL config: {:#?}", pg_config);
+    tracing::debug!("PostgreSQL config: {:#?}", pg_config);
     let manager = PgConnectionManager::new(pg_config, NoTls);
     Pool::builder()
         .max_open(config.app.db_pool_max_size)
@@ -374,7 +374,7 @@ WHERE access_token = $1",
         loop {
             check_interval.tick().await;
             tokio::spawn(async move {
-                log::info!("Running vacuum for old messages");
+                tracing::info!("Running vacuum for old messages");
                 self.run_message_vacuum(vacuum_messages_every, message_expire_after)
                     .await;
             });
@@ -450,7 +450,7 @@ WHERE access_token = $1",
         &self,
         config: &'static Config,
     ) -> Result<(), FileStorageError> {
-        log::info!("Loading snapshot of messages from disk...");
+        tracing::info!("Loading snapshot of messages from disk...");
         let save_file_directory = &config.app.save_file_directory;
         let directory_contents_res = tokio::fs::read_dir(save_file_directory).await;
         let mut directory_contents = match directory_contents_res {
@@ -475,7 +475,7 @@ WHERE access_token = $1",
                 .unwrap_or(true)
             {
                 // either has an extension that is not `dat` or has no extension
-                log::debug!(
+                tracing::debug!(
                     "Ignoring file {} from messages directory, extension is not `dat`",
                     file_path.to_string_lossy()
                 );
@@ -509,7 +509,7 @@ WHERE access_token = $1",
         &self,
         config: &'static Config,
     ) -> Result<(), FileStorageError> {
-        log::info!("Saving snapshot of messages to disk...");
+        tracing::info!("Saving snapshot of messages to disk...");
         let save_file_directory = &config.app.save_file_directory;
         let mkdir_result = tokio::fs::DirBuilder::new()
             .create(save_file_directory)

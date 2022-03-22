@@ -43,7 +43,7 @@ async fn run_system_monitoring() {
         let system_stats = match system_stats {
             Ok(system_stats) => system_stats,
             Err(e) => {
-                log::error!("Monitoring: Failed to get CPU and Memory statistics: {}", e);
+                tracing::error!("Monitoring: Failed to get CPU and Memory statistics: {}", e);
                 continue;
             }
         };

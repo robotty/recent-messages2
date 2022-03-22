@@ -18,7 +18,7 @@ use structopt::StructOpt;
 
 #[tokio::main]
 async fn main() {
-    env_logger::init();
+    tracing_subscriber::fmt::init();
 
     // unix: increase NOFILE rlimit
     #[cfg(unix)]
@@ -37,8 +37,8 @@ async fn main() {
     let config = match config {
         Ok(config) => config,
         Err(e) => {
-            log::debug!("Parsed args: {:#?}", args);
-            log::error!(
+            tracing::debug!("Parsed args: {:#?}", args);
+            tracing::error!(
                 "Failed to load config from `{}`: {}",
                 args.config_path.to_string_lossy(),
                 e,
@@ -48,19 +48,19 @@ async fn main() {
     };
     let config: &'static Config = Box::leak(Box::new(config));
 
-    log::info!("Successfully loaded config");
-    log::debug!("Parsed args: {:#?}", args);
-    log::debug!("Config: {:#?}", config);
+    tracing::info!("Successfully loaded config");
+    tracing::debug!("Parsed args: {:#?}", args);
+    tracing::debug!("Config: {:#?}", config);
 
     // db init
     let db = db::connect_to_postgresql(&config).await;
     let migrations_result = db::run_migrations(&db).await;
     match migrations_result {
         Ok(()) => {
-            log::info!("Successfully ran database migrations");
+            tracing::info!("Successfully ran database migrations");
         }
         Err(e) => {
-            log::error!("Failed to run database migrations: {}", e);
+            tracing::error!("Failed to run database migrations: {}", e);
             std::process::exit(1);
         }
     }
@@ -69,7 +69,7 @@ async fn main() {
     let listener = web::bind(&config).await;
     let listener = match listener {
         Ok(listener) => {
-            log::info!(
+            tracing::info!(
                 "Web server bound successfully, listening for requests at `{}`",
                 config.web.listen_address
             );
@@ -77,7 +77,7 @@ async fn main() {
         }
         Err(e) => {
             // e is a custom error here so it's already nicely formatted (WebServerStartError)
-            log::error!("{}", e);
+            tracing::error!("{}", e);
             std::process::exit(1);
         }
     };
@@ -86,9 +86,9 @@ async fn main() {
     let data_storage: &'static DataStorage = Box::leak(Box::new(data_storage));
     let res = data_storage.load_messages_from_disk(config).await;
     match res {
-        Ok(()) => log::info!("Finished loading stored messages"),
+        Ok(()) => tracing::info!("Finished loading stored messages"),
         Err(e) => {
-            log::error!("Failed to load stored messages: {}", e);
+            tracing::error!("Failed to load stored messages: {}", e);
             std::process::exit(1);
         }
     }
@@ -126,18 +126,18 @@ async fn main() {
     // await termination.
     tokio::select! {
         _ = ctrl_c_event => {
-            log::info!("Interrupted, shutting down");
+            tracing::info!("Interrupted, shutting down");
         }
         _ = web_join_handle => {
-            log::error!("Web task ended with some sort of error (see log output above!) - Shutting down!")
+            tracing::error!("Web task ended with some sort of error (see log output above!) - Shutting down!")
         }
     }
 
     let res = data_storage.save_messages_to_disk(config).await;
     match res {
-        Ok(()) => log::info!("Finished saving stored messages"),
+        Ok(()) => tracing::info!("Finished saving stored messages"),
         Err(e) => {
-            log::error!("Failed to save messages: {}", e);
+            tracing::error!("Failed to save messages: {}", e);
             std::process::exit(1);
         }
     }
@@ -149,14 +149,14 @@ fn increase_nofile_rlimit() {
     let (soft, hard) = match Resource::NOFILE.get() {
         Ok((soft, hard)) => (soft, hard),
         Err(e) => {
-            log::error!(
+            tracing::error!(
                 "Failed to get NOFILE rlimit, will not attempt to increase rlimit: {}",
                 e
             );
             return;
         }
     };
-    log::debug!(
+    tracing::debug!(
         "NOFILE rlimit: process was started with limits set to {} soft, {} hard",
         soft,
         hard
@@ -164,15 +164,15 @@ fn increase_nofile_rlimit() {
 
     if soft < hard {
         match Resource::NOFILE.set(hard, hard) {
-            Ok(()) => log::info!(
+            Ok(()) => tracing::info!(
                 "Successfully increased NOFILE rlimit to {}, was at {}",
                 hard,
                 soft
             ),
-            Err(e) => log::error!("Failed to increase NOFILE rlimit to {}: {}", hard, e),
+            Err(e) => tracing::error!("Failed to increase NOFILE rlimit to {}: {}", hard, e),
         }
     } else {
-        log::debug!("NOFILE rlimit: no need to increase (soft limit is not below hard limit)")
+        tracing::debug!("NOFILE rlimit: no need to increase (soft limit is not below hard limit)")
     }
 }
 

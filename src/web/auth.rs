@@ -173,7 +173,7 @@ pub async fn create_token(
         .await
         .map_err(ApiError::SaveUserAuthorization)?;
 
-    log::debug!(
+    tracing::debug!(
         "User {} ({}, {}) authorized successfully",
         user_authorization.user_name,
         user_authorization.user_login,
@@ -192,7 +192,7 @@ impl UserAuthorization {
         &mut self,
         credentials: &TwitchApiClientCredentials,
     ) -> Result<(), ApiError> {
-        log::info!("Refreshing access token for user {}", self.user_login);
+        tracing::info!("Refreshing access token for user {}", self.user_login);
         let new_access_token = HTTP_CLIENT
             .post("https://id.twitch.tv/oauth2/token")
             .query(&[
@@ -237,7 +237,7 @@ impl UserAuthorization {
     ) -> Pin<Box<dyn Future<Output = Result<(), ApiError>> + Send + 'a>> {
         // the boxed future is necessary because of the recursive call
         async move {
-            log::debug!("Executing auth validation for user {}: Querying Helix API for user", self.user_login);
+            tracing::debug!("Executing auth validation for user {}: Querying Helix API for user", self.user_login);
             // query helix for the user. success => token still valid, error => token expired/revoked
             // the async {}.await acts like a try{} block (but try blocks are not in stable rust yet)
             let user_api_response_result = async {
@@ -270,7 +270,7 @@ impl UserAuthorization {
 
             match user_api_response_result {
                 Ok(response) => {
-                    log::debug!("Executing auth validation for user {}: Success, connection still active", self.user_login);
+                    tracing::debug!("Executing auth validation for user {}: Success, connection still active", self.user_login);
                     self.twitch_authorization_last_validated = Utc::now();
                     self.user_id = response.id;
                     self.user_login = response.login;
@@ -278,14 +278,14 @@ impl UserAuthorization {
                     Ok(())
                 }
                 Err(ApiError::Unauthorized) if try_refresh_if_invalid => {
-                    log::debug!("Executing auth validation for user {}: Failure! Unauthorized. Trying refresh", self.user_login);
+                    tracing::debug!("Executing auth validation for user {}: Failure! Unauthorized. Trying refresh", self.user_login);
                     self.refresh_token(credentials).boxed().await?;
                     // recurse: try the above again, now that the token is successfully refreshed.
                     self.validate_still_valid_inner(credentials, recheck_twitch_auth_after, false)
                         .await
                 }
                 Err(e) => {
-                    log::debug!("Executing auth validation for user {}: Other error: {}", self.user_login, e);
+                    tracing::debug!("Executing auth validation for user {}: Other error: {}", self.user_login, e);
                     Err(e)
                 }
             }
@@ -304,7 +304,7 @@ impl UserAuthorization {
             <= recheck_twitch_auth_after
         {
             // skip the check, last validation less than `recheck_twitch_auth_after` ago
-            log::debug!(
+            tracing::debug!(
                 "Auth validation for user {} skipped (validated recently)",
                 self.user_login
             );
