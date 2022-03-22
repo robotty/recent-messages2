@@ -4,8 +4,10 @@
   margin-right: 10px;
 }
 
-.bootstrap-dark pre code {
-  color: #d3d3d3;
+@media (prefers-color-scheme: dark) {
+  pre {
+    color: #d3d3d3;
+  }
 }
 
 body {
