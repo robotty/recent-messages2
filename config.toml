@@ -17,10 +17,11 @@
 
 #save_file_directory = "messages"
 
-# maximum number of connections the DB connection will create
+# maximum number of connections the DB connection pool will create
 # up this setting in case you run into issues on larger deployments,
 # and increase max_connections_count on the PostgreSQL server config (as needed) as well
-#db_pool_max_size = 64
+# default value is the number of CPUs on the system, multiplied by four
+#db_pool_max_size = 32
 
 # Configure the built-in web server and API service
 [web]

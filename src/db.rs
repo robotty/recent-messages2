@@ -1,32 +1,45 @@
 use crate::config::Config;
 use crate::web::auth::{TwitchUserAccessToken, UserAuthorization};
 use chrono::{DateTime, TimeZone, Utc};
+use deadpool_postgres::{ManagerConfig, PoolConfig, RecyclingMethod};
 use itertools::Itertools;
-use mobc::Pool;
-use mobc_postgres::PgConnectionManager;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::collections::{HashMap, HashSet, VecDeque};
-use std::ops::RangeTo;
+use std::ops::{DerefMut, RangeTo};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
 use thiserror::Error;
 use tokio::sync::{Mutex, RwLock};
-use tokio_postgres::error::Error as PgError;
 use tokio_postgres::tls::NoTls;
 
 // TODO support TLS if needed
 // see https://docs.rs/postgres-native-tls/0.3.0/postgres_native_tls/index.html
 
-type PgPool = Pool<PgConnectionManager<NoTls>>;
+type PgPool = deadpool_postgres::Pool;
 
 pub async fn connect_to_postgresql(config: &Config) -> PgPool {
     let pg_config = tokio_postgres::Config::from(config.db.clone());
     tracing::debug!("PostgreSQL config: {:#?}", pg_config);
-    let manager = PgConnectionManager::new(pg_config, NoTls);
-    Pool::builder()
-        .max_open(config.app.db_pool_max_size)
-        .build(manager)
+
+    let mgr_config = ManagerConfig {
+        recycling_method: RecyclingMethod::Fast,
+    };
+    let pool_config = PoolConfig {
+        max_size: config.app.db_pool_max_size,
+        // For now I've set all of these to `None` intentionally
+        timeouts: deadpool_postgres::Timeouts {
+            create: None,
+            wait: None,
+            recycle: None,
+        },
+    };
+
+    let manager = deadpool_postgres::Manager::from_config(pg_config, NoTls, mgr_config);
+    PgPool::builder(manager)
+        .config(pool_config)
+        .build()
+        .unwrap()
 }
 
 mod migrations {
@@ -37,19 +50,13 @@ mod migrations {
 
 pub async fn run_migrations(db: &PgPool) -> Result<(), Box<dyn std::error::Error>> {
     let mut db = db.get().await?;
-    migrations::migrations::runner().run_async(&mut *db).await?;
+    migrations::migrations::runner()
+        .run_async(db.as_mut().deref_mut())
+        .await?;
     Ok(())
 }
 
-#[derive(Error, Debug)]
-pub enum StorageError {
-    #[error("Timed out while connecting to PostgreSQL database server")]
-    Timeout,
-    #[error("Bad connection in the pool")]
-    BadConn,
-    #[error("Error communicating with PostgreSQL database server: {0}")]
-    PgError(#[from] PgError),
-}
+pub type StorageError = deadpool_postgres::PoolError;
 
 // TODO could possibly optimize further by storing the ServerMessage instead of its source?
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -75,17 +82,6 @@ where
     S: Serializer,
 {
     serializer.serialize_i64(timestamp.timestamp_millis())
-}
-
-// mobc::Error<PgError> gets returned from the db pool .get() call.
-impl From<mobc::Error<PgError>> for StorageError {
-    fn from(err: mobc::Error<PgError>) -> Self {
-        match err {
-            mobc::Error::Timeout => StorageError::Timeout,
-            mobc::Error::BadConn => StorageError::BadConn,
-            mobc::Error::Inner(pg_error) => StorageError::PgError(pg_error),
-        }
-    }
 }
 
 #[derive(Clone)]
