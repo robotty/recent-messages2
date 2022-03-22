@@ -17,6 +17,7 @@ use warp::Filter;
 use warp::{path, Rejection, Reply};
 
 use metrics_exporter_prometheus::PrometheusHandle;
+use tokio_stream::wrappers::TcpListenerStream;
 #[cfg(unix)]
 use {
     std::fs::Permissions, std::os::unix::fs::PermissionsExt, std::path::PathBuf,
@@ -180,21 +181,12 @@ pub async fn run(
 
     match listener {
         Listener::Tcp(tcp_listener) => {
-            // TODO remove this again when tokio gets stream support back
-            let tcp_listener = async_stream::stream! {
-                loop {
-                    yield tcp_listener.accept().await.map(|(sock, _addr)| sock);
-                }
-            };
+            let tcp_listener = TcpListenerStream::new(tcp_listener);
             warp::serve(app).serve_incoming(tcp_listener).await
         }
         #[cfg(unix)]
         Listener::Unix(unix_listener) => {
-            let unix_listener = async_stream::stream! {
-                loop {
-                    yield unix_listener.accept().await.map(|(sock, _addr)| sock);
-                }
-            };
+            let unix_listener = UnixListenerStream::new(unix_listener);
             warp::serve(app).serve_incoming(unix_listener).await
         }
     }
