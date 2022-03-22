@@ -14,5 +14,5 @@ fi
 
 # NOTE when updating these commands, don't forget to update the same commands in the CI configurations
 # in /.github/workflows too
-./web/node_modules/.bin/prettier $PRETTIER_OPTIONS --ignore-path ".gitignore" "**/*.md" "**/*.js" "**/*.tsx" "**/*.yml" "**/*.json"
+./web/node_modules/.bin/prettier $PRETTIER_OPTIONS --ignore-path ".gitignore" "**/*.md" "**/*.tsx" "**/*.yml" "**/*.json"
 cargo fmt $CARGO_FMT_OPTIONS
