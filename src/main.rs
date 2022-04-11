@@ -18,6 +18,7 @@ use structopt::StructOpt;
 
 #[tokio::main]
 async fn main() {
+    tracing_log::LogTracer::init().unwrap();
     tracing_subscriber::fmt::init();
 
     // unix: increase NOFILE rlimit

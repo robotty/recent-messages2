@@ -1321,6 +1321,7 @@ dependencies = [
  "tokio-stream",
  "toml",
  "tracing",
+ "tracing-log",
  "tracing-subscriber",
  "twitch-irc",
  "warp",
