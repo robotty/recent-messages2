@@ -3,34 +3,24 @@
 #![deny(clippy::cargo)]
 
 mod config;
-mod db;
-mod irc_listener;
-mod message_export;
+// mod db;
+// mod irc_listener;
+// mod message_export;
 mod system_monitoring;
 mod web;
 
 use crate::config::{Args, Config};
-use crate::db::DataStorage;
-#[cfg(not(unix))]
+// use crate::db::DataStorage;
 use futures::prelude::*;
+// use metrics_exporter_prometheus::PrometheusBuilder;
+use futures::future::FusedFuture;
 use metrics_exporter_prometheus::PrometheusBuilder;
 use structopt::StructOpt;
+use tokio_util::sync::CancellationToken;
 
 #[tokio::main]
 async fn main() {
-    tracing_log::LogTracer::init().unwrap();
     tracing_subscriber::fmt::init();
-
-    // unix: increase NOFILE rlimit
-    #[cfg(unix)]
-    increase_nofile_rlimit();
-
-    // init metrics system
-    let prom_handle = PrometheusBuilder::new()
-        .install_recorder()
-        .expect("failed to install prometheus recorder");
-    system_monitoring::spawn_system_monitoring();
-    register_application_metrics();
 
     // args and config parsing
     let args = Args::from_args();
@@ -53,6 +43,18 @@ async fn main() {
     tracing::debug!("Parsed args: {:#?}", args);
     tracing::debug!("Config: {:#?}", config);
 
+    // unix: increase NOFILE rlimit
+    #[cfg(unix)]
+    increase_nofile_rlimit();
+
+    // init metrics system
+    let prom_handle = PrometheusBuilder::new()
+        .install_recorder()
+        .expect("failed to install prometheus recorder");
+    system_monitoring::spawn_system_monitoring();
+    register_application_metrics();
+
+    /*
     // db init
     let db = db::connect_to_postgresql(&config).await;
     let migrations_result = db::run_migrations(&db).await;
@@ -100,13 +102,20 @@ async fn main() {
     )));
 
     tokio::spawn(data_storage.run_task_vacuum_old_messages(config));
-    let web_join_handle = tokio::spawn(web::run(
-        listener,
-        prom_handle,
-        data_storage,
-        irc_listener,
-        config,
-    ));
+    */
+    let app_shutdown_signal = CancellationToken::new();
+    let webserver = match web::run(config, app_shutdown_signal.clone()).await {
+        Ok(webserver) => webserver,
+        Err(bind_error) => {
+            tracing::error!(
+                "Failed to bind webserver to {}: {}",
+                config.web.listen_address,
+                bind_error
+            );
+            std::process::exit(1);
+        }
+    };
+    let webserver_join_handle = tokio::spawn(webserver);
 
     #[cfg(unix)]
     let ctrl_c_event = async {
@@ -125,15 +134,56 @@ async fn main() {
         tokio::signal::ctrl_c().map(|res| res.expect("Failed to listen to Ctrl-C event"));
 
     // await termination.
-    tokio::select! {
-        _ = ctrl_c_event => {
-            tracing::info!("Interrupted, shutting down");
-        }
-        _ = web_join_handle => {
-            tracing::error!("Web task ended with some sort of error (see log output above!) - Shutting down!")
+    let ctrl_c_event = ctrl_c_event.fuse();
+    futures::pin_mut!(ctrl_c_event);
+    let mut webserver_join_handle = webserver_join_handle.fuse();
+    let mut exit_code: i32 = 0;
+    loop {
+        tokio::select! {
+            _ = (&mut ctrl_c_event), if !ctrl_c_event.is_terminated() => {
+                tracing::info!("Interrupted, shutting down gracefully");
+                app_shutdown_signal.cancel();
+            },
+            webserver_result = (&mut webserver_join_handle), if !webserver_join_handle.is_terminated() => {
+                // two cases:
+                // - webserver ends on its own WITHOUT us sending the
+                //   shutdown signal first (fatal error probably)
+                //   ctrl_c_event.is_terminated() will be FALSE
+                // - webserver ends after Ctrl-C shutdown request
+                //   ctrl_c_event.is_terminated() will be TRUE
+                match webserver_result {
+                    Ok(Ok(())) => {
+                        if !ctrl_c_event.is_terminated() {
+                            tracing::error!("Webserver ended without error even though no shutdown was requested (shutting down other parts of application gracefully)");
+                            app_shutdown_signal.cancel();
+                            exit_code = 1;
+                        } else {
+                            // regular end after graceful shutdown request
+                            tracing::info!("Webserver has successfully shut down gracefully");
+                        }
+                    },
+                    Ok(Err(tower_error)) => {
+                        tracing::error!("Webserver encountered fatal error (shutting down other parts of application gracefully): {}", tower_error);
+                        app_shutdown_signal.cancel();
+                        exit_code = 1;
+                    },
+                    Err(join_error) => {
+                        tracing::error!("Webserver tokio task ended abnormally (shutting down other parts of application gracefully): {}", join_error);
+                        app_shutdown_signal.cancel();
+                        exit_code = 1;
+                    }
+                }
+            },
+            else => {
+                tracing::info!("Everything shut down successfully, ending");
+                break;
+            }
         }
     }
 
+    std::process::exit(exit_code);
+
+    /*
     let res = data_storage.save_messages_to_disk(config).await;
     match res {
         Ok(()) => tracing::info!("Finished saving stored messages"),
@@ -142,6 +192,7 @@ async fn main() {
             std::process::exit(1);
         }
     }
+    */
 }
 
 #[cfg(unix)]
