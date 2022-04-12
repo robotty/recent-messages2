@@ -6,7 +6,7 @@ mod config;
 // mod db;
 // mod irc_listener;
 // mod message_export;
-mod system_monitoring;
+mod monitoring;
 mod web;
 
 use crate::config::{Args, Config};
@@ -14,7 +14,6 @@ use crate::config::{Args, Config};
 use futures::prelude::*;
 // use metrics_exporter_prometheus::PrometheusBuilder;
 use futures::future::FusedFuture;
-use metrics_exporter_prometheus::PrometheusBuilder;
 use structopt::StructOpt;
 use tokio_util::sync::CancellationToken;
 
@@ -47,12 +46,9 @@ async fn main() {
     #[cfg(unix)]
     increase_nofile_rlimit();
 
-    // init metrics system
-    let prom_handle = PrometheusBuilder::new()
-        .install_recorder()
-        .expect("failed to install prometheus recorder");
-    system_monitoring::spawn_system_monitoring();
-    register_application_metrics();
+    let app_shutdown_signal = CancellationToken::new();
+
+    let process_monitoring_join_handle = tokio::spawn(monitoring::run_process_monitoring(app_shutdown_signal.clone()));
 
     /*
     // db init
@@ -103,7 +99,6 @@ async fn main() {
 
     tokio::spawn(data_storage.run_task_vacuum_old_messages(config));
     */
-    let app_shutdown_signal = CancellationToken::new();
     let webserver = match web::run(config, app_shutdown_signal.clone()).await {
         Ok(webserver) => webserver,
         Err(bind_error) => {
@@ -136,6 +131,7 @@ async fn main() {
     // await termination.
     let ctrl_c_event = ctrl_c_event.fuse();
     futures::pin_mut!(ctrl_c_event);
+    let mut process_monitoring_join_handle = process_monitoring_join_handle.fuse();
     let mut webserver_join_handle = webserver_join_handle.fuse();
     let mut exit_code: i32 = 0;
     loop {
@@ -144,6 +140,25 @@ async fn main() {
                 tracing::info!("Interrupted, shutting down gracefully");
                 app_shutdown_signal.cancel();
             },
+            process_monitoring_result = (&mut process_monitoring_join_handle), if !process_monitoring_join_handle.is_terminated() => {
+                match process_monitoring_result {
+                    Ok(()) => {
+                        if !ctrl_c_event.is_terminated() {
+                            tracing::error!("Process monitoring ended without error even though no shutdown was requested (shutting down other parts of application gracefully)");
+                            app_shutdown_signal.cancel();
+                            exit_code = 1;
+                        } else {
+                            // regular end after graceful shutdown request
+                            tracing::info!("Process monitoring has successfully shut down gracefully");
+                        }
+                    },
+                    Err(join_error) => {
+                        tracing::error!("Process monitoring task ended abnormally (shutting down other parts of application gracefully): {}", join_error);
+                        app_shutdown_signal.cancel();
+                        exit_code = 1;
+                    }
+                }
+            }
             webserver_result = (&mut webserver_join_handle), if !webserver_join_handle.is_terminated() => {
                 // two cases:
                 // - webserver ends on its own WITHOUT us sending the
@@ -176,12 +191,10 @@ async fn main() {
             },
             else => {
                 tracing::info!("Everything shut down successfully, ending");
-                break;
+                std::process::exit(exit_code);
             }
         }
     }
-
-    std::process::exit(exit_code);
 
     /*
     let res = data_storage.save_messages_to_disk(config).await;
@@ -228,28 +241,28 @@ fn increase_nofile_rlimit() {
     }
 }
 
-/// Register all created metrics to give them their description and appropriate units.
-fn register_application_metrics() {
-    metrics::describe_counter!(
-        "recent_messages_messages_appended",
-        "Total number of messages appended to storage"
-    );
-    metrics::describe_gauge!(
-        "recent_messages_messages_stored",
-        "Number of messages currently stored in storage"
-    );
-    metrics::describe_counter!(
-        "recent_messages_messages_vacuumed",
-        "Total number of messages that were removed by the automatic vacuum runner"
-    );
-    metrics::describe_counter!(
-        "recent_messages_message_vacuum_runs",
-        "Total number of times the automatic vacuum runner has been started for a certain channel"
-    );
-    metrics::describe_histogram!(
-        "http_request_duration_milliseconds",
-        metrics::Unit::Milliseconds,
-        "Distribution of how many milliseconds incoming web requests took to answer them"
-    );
-    metrics::describe_counter!("http_request", "Total number of incoming HTTP requests");
-}
+// /// Register all created metrics to give them their description and appropriate units.
+// fn register_application_metrics() {
+//     metrics::describe_counter!(
+//         "recent_messages_messages_appended",
+//         "Total number of messages appended to storage"
+//     );
+//     metrics::describe_gauge!(
+//         "recent_messages_messages_stored",
+//         "Number of messages currently stored in storage"
+//     );
+//     metrics::describe_counter!(
+//         "recent_messages_messages_vacuumed",
+//         "Total number of messages that were removed by the automatic vacuum runner"
+//     );
+//     metrics::describe_counter!(
+//         "recent_messages_message_vacuum_runs",
+//         "Total number of times the automatic vacuum runner has been started for a certain channel"
+//     );
+//     metrics::describe_histogram!(
+//         "http_request_duration_milliseconds",
+//         metrics::Unit::Milliseconds,
+//         "Distribution of how many milliseconds incoming web requests took to answer them"
+//     );
+//     metrics::describe_counter!("http_request", "Total number of incoming HTTP requests");
+// }
