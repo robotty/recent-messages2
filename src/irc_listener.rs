@@ -1,6 +1,5 @@
 use crate::config::Config;
 use crate::db::DataStorage;
-use std::borrow::Cow;
 use tokio::sync::mpsc;
 use twitch_irc::login::StaticLoginCredentials;
 use twitch_irc::message::{AsRawIRC, ServerMessage};
@@ -13,10 +12,7 @@ pub struct IrcListener {
 
 impl IrcListener {
     pub fn start(data_storage: &'static DataStorage, config: &'static Config) -> IrcListener {
-        let (incoming_messages, client) = TwitchIRCClient::new(ClientConfig {
-            metrics_identifier: Some(Cow::Borrowed("listener")),
-            ..ClientConfig::default()
-        });
+        let (incoming_messages, client) = TwitchIRCClient::new(ClientConfig::default());
 
         tokio::spawn(IrcListener::run_forwarder(
             incoming_messages,

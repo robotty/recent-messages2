@@ -346,20 +346,23 @@ WHERE access_token = $1",
             time_received: Utc::now(),
             message_source,
         });
-        metrics::counter!("recent_messages_messages_appended", 1);
+        // TODO
+        // metrics::counter!("recent_messages_messages_appended", 1);
 
         if channel_messages.len() > max_buffer_size {
             channel_messages.pop_front();
         } else {
             let new_gauge_value = self.messages_stored.fetch_add(1, Ordering::SeqCst) + 1;
-            metrics::gauge!("recent_messages_messages_stored", new_gauge_value as f64);
+            // TODO
+            // metrics::gauge!("recent_messages_messages_stored", new_gauge_value as f64);
         }
     }
 
     pub async fn run_task_vacuum_old_messages(&'static self, config: &'static Config) {
-        metrics::counter!("recent_messages_messages_vacuumed", 0);
+        // TODO
+        // metrics::counter!("recent_messages_messages_vacuumed", 0);
         // initialize to 0
-        metrics::counter!("recent_messages_message_vacuum_runs", 0); // initialize to 0
+        // metrics::counter!("recent_messages_message_vacuum_runs", 0); // initialize to 0
         let vacuum_messages_every = config.app.vacuum_messages_every;
         let message_expire_after = config.app.messages_expire_after;
 
@@ -423,13 +426,15 @@ WHERE access_token = $1",
                     });
 
                     let messages_deleted = (remove_until + 1) as u64;
-                    metrics::counter!("recent_messages_messages_vacuumed", messages_deleted);
+                    // TODO
+                    // metrics::counter!("recent_messages_messages_vacuumed", messages_deleted);
 
                     let new_gauge_value = self
                         .messages_stored
                         .fetch_sub(messages_deleted, Ordering::SeqCst)
                         - messages_deleted;
-                    metrics::gauge!("recent_messages_messages_stored", new_gauge_value as f64);
+                    // TODO
+                    // metrics::gauge!("recent_messages_messages_stored", new_gauge_value as f64);
 
                     // remove the mapping from the map if there are no more messages.
                     if channel_messages.len() == 0 {
@@ -438,7 +443,8 @@ WHERE access_token = $1",
                 }
             } // else: (None) no messages stored for that channel.
 
-            metrics::counter!("recent_messages_message_vacuum_runs", 1);
+            // TODO
+            // metrics::counter!("recent_messages_message_vacuum_runs", 1);
         }
     }
 
@@ -493,7 +499,8 @@ WHERE access_token = $1",
                 .messages_stored
                 .fetch_add(messages_added, Ordering::SeqCst)
                 + messages_added;
-            metrics::gauge!("recent_messages_messages_stored", new_gauge_value as f64);
+            // TODO
+            // metrics::gauge!("recent_messages_messages_stored", new_gauge_value as f64);
 
             messages_map.insert(channel_login, Arc::new(Mutex::new(channel_messages)));
         }

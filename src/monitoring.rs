@@ -1,22 +1,38 @@
+use crate::shutdown::ShutdownNoticeReceiver;
 use chrono::Utc;
 use prometheus::{register_gauge, register_int_gauge};
 use simple_process_stats::ProcessStats;
 use tokio::time::Duration;
-use tokio_util::sync::CancellationToken;
 
 /// Provides metrics for CPU and memory usage.
-pub async fn run_process_monitoring(app_shutdown_signal: CancellationToken) {
-    let start_time_seconds = register_gauge!("process_start_time_seconds", "UTC timestamp (in seconds) of when the process started.").unwrap();
-    let cpu_user_seconds_total = register_gauge!("process_cpu_user_seconds_total", "Cumulative number of seconds spent executing in user mode").unwrap();
-    let cpu_system_seconds_total = register_gauge!("process_cpu_system_seconds_total", "Cumulative number of seconds spent executing in kernel mode").unwrap();
-    let resident_memory_bytes = register_int_gauge!("process_resident_memory_bytes", "Resident memory usage size as reported by the kernel, in bytes").unwrap();
+pub async fn run_process_monitoring(mut shutdown_receiver: ShutdownNoticeReceiver) {
+    let start_time_seconds = register_gauge!(
+        "process_start_time_seconds",
+        "UTC timestamp (in seconds) of when the process started."
+    )
+    .unwrap();
+    let cpu_user_seconds_total = register_gauge!(
+        "process_cpu_user_seconds_total",
+        "Cumulative number of seconds spent executing in user mode"
+    )
+    .unwrap();
+    let cpu_system_seconds_total = register_gauge!(
+        "process_cpu_system_seconds_total",
+        "Cumulative number of seconds spent executing in kernel mode"
+    )
+    .unwrap();
+    let resident_memory_bytes = register_int_gauge!(
+        "process_resident_memory_bytes",
+        "Resident memory usage size as reported by the kernel, in bytes"
+    )
+    .unwrap();
     start_time_seconds.set(Utc::now().timestamp() as f64);
 
     let mut interval = tokio::time::interval(Duration::from_secs(10));
     loop {
         tokio::select! {
             _ = interval.tick() => {},
-            _ = app_shutdown_signal.cancelled() => {
+            _ = shutdown_receiver.next_shutdown_notice(), if shutdown_receiver.may_have_more_notices() => {
                 break;
             }
         }

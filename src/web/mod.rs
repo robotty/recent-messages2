@@ -1,38 +1,54 @@
 use crate::config::ListenAddr;
+use crate::shutdown::ShutdownNoticeReceiver;
+use crate::web::error::ApiError;
 use crate::Config;
-use axum::routing::get;
-use axum::Router;
-use futures::future::BoxFuture;
+use actix_web::{get, web, App, HttpServer, Responder};
+use futures::pin_mut;
+use std::future::Future;
 use thiserror::Error;
-use tokio_util::sync::CancellationToken;
+
+pub mod auth;
+pub mod error;
+pub mod get_recent_messages;
+pub mod ignored;
+pub mod purge;
+
+#[get("/{id}/{name}/index.html")]
+async fn index(path: web::Path<(u32, String)>) -> impl Responder {
+    let (id, name) = path.into_inner();
+    format!("Hello {}! id:{}", name, id)
+}
 
 pub async fn run(
     config: &'static Config,
-    app_shutdown_signal: CancellationToken,
-) -> Result<BoxFuture<'static, hyper::Result<()>>, BindError> {
-    // build our application with a single route
-    let app = Router::new().route("/", get(|| async { "Hello, World!" }));
+    mut shutdown_receiver: ShutdownNoticeReceiver,
+) -> std::io::Result<impl Future<Output = std::io::Result<()>> + Send + 'static> {
+    let app_factory = || App::new().service(index);
 
-    // run it with hyper on localhost:3000
-    Ok(match &config.web.listen_address {
-        ListenAddr::Tcp { address } => Box::pin(
-            axum::Server::try_bind(address)?
-                .serve(app.into_make_service())
-                .with_graceful_shutdown(async move {
-                    app_shutdown_signal.cancelled().await;
-                }),
-        ),
+    let mut server = HttpServer::new(app_factory).disable_signals();
+
+    match &config.web.listen_address {
+        ListenAddr::Tcp { address } => {
+            server = server.bind(address)?;
+        }
         #[cfg(unix)]
         ListenAddr::Unix { path } => {
-            use hyperlocal::UnixServerExt;
+            server = server.bind_uds(path)?;
+        }
+    };
+    let running_server = server.run();
 
-            Box::pin(
-                axum::Server::bind_unix(path)?
-                    .serve(app.into_make_service())
-                    .with_graceful_shutdown(async move {
-                        app_shutdown_signal.cancelled().await;
-                    }),
-            )
+    Ok(async move {
+        let server_handle = running_server.handle();
+        pin_mut!(running_server);
+
+        loop {
+            tokio::select! {
+                result = (&mut running_server) => return result,
+                notice = shutdown_receiver.next_shutdown_notice(), if shutdown_receiver.may_have_more_notices() => {
+                    drop(server_handle.stop(notice.graceful));
+                },
+            }
         }
     })
 }
