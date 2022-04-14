@@ -1,11 +1,12 @@
 use crate::config::ListenAddr;
-use crate::shutdown::ShutdownNoticeReceiver;
 use crate::web::error::ApiError;
 use crate::Config;
 use actix_web::{get, web, App, HttpServer, Responder};
-use futures::pin_mut;
+use futures::future::FusedFuture;
+use futures::{pin_mut, FutureExt};
 use std::future::Future;
 use thiserror::Error;
+use tokio_util::sync::CancellationToken;
 
 pub mod auth;
 pub mod error;
@@ -21,7 +22,7 @@ async fn index(path: web::Path<(u32, String)>) -> impl Responder {
 
 pub async fn run(
     config: &'static Config,
-    mut shutdown_receiver: ShutdownNoticeReceiver,
+    shutdown_signal: CancellationToken,
 ) -> std::io::Result<impl Future<Output = std::io::Result<()>> + Send + 'static> {
     let app_factory = || App::new().service(index);
 
@@ -41,12 +42,17 @@ pub async fn run(
     Ok(async move {
         let server_handle = running_server.handle();
         pin_mut!(running_server);
+        let shutdown = shutdown_signal.cancelled().fuse();
+        pin_mut!(shutdown);
 
         loop {
             tokio::select! {
-                result = (&mut running_server) => return result,
-                notice = shutdown_receiver.next_shutdown_notice(), if shutdown_receiver.may_have_more_notices() => {
-                    drop(server_handle.stop(notice.graceful));
+                result = &mut running_server => return result,
+                _ = &mut shutdown, if !shutdown.is_terminated() => {
+                    // drop() the returned future, it's just a oneshot channel receiver
+                    // returned from an otherwise sync function (that means it does NOT need to be
+                    // polled to even run it in the first place)
+                    drop(server_handle.stop(true));
                 },
             }
         }

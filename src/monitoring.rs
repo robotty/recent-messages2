@@ -1,11 +1,11 @@
-use crate::shutdown::ShutdownNoticeReceiver;
 use chrono::Utc;
 use prometheus::{register_gauge, register_int_gauge};
 use simple_process_stats::ProcessStats;
 use tokio::time::Duration;
+use tokio_util::sync::CancellationToken;
 
 /// Provides metrics for CPU and memory usage.
-pub async fn run_process_monitoring(mut shutdown_receiver: ShutdownNoticeReceiver) {
+pub async fn run_process_monitoring(shutdown_signal: CancellationToken) {
     let start_time_seconds = register_gauge!(
         "process_start_time_seconds",
         "UTC timestamp (in seconds) of when the process started."
@@ -32,7 +32,7 @@ pub async fn run_process_monitoring(mut shutdown_receiver: ShutdownNoticeReceive
     loop {
         tokio::select! {
             _ = interval.tick() => {},
-            _ = shutdown_receiver.next_shutdown_notice(), if shutdown_receiver.may_have_more_notices() => {
+            _ = shutdown_signal.cancelled() => {
                 break;
             }
         }

@@ -1316,6 +1316,7 @@ dependencies = [
  "tokio",
  "tokio-postgres",
  "tokio-stream",
+ "tokio-util 0.7.1",
  "toml",
  "tracing",
  "tracing-subscriber",

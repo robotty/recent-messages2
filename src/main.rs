@@ -11,10 +11,10 @@ mod shutdown;
 mod web;
 
 use crate::config::{Args, Config};
-use crate::db::DataStorage;
 use futures::future::FusedFuture;
 use futures::prelude::*;
 use structopt::StructOpt;
+use tokio_util::sync::CancellationToken;
 
 #[tokio::main]
 async fn main() {
@@ -43,10 +43,10 @@ async fn main() {
     #[cfg(unix)]
     increase_nofile_rlimit();
 
-    let (shutdown_tx, shutdown_rx) = shutdown::new_pair();
+    let shutdown_signal = CancellationToken::new();
 
     let process_monitoring_join_handle =
-        tokio::spawn(monitoring::run_process_monitoring(shutdown_rx.clone()));
+        tokio::spawn(monitoring::run_process_monitoring(shutdown_signal.clone()));
     /*
         // db init
         let db = db::connect_to_postgresql(&config).await;
@@ -79,7 +79,7 @@ async fn main() {
 
         tokio::spawn(data_storage.run_task_vacuum_old_messages(config));
     */
-    let webserver = match web::run(config, shutdown_rx.clone()).await {
+    let webserver = match web::run(config, shutdown_signal.clone()).await {
         Ok(webserver) => webserver,
         Err(bind_error) => {
             tracing::error!(
@@ -93,7 +93,8 @@ async fn main() {
     let webserver_join_handle = tokio::spawn(webserver);
 
     // await termination.
-    let mut shutdown_signal = shutdown::ShutdownSignal::new();
+    let os_shutdown_signal = shutdown::shutdown_signal().fuse();
+    futures::pin_mut!(os_shutdown_signal);
     let mut process_monitoring_join_handle = process_monitoring_join_handle.fuse();
     let mut webserver_join_handle = webserver_join_handle.fuse();
     let mut exit_code: i32 = 0;
@@ -103,18 +104,16 @@ async fn main() {
         }
 
         tokio::select! {
-            _ = shutdown_signal.next_signal() => {
-                // first Ctrl-C press shuts the app down gracefully, second
-                // Ctrl-C press makes the shutdown forceful
+            _ = &mut os_shutdown_signal, if !os_shutdown_signal.is_terminated() => {
                 tracing::debug!("Received shutdown signal");
-                shutdown_tx.next_shutdown_severity();
+                shutdown_signal.cancel();
             },
             process_monitoring_result = (&mut process_monitoring_join_handle), if !process_monitoring_join_handle.is_terminated() => {
                 match process_monitoring_result {
                     Ok(()) => {
-                        if !shutdown_tx.is_in_cashutdown_mode() {
+                        if !shutdown_signal.is_cancelled() {
                             tracing::error!("Process monitoring ended without error even though no shutdown was requested (shutting down other parts of application gracefully)");
-                            shutdown_tx.initiate_shutdown(true);
+                            shutdown_signal.cancel();
                             exit_code = 1;
                         } else {
                             // regular end after graceful shutdown request
@@ -123,7 +122,7 @@ async fn main() {
                     },
                     Err(join_error) => {
                         tracing::error!("Process monitoring task ended abnormally (shutting down other parts of application gracefully): {}", join_error);
-                        shutdown_tx.initiate_shutdown(true);
+                        shutdown_signal.cancel();
                         exit_code = 1;
                     }
                 }
@@ -137,9 +136,9 @@ async fn main() {
                 //   ctrl_c_event.is_terminated() will be TRUE
                 match webserver_result {
                     Ok(Ok(())) => {
-                        if !shutdown_tx.is_in_shutdown_mode() {
+                        if !shutdown_signal.is_cancelled() {
                             tracing::error!("Webserver ended without error even though no shutdown was requested (shutting down other parts of application gracefully)");
-                            shutdown_tx.initiate_shutdown(true);
+                            shutdown_signal.cancel();
                             exit_code = 1;
                         } else {
                             // regular end after graceful shutdown request
@@ -148,12 +147,12 @@ async fn main() {
                     },
                     Ok(Err(tower_error)) => {
                         tracing::error!("Webserver encountered fatal error (shutting down other parts of application gracefully): {}", tower_error);
-                        shutdown_tx.initiate_shutdown(true);
+                        shutdown_signal.cancel();
                         exit_code = 1;
                     },
                     Err(join_error) => {
                         tracing::error!("Webserver tokio task ended abnormally (shutting down other parts of application gracefully): {}", join_error);
-                        shutdown_tx.initiate_shutdown(true);
+                        shutdown_signal.cancel();
                         exit_code = 1;
                     }
                 }
