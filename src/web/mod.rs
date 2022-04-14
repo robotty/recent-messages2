@@ -67,3 +67,11 @@ pub enum BindError {
     #[error("{0}")]
     Unix(#[from] std::io::Error),
 }
+
+// TODO integrate these old metrics
+//     metrics::describe_histogram!(
+//         "http_request_duration_milliseconds",
+//         metrics::Unit::Milliseconds,
+//         "Distribution of how many milliseconds incoming web requests took to answer them"
+//     );
+//     metrics::describe_counter!("http_request", "Total number of incoming HTTP requests");

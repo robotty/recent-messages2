@@ -3,10 +3,12 @@ use crate::web::auth::{TwitchUserAccessToken, UserAuthorization};
 use chrono::{DateTime, TimeZone, Utc};
 use deadpool_postgres::{ManagerConfig, PoolConfig, RecyclingMethod};
 use itertools::Itertools;
+use lazy_static::lazy_static;
+use prometheus::{register_int_counter, register_int_gauge};
+use prometheus::{IntCounter, IntGauge};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::ops::{DerefMut, RangeTo};
-use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
 use thiserror::Error;
@@ -15,6 +17,29 @@ use tokio_postgres::tls::NoTls;
 
 // TODO support TLS if needed
 // see https://docs.rs/postgres-native-tls/0.3.0/postgres_native_tls/index.html
+
+lazy_static! {
+    static ref MESSAGES_APPENDED: IntCounter = register_int_counter!(
+        "recentmessages_messages_appended",
+        "Total number of messages appended to storage"
+    )
+    .unwrap();
+    static ref MESSAGES_STORED: IntGauge = register_int_gauge!(
+        "recentmessages_messages_stored",
+        "Number of messages currently stored in storage"
+    )
+    .unwrap();
+    static ref MESSAGES_VACUUMED: IntCounter = register_int_counter!(
+        "recentmessages_messages_vacuumed",
+        "Total number of messages that were removed by the automatic vacuum runner"
+    )
+    .unwrap();
+    static ref VACUUM_RUNS: IntCounter = register_int_counter!(
+        "recentmessages_message_vacuum_runs",
+        "Total number of times the automatic vacuum runner has been started for a certain channel"
+    )
+    .unwrap();
+}
 
 type PgPool = deadpool_postgres::Pool;
 
@@ -89,7 +114,6 @@ pub struct DataStorage {
     db: PgPool,
     #[allow(clippy::type_complexity)] // type is not used anywhere except here
     messages: Arc<RwLock<HashMap<String, Arc<Mutex<VecDeque<StoredMessage>>>>>>,
-    messages_stored: Arc<AtomicU64>,
 }
 
 impl DataStorage {
@@ -97,7 +121,6 @@ impl DataStorage {
         DataStorage {
             db,
             messages: Default::default(),
-            messages_stored: Default::default(),
         }
     }
 
@@ -325,11 +348,6 @@ WHERE access_token = $1",
     }
 
     /// Append a message to the storage.
-    ///
-    /// Returns by how much the amount of stored messages increased as a result of the operation.
-    /// If the message was appended, but at the same time an old overflowing message was removed
-    /// as well, then this returns `0`. If the message was appended without another message being
-    /// removed at the same time, then this returns `1`.
     pub async fn append_message(
         &self,
         channel_login: String,
@@ -346,23 +364,16 @@ WHERE access_token = $1",
             time_received: Utc::now(),
             message_source,
         });
-        // TODO
-        // metrics::counter!("recent_messages_messages_appended", 1);
+        MESSAGES_APPENDED.inc();
 
         if channel_messages.len() > max_buffer_size {
             channel_messages.pop_front();
         } else {
-            let new_gauge_value = self.messages_stored.fetch_add(1, Ordering::SeqCst) + 1;
-            // TODO
-            // metrics::gauge!("recent_messages_messages_stored", new_gauge_value as f64);
+            MESSAGES_STORED.inc();
         }
     }
 
     pub async fn run_task_vacuum_old_messages(&'static self, config: &'static Config) {
-        // TODO
-        // metrics::counter!("recent_messages_messages_vacuumed", 0);
-        // initialize to 0
-        // metrics::counter!("recent_messages_message_vacuum_runs", 0); // initialize to 0
         let vacuum_messages_every = config.app.vacuum_messages_every;
         let message_expire_after = config.app.messages_expire_after;
 
@@ -406,7 +417,7 @@ WHERE access_token = $1",
                 // iter() begins at the front of the list, which is where the oldest message lives
                 let cutoff_time =
                     Utc::now() - chrono::Duration::from_std(messages_expire_after).unwrap();
-                let mut remove_until = None;
+                let mut remove_until: Option<usize> = None;
                 for (i, StoredMessage { time_received, .. }) in channel_messages.iter().enumerate()
                 {
                     if time_received < &cutoff_time {
@@ -424,17 +435,11 @@ WHERE access_token = $1",
                     channel_messages.drain(RangeTo {
                         end: remove_until + 1,
                     });
+                    channel_messages.shrink_to_fit();
 
-                    let messages_deleted = (remove_until + 1) as u64;
-                    // TODO
-                    // metrics::counter!("recent_messages_messages_vacuumed", messages_deleted);
-
-                    let new_gauge_value = self
-                        .messages_stored
-                        .fetch_sub(messages_deleted, Ordering::SeqCst)
-                        - messages_deleted;
-                    // TODO
-                    // metrics::gauge!("recent_messages_messages_stored", new_gauge_value as f64);
+                    let messages_deleted = remove_until as u64 + 1;
+                    MESSAGES_VACUUMED.inc_by(messages_deleted);
+                    MESSAGES_STORED.add(-(messages_deleted as i64));
 
                     // remove the mapping from the map if there are no more messages.
                     if channel_messages.len() == 0 {
@@ -443,8 +448,7 @@ WHERE access_token = $1",
                 }
             } // else: (None) no messages stored for that channel.
 
-            // TODO
-            // metrics::counter!("recent_messages_message_vacuum_runs", 1);
+            VACUUM_RUNS.inc();
         }
     }
 
@@ -494,13 +498,8 @@ WHERE access_token = $1",
             .await
             .unwrap()?;
 
-            let messages_added = channel_messages.len() as u64;
-            let new_gauge_value = self
-                .messages_stored
-                .fetch_add(messages_added, Ordering::SeqCst)
-                + messages_added;
-            // TODO
-            // metrics::gauge!("recent_messages_messages_stored", new_gauge_value as f64);
+            let messages_added = channel_messages.len() as i64;
+            MESSAGES_STORED.add(messages_added);
 
             messages_map.insert(channel_login, Arc::new(Mutex::new(channel_messages)));
         }

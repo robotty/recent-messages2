@@ -207,29 +207,3 @@ fn increase_nofile_rlimit() {
         tracing::debug!("NOFILE rlimit: no need to increase (soft limit is not below hard limit)")
     }
 }
-
-// /// Register all created metrics to give them their description and appropriate units.
-// fn register_application_metrics() {
-//     metrics::describe_counter!(
-//         "recent_messages_messages_appended",
-//         "Total number of messages appended to storage"
-//     );
-//     metrics::describe_gauge!(
-//         "recent_messages_messages_stored",
-//         "Number of messages currently stored in storage"
-//     );
-//     metrics::describe_counter!(
-//         "recent_messages_messages_vacuumed",
-//         "Total number of messages that were removed by the automatic vacuum runner"
-//     );
-//     metrics::describe_counter!(
-//         "recent_messages_message_vacuum_runs",
-//         "Total number of times the automatic vacuum runner has been started for a certain channel"
-//     );
-//     metrics::describe_histogram!(
-//         "http_request_duration_milliseconds",
-//         metrics::Unit::Milliseconds,
-//         "Distribution of how many milliseconds incoming web requests took to answer them"
-//     );
-//     metrics::describe_counter!("http_request", "Total number of incoming HTTP requests");
-// }
