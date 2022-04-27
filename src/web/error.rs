@@ -1,6 +1,7 @@
 use crate::db::StorageError;
 use axum::response::{IntoResponse, Response};
 use axum::Json;
+use http::header::HeaderName;
 use http::StatusCode;
 use serde::Serialize;
 use thiserror::Error;
@@ -15,6 +16,12 @@ pub enum ApiError {
     InvalidPath,
     #[error("Invalid or missing query parameters")]
     InvalidQuery,
+    #[error("Invalid or missing payload in request body")]
+    InvalidPayload,
+    #[error("Header value for Header `{0}` was not valid UTF-8")]
+    HeaderValueNotUtf8(HeaderName),
+    #[error("Missing header `{0}`")]
+    MissingHeader(HeaderName),
     #[error("Invalid channel login: {0}")]
     InvalidChannelLogin(twitch_irc::validate::Error),
     #[error("The channel login `{0}` is excluded from this service")]
@@ -61,6 +68,9 @@ impl ApiError {
             ApiError::MethodNotAllowed => StatusCode::METHOD_NOT_ALLOWED,
             ApiError::InvalidPath => StatusCode::BAD_REQUEST,
             ApiError::InvalidQuery => StatusCode::BAD_REQUEST,
+            ApiError::InvalidPayload => StatusCode::BAD_REQUEST,
+            ApiError::HeaderValueNotUtf8(_) => StatusCode::BAD_REQUEST,
+            ApiError::MissingHeader(_) => StatusCode::BAD_REQUEST,
             ApiError::InvalidChannelLogin(_) => StatusCode::BAD_REQUEST,
             ApiError::ChannelIgnored(_) => StatusCode::FORBIDDEN,
             ApiError::InvalidAuthorizationCode => StatusCode::BAD_REQUEST,
@@ -101,6 +111,9 @@ impl ApiError {
             ApiError::MethodNotAllowed => "method_not_allowed",
             ApiError::InvalidPath => "invalid_path",
             ApiError::InvalidQuery => "invalid_query",
+            ApiError::InvalidPayload => "invalid_payload",
+            ApiError::HeaderValueNotUtf8(_) => "header_value_not_utf8",
+            ApiError::MissingHeader(_) => "missing_header",
             ApiError::InvalidChannelLogin(_) => "invalid_channel_login",
             ApiError::ChannelIgnored(_) => "channel_ignored",
             ApiError::InvalidAuthorizationCode => "invalid_authorization_code",

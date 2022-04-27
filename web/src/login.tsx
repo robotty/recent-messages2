@@ -192,6 +192,9 @@ class Authorized extends React.Component<
             },
           }
         );
+        if (!response.ok) {
+          throw Error(response.statusText);
+        }
         const json = await response.json();
 
         let newAuthState: AuthPresent = {
@@ -324,14 +327,17 @@ export function revalidateLogin(
 
   (async () => {
     try {
-      const resp = await fetch(`${config.api_base_url}/auth/extend`, {
+      const response = await fetch(`${config.api_base_url}/auth/extend`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${authState.accessToken}`,
           Accept: "application/json",
         },
       });
-      const json = await resp.json();
+      if (!response.ok) {
+        throw Error(response.statusText);
+      }
+      const json = await response.json();
 
       let newAuthState: AuthPresent = {
         type: "present",

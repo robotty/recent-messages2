@@ -3,16 +3,23 @@ use crate::irc_listener::IrcListener;
 use crate::web::error::ApiError;
 use crate::{Config, DataStorage};
 use axum::handler::Handler;
-use axum::routing::{any_service, get};
+use axum::routing::{get, post};
 use axum::{middleware, Extension, Router};
+use axum::response::IntoResponse;
 use futures::future::BoxFuture;
-use http::{header, Method};
+use http::{header, Method, Request, StatusCode};
+use lazy_static::lazy_static;
 use thiserror::Error;
 use tokio_util::sync::CancellationToken;
 use tower::ServiceBuilder;
 use tower_http::cors::{self, CorsLayer};
+use tower_http::services::{ServeDir, ServeFile};
+use hyper::Body;
+use tower::Service;
 
 pub mod auth;
+mod auth_endpoints;
+mod auth_middleware;
 pub mod error;
 mod get_metrics;
 pub mod get_recent_messages;
@@ -24,6 +31,11 @@ mod record_metrics;
 pub struct WebAppData {
     data_storage: &'static DataStorage,
     irc_listener: &'static IrcListener,
+    config: &'static Config,
+}
+
+lazy_static! {
+    static ref HTTP_CLIENT: reqwest::Client = reqwest::Client::new();
 }
 
 pub async fn run(
@@ -35,6 +47,7 @@ pub async fn run(
     let shared_state = WebAppData {
         data_storage,
         irc_listener,
+        config,
     };
 
     let cors = CorsLayer::new()
@@ -46,6 +59,11 @@ pub async fn run(
         ])
         .allow_origin(cors::Any);
 
+    let auth_middleware = || {
+        middleware::from_fn(move |req, next| {
+            auth_middleware::with_authorization(req, next, shared_state)
+        })
+    };
     let method_fallback = || (|| async { ApiError::MethodNotAllowed }).into_service();
 
     let api = Router::new()
@@ -53,19 +71,65 @@ pub async fn run(
             "/recent-messages/:channel_login",
             get(get_recent_messages::get_recent_messages).fallback(method_fallback()),
         )
+        .route(
+            "/ignored",
+            get(ignored::get_ignored)
+                .post(ignored::set_ignored)
+                .route_layer(auth_middleware())
+                .fallback(method_fallback()),
+        )
+        .route(
+            "/purge",
+            post(purge::purge_messages)
+                .route_layer(auth_middleware())
+                .fallback(method_fallback()),
+        )
+        .route(
+            "/auth/create",
+            post(auth_endpoints::create_token).fallback(method_fallback()),
+        )
+        .route(
+            "/auth/extend",
+            post(auth_endpoints::extend_token)
+                .route_layer(auth_middleware())
+                .fallback(method_fallback()),
+        )
+        .route(
+            "/auth/revoke",
+            post(auth_endpoints::revoke_token)
+                .route_layer(auth_middleware())
+                .fallback(method_fallback()),
+        )
+        .route(
+            "/metrics",
+            get(get_metrics::get_metrics).fallback(method_fallback()),
+        )
         .layer(
             ServiceBuilder::new()
                 .layer(cors)
                 .layer(Extension(shared_state)),
         );
 
+    let mut servedir = ServeDir::new("web/dist")
+        .append_index_html_on_directories(true)
+        .fallback(ServeFile::new("web/dist/index.html"));
+
     let app = Router::new()
-        .route(
-            "/metrics",
-            get(get_metrics::get_metrics).fallback(method_fallback()),
-        )
         .nest("/api/v2", api)
-        .fallback((|| async { ApiError::NotFound }).into_service())
+        .fallback((|request: Request<Body>| async move {
+            if request.uri().path().starts_with("/api/v2/") || request.uri().path() == "/api/v2" {
+                ApiError::NotFound.into_response()
+            } else {
+                // try for a file
+                match servedir.call(request).await {
+                    Ok(response) => response.into_response(),
+                    Err(e) => {
+                        tracing::error!("Error trying to serve static file: {}", e);
+                        StatusCode::INTERNAL_SERVER_ERROR.into_response()
+                    }
+                }
+            }
+        }).into_service())
         .route_layer(middleware::from_fn(record_metrics::record_metrics));
 
     Ok(match &config.web.listen_address {

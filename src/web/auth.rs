@@ -37,28 +37,28 @@ pub struct UserAuthorization {
 }
 
 #[derive(Serialize)]
-struct UserAuthorizationResponse<'a> {
-    access_token: &'a str,
-    valid_until: DateTime<Utc>,
-    user_id: &'a str,
-    user_login: &'a str,
-    user_name: &'a str,
-    user_profile_image_url: &'a str,
-    user_details_valid_until: DateTime<Utc>,
+pub struct UserAuthorizationResponse {
+    pub access_token: String,
+    pub valid_until: DateTime<Utc>,
+    pub user_id: String,
+    pub user_login: String,
+    pub user_name: String,
+    pub user_profile_image_url: String,
+    pub user_details_valid_until: DateTime<Utc>,
 }
 
-impl<'a> UserAuthorizationResponse<'a> {
-    fn from_auth(
-        auth: &'a UserAuthorization,
+impl UserAuthorizationResponse {
+    pub(crate) fn from_auth(
+        auth: &UserAuthorization,
         user_details_valid_for: Duration,
-    ) -> UserAuthorizationResponse<'a> {
+    ) -> UserAuthorizationResponse {
         UserAuthorizationResponse {
-            access_token: &auth.access_token,
+            access_token: auth.access_token.clone(),
             valid_until: auth.valid_until,
-            user_id: &auth.user_id,
-            user_login: &auth.user_login,
-            user_name: &auth.user_name,
-            user_profile_image_url: &auth.user_profile_image_url,
+            user_id: auth.user_id.clone(),
+            user_login: auth.user_login.clone(),
+            user_name: auth.user_name.clone(),
+            user_profile_image_url: auth.user_profile_image_url.clone(),
             user_details_valid_until: auth.twitch_authorization_last_validated
                 + chrono::Duration::from_std(user_details_valid_for).unwrap(),
         }
@@ -66,17 +66,17 @@ impl<'a> UserAuthorizationResponse<'a> {
 }
 
 #[derive(Deserialize)]
-struct HelixGetUserResponse {
+pub struct HelixGetUserResponse {
     // we expect a list of size 1
-    data: (HelixUser,),
+    pub data: (HelixUser,),
 }
 
 #[derive(Deserialize)]
-struct HelixUser {
-    id: String,
-    login: String,
-    display_name: String,
-    profile_image_url: String,
+pub struct HelixUser {
+    pub id: String,
+    pub login: String,
+    pub display_name: String,
+    pub profile_image_url: String,
 }
 
 lazy_static! {
@@ -195,7 +195,7 @@ impl UserAuthorization {
             .boxed()
     }
 
-    async fn validate_still_valid(
+    pub(crate) async fn validate_still_valid(
         &mut self,
         credentials: &TwitchApiClientCredentials,
         recheck_twitch_auth_after: Duration,
