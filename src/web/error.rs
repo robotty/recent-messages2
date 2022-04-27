@@ -1,10 +1,20 @@
 use crate::db::StorageError;
+use axum::response::{IntoResponse, Response};
+use axum::Json;
 use http::StatusCode;
 use serde::Serialize;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum ApiError {
+    #[error("Not Found")]
+    NotFound,
+    #[error("Method Not Allowed")]
+    MethodNotAllowed,
+    #[error("Invalid or missing path parameters")]
+    InvalidPath,
+    #[error("Invalid or missing query parameters")]
+    InvalidQuery,
     #[error("Invalid channel login: {0}")]
     InvalidChannelLogin(twitch_irc::validate::Error),
     #[error("The channel login `{0}` is excluded from this service")]
@@ -36,7 +46,7 @@ pub enum ApiError {
 }
 
 impl ApiError {
-    fn status(&self) -> StatusCode {
+    fn status_code(&self) -> StatusCode {
         match self {
             ApiError::ExchangeCodeForAccessToken(_)
             | ApiError::QueryUserDetails(_)
@@ -47,6 +57,10 @@ impl ApiError {
             | ApiError::AuthorizationRevokeFailed(_)
             | ApiError::GetChannelIgnored(_)
             | ApiError::SetChannelIgnored(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            ApiError::NotFound => StatusCode::NOT_FOUND,
+            ApiError::MethodNotAllowed => StatusCode::METHOD_NOT_ALLOWED,
+            ApiError::InvalidPath => StatusCode::BAD_REQUEST,
+            ApiError::InvalidQuery => StatusCode::BAD_REQUEST,
             ApiError::InvalidChannelLogin(_) => StatusCode::BAD_REQUEST,
             ApiError::ChannelIgnored(_) => StatusCode::FORBIDDEN,
             ApiError::InvalidAuthorizationCode => StatusCode::BAD_REQUEST,
@@ -83,6 +97,10 @@ impl ApiError {
             | ApiError::AuthorizationRevokeFailed(_)
             | ApiError::GetChannelIgnored(_)
             | ApiError::SetChannelIgnored(_) => "internal_server_error",
+            ApiError::NotFound => "not_found",
+            ApiError::MethodNotAllowed => "method_not_allowed",
+            ApiError::InvalidPath => "invalid_path",
+            ApiError::InvalidQuery => "invalid_query",
             ApiError::InvalidChannelLogin(_) => "invalid_channel_login",
             ApiError::ChannelIgnored(_) => "channel_ignored",
             ApiError::InvalidAuthorizationCode => "invalid_authorization_code",
@@ -98,4 +116,19 @@ struct ApiErrorResponse {
     status_message: &'static str,
     error: String,
     error_code: &'static str,
+}
+
+impl IntoResponse for ApiError {
+    fn into_response(self) -> Response {
+        (
+            self.status_code(),
+            Json(ApiErrorResponse {
+                status: self.status_code().as_u16(),
+                status_message: self.status_code().canonical_reason().unwrap(),
+                error: self.user_message(),
+                error_code: self.error_code(),
+            }),
+        )
+            .into_response()
+    }
 }

@@ -1,6 +1,8 @@
 use crate::config::Config;
 use crate::db::DataStorage;
 use tokio::sync::mpsc;
+use tokio::task::JoinHandle;
+use tokio_util::sync::CancellationToken;
 use twitch_irc::login::StaticLoginCredentials;
 use twitch_irc::message::{AsRawIRC, ServerMessage};
 use twitch_irc::{ClientConfig, SecureTCPTransport, TwitchIRCClient};
@@ -11,40 +13,61 @@ pub struct IrcListener {
 }
 
 impl IrcListener {
-    pub fn start(data_storage: &'static DataStorage, config: &'static Config) -> IrcListener {
+    pub fn start(
+        data_storage: &'static DataStorage,
+        config: &'static Config,
+        shutdown_signal: CancellationToken,
+    ) -> (IrcListener, JoinHandle<()>, JoinHandle<()>) {
         let (incoming_messages, client) = TwitchIRCClient::new(ClientConfig::default());
 
-        tokio::spawn(IrcListener::run_forwarder(
+        let forwarder_join_handle = tokio::spawn(IrcListener::run_forwarder(
             incoming_messages,
             data_storage,
             config.app.max_buffer_size,
+            shutdown_signal.clone(),
         ));
 
-        tokio::spawn(IrcListener::run_channel_join_parter(
+        let channel_jp_join_handle = tokio::spawn(IrcListener::run_channel_join_parter(
             client.clone(),
             config,
             data_storage,
+            shutdown_signal,
         ));
 
-        IrcListener { irc_client: client }
+        (
+            IrcListener { irc_client: client },
+            forwarder_join_handle,
+            channel_jp_join_handle,
+        )
     }
 
     async fn run_forwarder(
         mut incoming_messages: mpsc::UnboundedReceiver<ServerMessage>,
         data_storage: &'static DataStorage,
         max_buffer_size: usize,
+        shutdown_signal: CancellationToken,
     ) {
-        while let Some(message) = incoming_messages.recv().await {
-            tokio::spawn(async move {
-                if let Some(channel_login) = message.channel_login() {
-                    let message_source = message.source().as_raw_irc();
-                    data_storage
-                        .append_message(channel_login.to_owned(), message_source, max_buffer_size)
-                        .await;
-                }
-            });
+        let worker = async move {
+            while let Some(message) = incoming_messages.recv().await {
+                tokio::spawn(async move {
+                    if let Some(channel_login) = message.channel_login() {
+                        let message_source = message.source().as_raw_irc();
+                        data_storage
+                            .append_message(
+                                channel_login.to_owned(),
+                                message_source,
+                                max_buffer_size,
+                            )
+                            .await;
+                    }
+                });
+            }
+        };
+
+        tokio::select! {
+            _ = worker => {},
+            _ = shutdown_signal.cancelled() => {}
         }
-        unreachable!("stream should never end");
     }
 
     /// Start background loop to vacuum/part channels that are not used.
@@ -52,28 +75,36 @@ impl IrcListener {
         irc_client: TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
         config: &'static Config,
         data_storage: &'static DataStorage,
+        shutdown_signal: CancellationToken,
     ) {
         let mut check_interval = tokio::time::interval(config.app.vacuum_channels_every);
 
-        loop {
-            check_interval.tick().await;
+        let worker = async move {
+            loop {
+                check_interval.tick().await;
 
-            let res = data_storage
-                .get_channel_logins_to_join(config.app.channels_expire_after)
-                .await;
-            let channels = match res {
-                Ok(channels_to_part) => channels_to_part,
-                Err(e) => {
-                    tracing::error!("Failed to query the DB for a list of channels that should be joined. This iteration will be skipped. Cause: {}", e);
-                    continue;
-                }
-            };
+                let res = data_storage
+                    .get_channel_logins_to_join(config.app.channels_expire_after)
+                    .await;
+                let channels = match res {
+                    Ok(channels_to_part) => channels_to_part,
+                    Err(e) => {
+                        tracing::error!("Failed to query the DB for a list of channels that should be joined. This iteration will be skipped. Cause: {}", e);
+                        continue;
+                    }
+                };
 
-            tracing::info!(
-                "Checked database for channels that should be joined, now at {} channels",
-                channels.len()
-            );
-            irc_client.set_wanted_channels(channels).unwrap();
+                tracing::info!(
+                    "Checked database for channels that should be joined, now at {} channels",
+                    channels.len()
+                );
+                irc_client.set_wanted_channels(channels).unwrap();
+            }
+        };
+
+        tokio::select! {
+            _ = worker => {},
+            _ = shutdown_signal.cancelled() => {}
         }
     }
 

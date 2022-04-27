@@ -13,7 +13,9 @@ use std::sync::Arc;
 use std::time::Duration;
 use thiserror::Error;
 use tokio::sync::{Mutex, RwLock};
+use tokio::time::MissedTickBehavior;
 use tokio_postgres::tls::NoTls;
+use tokio_util::sync::CancellationToken;
 
 // TODO support TLS if needed
 // see https://docs.rs/postgres-native-tls/0.3.0/postgres_native_tls/index.html
@@ -373,21 +375,29 @@ WHERE access_token = $1",
         }
     }
 
-    pub async fn run_task_vacuum_old_messages(&'static self, config: &'static Config) {
+    pub async fn run_task_vacuum_old_messages(
+        &'static self,
+        config: &'static Config,
+        shutdown_signal: CancellationToken,
+    ) {
         let vacuum_messages_every = config.app.vacuum_messages_every;
         let message_expire_after = config.app.messages_expire_after;
 
         let mut check_interval = tokio::time::interval(vacuum_messages_every);
-        // uses up the initial tick, there is no need to run immediately
-        // after application startup
+        check_interval.set_missed_tick_behavior(MissedTickBehavior::Delay);
 
-        loop {
-            check_interval.tick().await;
-            tokio::spawn(async move {
+        let worker = async move {
+            loop {
+                check_interval.tick().await;
                 tracing::info!("Running vacuum for old messages");
                 self.run_message_vacuum(vacuum_messages_every, message_expire_after)
                     .await;
-            });
+            }
+        };
+
+        tokio::select! {
+            _ = worker => {},
+            _ = shutdown_signal.cancelled() => {}
         }
     }
 
@@ -407,48 +417,50 @@ WHERE access_token = $1",
 
         for channel in channels_with_messages {
             interval.tick().await;
+            VACUUM_RUNS.inc();
 
             let messages_map = self.messages.read().await;
             let channel_messages = messages_map.get(&channel).map(|e| Arc::clone(&e));
             drop(messages_map); // unlock mutex
-            if let Some(channel_messages) = channel_messages {
-                let mut channel_messages = channel_messages.lock().await;
 
-                // iter() begins at the front of the list, which is where the oldest message lives
-                let cutoff_time =
-                    Utc::now() - chrono::Duration::from_std(messages_expire_after).unwrap();
-                let mut remove_until: Option<usize> = None;
-                for (i, StoredMessage { time_received, .. }) in channel_messages.iter().enumerate()
-                {
-                    if time_received < &cutoff_time {
-                        // this message should be deleted
-                        remove_until = Some(i);
-                    } else {
-                        // message should be preserved
-                        // no point further looking since all following messages will be
-                        // younger
-                        break;
-                    }
+            let channel_messages = match channel_messages {
+                Some(channel_messages) => channel_messages,
+                None => continue, // no messages stored for that channel. Check next channel
+            };
+
+            let mut channel_messages = channel_messages.lock().await;
+
+            // iter() begins at the front of the list, which is where the oldest message lives
+            let cutoff_time =
+                Utc::now() - chrono::Duration::from_std(messages_expire_after).unwrap();
+            let mut remove_until: Option<usize> = None;
+            for (i, StoredMessage { time_received, .. }) in channel_messages.iter().enumerate() {
+                if time_received < &cutoff_time {
+                    // this message should be deleted
+                    remove_until = Some(i);
+                } else {
+                    // message should be preserved
+                    // no point further looking since all following messages will be
+                    // younger
+                    break;
                 }
+            }
 
-                if let Some(remove_until) = remove_until {
-                    channel_messages.drain(RangeTo {
-                        end: remove_until + 1,
-                    });
-                    channel_messages.shrink_to_fit();
+            if let Some(remove_until) = remove_until {
+                channel_messages.drain(RangeTo {
+                    end: remove_until + 1,
+                });
+                channel_messages.shrink_to_fit(); // free up memory
 
-                    let messages_deleted = remove_until as u64 + 1;
-                    MESSAGES_VACUUMED.inc_by(messages_deleted);
-                    MESSAGES_STORED.add(-(messages_deleted as i64));
+                let messages_deleted = remove_until as u64 + 1;
+                MESSAGES_VACUUMED.inc_by(messages_deleted);
+                MESSAGES_STORED.add(-(messages_deleted as i64));
 
-                    // remove the mapping from the map if there are no more messages.
-                    if channel_messages.len() == 0 {
-                        self.messages.write().await.remove(&channel);
-                    }
+                // remove the mapping from the map if there are no more messages.
+                if channel_messages.len() == 0 {
+                    self.messages.write().await.remove(&channel);
                 }
-            } // else: (None) no messages stored for that channel.
-
-            VACUUM_RUNS.inc();
+            }
         }
     }
 

@@ -11,9 +11,11 @@ mod shutdown;
 mod web;
 
 use crate::config::{Args, Config};
+use crate::db::DataStorage;
 use futures::future::FusedFuture;
 use futures::prelude::*;
 use structopt::StructOpt;
+use tokio::task::JoinHandle;
 use tokio_util::sync::CancellationToken;
 
 #[tokio::main]
@@ -42,86 +44,103 @@ async fn main() {
 
     #[cfg(unix)]
     increase_nofile_rlimit();
-
     let shutdown_signal = CancellationToken::new();
 
     let process_monitoring_join_handle =
         tokio::spawn(monitoring::run_process_monitoring(shutdown_signal.clone()));
-    /*
-        // db init
-        let db = db::connect_to_postgresql(&config).await;
-        let migrations_result = db::run_migrations(&db).await;
-        match migrations_result {
-            Ok(()) => {
-                tracing::info!("Successfully ran database migrations");
-            }
-            Err(e) => {
-                tracing::error!("Failed to run database migrations: {}", e);
-                std::process::exit(1);
-            }
+
+    // db init
+    let db = db::connect_to_postgresql(&config).await;
+    let migrations_result = db::run_migrations(&db).await;
+    match migrations_result {
+        Ok(()) => {
+            tracing::info!("Successfully ran database migrations");
         }
-
-        let data_storage = db::DataStorage::new(db);
-        let data_storage: &'static DataStorage = Box::leak(Box::new(data_storage));
-        let res = data_storage.load_messages_from_disk(config).await;
-        match res {
-            Ok(()) => tracing::info!("Finished loading stored messages"),
-            Err(e) => {
-                tracing::error!("Failed to load stored messages: {}", e);
-                std::process::exit(1);
-            }
-        }
-
-        let irc_listener = Box::leak(Box::new(irc_listener::IrcListener::start(
-            data_storage,
-            config,
-        )));
-
-        tokio::spawn(data_storage.run_task_vacuum_old_messages(config));
-    */
-    let webserver = match web::run(config, shutdown_signal.clone()).await {
-        Ok(webserver) => webserver,
-        Err(bind_error) => {
-            tracing::error!(
-                "Failed to bind webserver to {}: {}",
-                config.web.listen_address,
-                bind_error
-            );
+        Err(e) => {
+            tracing::error!("Failed to run database migrations: {}", e);
             std::process::exit(1);
         }
-    };
+    }
+
+    let data_storage = db::DataStorage::new(db);
+    let data_storage: &'static DataStorage = Box::leak(Box::new(data_storage));
+    let res = data_storage.load_messages_from_disk(config).await;
+    match res {
+        Ok(()) => tracing::info!("Finished loading stored messages"),
+        Err(e) => {
+            tracing::error!("Failed to load stored messages: {}", e);
+            std::process::exit(1);
+        }
+    }
+
+    let (irc_listener, forwarder_join_handle, channel_jp_join_handle) =
+        irc_listener::IrcListener::start(data_storage, config, shutdown_signal.clone());
+    let irc_listener = Box::leak(Box::new(irc_listener));
+
+    let old_msg_vacuum_join_handle =
+        tokio::spawn(data_storage.run_task_vacuum_old_messages(config, shutdown_signal.clone()));
+
+    let webserver =
+        match web::run(data_storage, irc_listener, config, shutdown_signal.clone()).await {
+            Ok(webserver) => webserver,
+            Err(bind_error) => {
+                tracing::error!(
+                    "Failed to bind webserver to {}: {}",
+                    config.web.listen_address,
+                    bind_error
+                );
+                std::process::exit(1);
+            }
+        };
     let webserver_join_handle = tokio::spawn(webserver);
 
     // await termination.
     let os_shutdown_signal = shutdown::shutdown_signal().fuse();
     futures::pin_mut!(os_shutdown_signal);
-    let mut process_monitoring_join_handle = process_monitoring_join_handle.fuse();
+
+    let with_name = move |fut: JoinHandle<()>, name| fut.map(move |x| (x, name));
+    let mut simple_workers = [
+        with_name(process_monitoring_join_handle, "Process Monitoring task").fuse(),
+        with_name(forwarder_join_handle, "IRC message forwarder").fuse(),
+        with_name(channel_jp_join_handle, "IRC channel join/part task").fuse(),
+        with_name(old_msg_vacuum_join_handle, "Old message vacuum task").fuse(),
+    ];
+
     let mut webserver_join_handle = webserver_join_handle.fuse();
     let mut exit_code: i32 = 0;
     loop {
-        if process_monitoring_join_handle.is_terminated() && webserver_join_handle.is_terminated() {
+        let all_simple_workers_terminated = simple_workers.iter().all(|fut| fut.is_terminated());
+        if all_simple_workers_terminated && webserver_join_handle.is_terminated() {
+            tracing::info!("Everything shut down successfully, ending");
             break;
         }
+
+        let any_simple_worker = futures::future::select_all(simple_workers.iter_mut());
 
         tokio::select! {
             _ = &mut os_shutdown_signal, if !os_shutdown_signal.is_terminated() => {
                 tracing::debug!("Received shutdown signal");
                 shutdown_signal.cancel();
             },
-            process_monitoring_result = (&mut process_monitoring_join_handle), if !process_monitoring_join_handle.is_terminated() => {
-                match process_monitoring_result {
+            fut_output = any_simple_worker, if !all_simple_workers_terminated => {
+                let ((worker_result, name), _, _) = fut_output;
+                match worker_result {
                     Ok(()) => {
                         if !shutdown_signal.is_cancelled() {
-                            tracing::error!("Process monitoring ended without error even though no shutdown was requested (shutting down other parts of application gracefully)");
+                            tracing::error!("{} ended without error even though no shutdown was requested (shutting down other parts of application gracefully)", name);
                             shutdown_signal.cancel();
                             exit_code = 1;
                         } else {
                             // regular end after graceful shutdown request
-                            tracing::info!("Process monitoring has successfully shut down gracefully");
+                            tracing::info!("{} has successfully shut down gracefully", name);
                         }
-                    },
+                    }
                     Err(join_error) => {
-                        tracing::error!("Process monitoring task ended abnormally (shutting down other parts of application gracefully): {}", join_error);
+                        tracing::error!(
+                            "{} ended abnormally (shutting down other parts of application gracefully): {}",
+                            name,
+                            join_error
+                        );
                         shutdown_signal.cancel();
                         exit_code = 1;
                     }
@@ -160,10 +179,6 @@ async fn main() {
         }
     }
 
-    tracing::info!("Everything shut down successfully, ending");
-    std::process::exit(exit_code);
-
-    /*
     let res = data_storage.save_messages_to_disk(config).await;
     match res {
         Ok(()) => tracing::info!("Finished saving stored messages"),
@@ -172,7 +187,8 @@ async fn main() {
             std::process::exit(1);
         }
     }
-    */
+
+    std::process::exit(exit_code);
 }
 
 #[cfg(unix)]

@@ -1,60 +1,92 @@
 use crate::config::ListenAddr;
+use crate::irc_listener::IrcListener;
 use crate::web::error::ApiError;
-use crate::Config;
-use actix_web::{get, web, App, HttpServer, Responder};
-use futures::future::FusedFuture;
-use futures::{pin_mut, FutureExt};
-use std::future::Future;
+use crate::{Config, DataStorage};
+use axum::handler::Handler;
+use axum::routing::{any_service, get};
+use axum::{middleware, Extension, Router};
+use futures::future::BoxFuture;
+use http::{header, Method};
 use thiserror::Error;
 use tokio_util::sync::CancellationToken;
+use tower::ServiceBuilder;
+use tower_http::cors::{self, CorsLayer};
 
 pub mod auth;
 pub mod error;
+mod get_metrics;
 pub mod get_recent_messages;
-pub mod ignored;
-pub mod purge;
+mod ignored;
+mod purge;
+mod record_metrics;
 
-#[get("/{id}/{name}/index.html")]
-async fn index(path: web::Path<(u32, String)>) -> impl Responder {
-    let (id, name) = path.into_inner();
-    format!("Hello {}! id:{}", name, id)
+#[derive(Clone, Copy)]
+pub struct WebAppData {
+    data_storage: &'static DataStorage,
+    irc_listener: &'static IrcListener,
 }
 
 pub async fn run(
+    data_storage: &'static DataStorage,
+    irc_listener: &'static IrcListener,
     config: &'static Config,
     shutdown_signal: CancellationToken,
-) -> std::io::Result<impl Future<Output = std::io::Result<()>> + Send + 'static> {
-    let app_factory = || App::new().service(index);
+) -> Result<BoxFuture<'static, hyper::Result<()>>, BindError> {
+    let shared_state = WebAppData {
+        data_storage,
+        irc_listener,
+    };
 
-    let mut server = HttpServer::new(app_factory).disable_signals();
+    let cors = CorsLayer::new()
+        .allow_methods(vec![Method::GET, Method::POST])
+        .allow_headers(vec![
+            header::AUTHORIZATION,
+            header::ACCEPT,
+            header::CONTENT_TYPE,
+        ])
+        .allow_origin(cors::Any);
 
-    match &config.web.listen_address {
-        ListenAddr::Tcp { address } => {
-            server = server.bind(address)?;
-        }
+    let method_fallback = || (|| async { ApiError::MethodNotAllowed }).into_service();
+
+    let api = Router::new()
+        .route(
+            "/recent-messages/:channel_login",
+            get(get_recent_messages::get_recent_messages).fallback(method_fallback()),
+        )
+        .layer(
+            ServiceBuilder::new()
+                .layer(cors)
+                .layer(Extension(shared_state)),
+        );
+
+    let app = Router::new()
+        .route(
+            "/metrics",
+            get(get_metrics::get_metrics).fallback(method_fallback()),
+        )
+        .nest("/api/v2", api)
+        .fallback((|| async { ApiError::NotFound }).into_service())
+        .route_layer(middleware::from_fn(record_metrics::record_metrics));
+
+    Ok(match &config.web.listen_address {
+        ListenAddr::Tcp { address } => Box::pin(
+            axum::Server::try_bind(address)?
+                .serve(app.into_make_service())
+                .with_graceful_shutdown(async move {
+                    shutdown_signal.cancelled().await;
+                }),
+        ),
         #[cfg(unix)]
         ListenAddr::Unix { path } => {
-            server = server.bind_uds(path)?;
-        }
-    };
-    let running_server = server.run();
+            use hyperlocal::UnixServerExt;
 
-    Ok(async move {
-        let server_handle = running_server.handle();
-        pin_mut!(running_server);
-        let shutdown = shutdown_signal.cancelled().fuse();
-        pin_mut!(shutdown);
-
-        loop {
-            tokio::select! {
-                result = &mut running_server => return result,
-                _ = &mut shutdown, if !shutdown.is_terminated() => {
-                    // drop() the returned future, it's just a oneshot channel receiver
-                    // returned from an otherwise sync function (that means it does NOT need to be
-                    // polled to even run it in the first place)
-                    drop(server_handle.stop(true));
-                },
-            }
+            Box::pin(
+                axum::Server::bind_unix(path)?
+                    .serve(app.into_make_service())
+                    .with_graceful_shutdown(async move {
+                        shutdown_signal.cancelled().await;
+                    }),
+            )
         }
     })
 }
@@ -67,11 +99,3 @@ pub enum BindError {
     #[error("{0}")]
     Unix(#[from] std::io::Error),
 }
-
-// TODO integrate these old metrics
-//     metrics::describe_histogram!(
-//         "http_request_duration_milliseconds",
-//         metrics::Unit::Milliseconds,
-//         "Distribution of how many milliseconds incoming web requests took to answer them"
-//     );
-//     metrics::describe_counter!("http_request", "Total number of incoming HTTP requests");
