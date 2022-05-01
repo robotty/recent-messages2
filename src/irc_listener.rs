@@ -23,7 +23,6 @@ impl IrcListener {
         let forwarder_join_handle = tokio::spawn(IrcListener::run_forwarder(
             incoming_messages,
             data_storage,
-            config.app.max_buffer_size,
             shutdown_signal.clone(),
         ));
 
@@ -44,7 +43,6 @@ impl IrcListener {
     async fn run_forwarder(
         mut incoming_messages: mpsc::UnboundedReceiver<ServerMessage>,
         data_storage: &'static DataStorage,
-        max_buffer_size: usize,
         shutdown_signal: CancellationToken,
     ) {
         let worker = async move {
@@ -52,13 +50,13 @@ impl IrcListener {
                 tokio::spawn(async move {
                     if let Some(channel_login) = message.channel_login() {
                         let message_source = message.source().as_raw_irc();
-                        data_storage
-                            .append_message(
-                                channel_login.to_owned(),
-                                message_source,
-                                max_buffer_size,
-                            )
+                        let res = data_storage
+                            .append_message(channel_login.to_owned(), message_source)
                             .await;
+
+                        if let Err(e) = res {
+                            tracing::error!("Failed to append message to storage: {}", e);
+                        }
                     }
                 });
             }

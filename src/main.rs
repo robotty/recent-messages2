@@ -62,16 +62,8 @@ async fn main() {
         }
     }
 
-    let data_storage = db::DataStorage::new(db);
+    let data_storage = DataStorage::new(db);
     let data_storage: &'static DataStorage = Box::leak(Box::new(data_storage));
-    let res = data_storage.load_messages_from_disk(config).await;
-    match res {
-        Ok(()) => tracing::info!("Finished loading stored messages"),
-        Err(e) => {
-            tracing::error!("Failed to load stored messages: {}", e);
-            std::process::exit(1);
-        }
-    }
 
     let (irc_listener, forwarder_join_handle, channel_jp_join_handle) =
         irc_listener::IrcListener::start(data_storage, config, shutdown_signal.clone());
@@ -176,15 +168,6 @@ async fn main() {
                     }
                 }
             }
-        }
-    }
-
-    let res = data_storage.save_messages_to_disk(config).await;
-    match res {
-        Ok(()) => tracing::info!("Finished saving stored messages"),
-        Err(e) => {
-            tracing::error!("Failed to save messages: {}", e);
-            std::process::exit(1);
         }
     }
 

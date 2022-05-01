@@ -11,6 +11,7 @@ pub async fn purge_messages(
     app_data
         .data_storage
         .purge_messages(&authorization.user_login)
-        .await;
+        .await
+        .map_err(ApiError::PurgeMessages)?;
     Ok(StatusCode::NO_CONTENT)
 }

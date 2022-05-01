@@ -3,19 +3,19 @@ use crate::web::auth::{
 };
 use crate::web::error::ApiError;
 use crate::web::WebAppData;
-use axum::extract::rejection::{QueryRejection};
-use axum::extract::{Query};
+use axum::extract::rejection::QueryRejection;
+use axum::extract::Query;
 use axum::{Extension, Json};
 use chrono::Utc;
 use http::StatusCode;
 use rand::distributions::Standard;
 use rand::Rng;
-use std::fmt::Write;
 use serde::Deserialize;
+use std::fmt::Write;
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct CreateAuthTokenQueryOptions {
-    code: String
+    code: String,
 }
 
 // POST /api/v2/auth/create?code=abcdef123456
@@ -23,7 +23,8 @@ pub async fn create_token(
     Extension(app_data): Extension<WebAppData>,
     query_options: Result<Query<CreateAuthTokenQueryOptions>, QueryRejection>,
 ) -> Result<Json<UserAuthorizationResponse>, ApiError> {
-    let Query(CreateAuthTokenQueryOptions { code }) = query_options.map_err(|_| ApiError::InvalidQuery)?;
+    let Query(CreateAuthTokenQueryOptions { code }) =
+        query_options.map_err(|_| ApiError::InvalidQuery)?;
 
     let user_access_token = crate::web::HTTP_CLIENT
         .post("https://id.twitch.tv/oauth2/token")

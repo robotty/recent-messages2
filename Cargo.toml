@@ -64,3 +64,7 @@ codegen-units = 1
 [[bin]]
 name = "recent-messages2"
 path = "src/main.rs"
+
+[[bin]]
+name = "recent-messages2-migrate-messages"
+path = "src/migrate_messages.rs"

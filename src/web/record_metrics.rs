@@ -16,7 +16,7 @@ lazy_static! {
     )
     .unwrap();
     static ref HTTP_REQUESTS_DURATION_SECONDS: HistogramVec = register_histogram_vec!(
-        "http_requests_duration_seconds",
+        "http_request_duration_seconds",
         "Histogram of time taken to fulfill HTTP requests",
         &["endpoint", "method", "status_code"]
     )

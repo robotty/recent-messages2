@@ -1,18 +1,14 @@
 use crate::config::Config;
 use crate::web::auth::{TwitchUserAccessToken, UserAuthorization};
-use chrono::{DateTime, TimeZone, Utc};
+use chrono::{DateTime, Utc};
 use deadpool_postgres::{ManagerConfig, PoolConfig, RecyclingMethod};
 use itertools::Itertools;
 use lazy_static::lazy_static;
 use prometheus::{register_int_counter, register_int_gauge};
 use prometheus::{IntCounter, IntGauge};
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
-use std::collections::{HashMap, HashSet, VecDeque};
-use std::ops::{DerefMut, RangeTo};
-use std::sync::Arc;
+use std::collections::HashSet;
+use std::ops::DerefMut;
 use std::time::Duration;
-use thiserror::Error;
-use tokio::sync::{Mutex, RwLock};
 use tokio::time::MissedTickBehavior;
 use tokio_postgres::tls::NoTls;
 use tokio_util::sync::CancellationToken;
@@ -86,44 +82,20 @@ pub async fn run_migrations(db: &PgPool) -> Result<(), Box<dyn std::error::Error
 pub type StorageError = deadpool_postgres::PoolError;
 
 // TODO could possibly optimize further by storing the ServerMessage instead of its source?
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct StoredMessage {
-    #[serde(
-        serialize_with = "to_utc_milliseconds",
-        deserialize_with = "from_utc_milliseconds"
-    )]
     pub time_received: DateTime<Utc>,
     pub message_source: String,
-}
-
-fn from_utc_milliseconds<'de, D>(deserializer: D) -> Result<DateTime<Utc>, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    let millis = Deserialize::deserialize(deserializer)?;
-    Ok(Utc.timestamp_millis(millis))
-}
-
-fn to_utc_milliseconds<S>(timestamp: &DateTime<Utc>, serializer: S) -> Result<S::Ok, S::Error>
-where
-    S: Serializer,
-{
-    serializer.serialize_i64(timestamp.timestamp_millis())
 }
 
 #[derive(Clone)]
 pub struct DataStorage {
     db: PgPool,
-    #[allow(clippy::type_complexity)] // type is not used anywhere except here
-    messages: Arc<RwLock<HashMap<String, Arc<Mutex<VecDeque<StoredMessage>>>>>>,
 }
 
 impl DataStorage {
     pub fn new(db: PgPool) -> DataStorage {
-        DataStorage {
-            db,
-            messages: Default::default(),
-        }
+        DataStorage { db }
     }
 
     pub async fn get_channel_logins_to_join(
@@ -302,40 +274,6 @@ WHERE access_token = $1",
 
     // TODO background task to purge expired authorizations
 
-    // left(start) of the vec: oldest messages
-    pub async fn get_messages(
-        &self,
-        channel_login: &str,
-        limit: Option<usize>,
-    ) -> Vec<StoredMessage> {
-        // limit: If specified, take the newest N messages.
-
-        let channel_messages = self
-            .messages
-            .read()
-            .await
-            .get(channel_login)
-            .map(|e| Arc::clone(&e));
-        match channel_messages {
-            Some(channel_messages) => {
-                let channel_messages = channel_messages.lock().await;
-                let limit = limit.unwrap_or_else(|| channel_messages.len());
-                channel_messages
-                    .iter()
-                    .rev()
-                    .take(limit)
-                    .rev()
-                    .cloned()
-                    .collect()
-            }
-            None => vec![],
-        }
-    }
-
-    pub async fn purge_messages(&self, channel_login: &str) {
-        self.messages.write().await.remove(channel_login);
-    }
-
     pub async fn delete_user_authorization(&self, access_token: &str) -> Result<(), StorageError> {
         let db_conn = self.db.get().await?;
 
@@ -349,30 +287,61 @@ WHERE access_token = $1",
         Ok(())
     }
 
+    // left(start) of the vec: oldest messages
+    pub async fn get_messages(
+        &self,
+        channel_login: &str,
+        limit: Option<usize>,
+        max_buffer_size: usize,
+    ) -> Result<Vec<StoredMessage>, StorageError> {
+        // limit: If specified, take the newest N messages.
+        let db_conn = self.db.get().await?;
+
+        let limit = match limit {
+            Some(limit) => usize::min(limit, max_buffer_size),
+            None => max_buffer_size,
+        };
+
+        let query = "SELECT time_received, message_source
+FROM message
+WHERE channel_login = $1
+ORDER BY time_received DESC
+LIMIT $2";
+
+        Ok(db_conn
+            .query(query, &[&channel_login, &(limit as i64)])
+            .await?
+            .into_iter()
+            .rev()
+            .map(|row| StoredMessage {
+                time_received: row.get("time_received"),
+                message_source: row.get("message_source"),
+            })
+            .collect_vec())
+    }
+
+    pub async fn purge_messages(&self, channel_login: &str) -> Result<(), StorageError> {
+        self.db
+            .get()
+            .await?
+            .execute(
+                "DELETE FROM message WHERE channel_login = $1",
+                &[&channel_login],
+            )
+            .await?;
+        Ok(())
+    }
+
     /// Append a message to the storage.
     pub async fn append_message(
         &self,
         channel_login: String,
         message_source: String,
-        max_buffer_size: usize,
-    ) {
-        let mut messages_map = self.messages.write().await;
-        // default is a new Mutex holding an empty vec
-        let channel_entry = Arc::clone(&messages_map.entry(channel_login).or_default());
-        drop(messages_map); // unlock mutex
-
-        let mut channel_messages = channel_entry.lock().await;
-        channel_messages.push_back(StoredMessage {
-            time_received: Utc::now(),
-            message_source,
-        });
+    ) -> Result<(), StorageError> {
+        self.db.get().await?.execute("INSERT INTO message(channel_login, time_received, message_source) VALUES ($1, now(), $2)", &[&channel_login, &message_source]).await?;
         MESSAGES_APPENDED.inc();
-
-        if channel_messages.len() > max_buffer_size {
-            channel_messages.pop_front();
-        } else {
-            MESSAGES_STORED.inc();
-        }
+        MESSAGES_STORED.inc();
+        Ok(())
     }
 
     pub async fn run_task_vacuum_old_messages(
@@ -382,6 +351,7 @@ WHERE access_token = $1",
     ) {
         let vacuum_messages_every = config.app.vacuum_messages_every;
         let message_expire_after = config.app.messages_expire_after;
+        let max_buffer_size = config.app.max_buffer_size;
 
         let mut check_interval = tokio::time::interval(vacuum_messages_every);
         check_interval.set_missed_tick_behavior(MissedTickBehavior::Delay);
@@ -390,8 +360,20 @@ WHERE access_token = $1",
             loop {
                 check_interval.tick().await;
                 tracing::info!("Running vacuum for old messages");
-                self.run_message_vacuum(vacuum_messages_every, message_expire_after)
+                let res = self
+                    .run_message_vacuum(
+                        vacuum_messages_every,
+                        message_expire_after,
+                        max_buffer_size,
+                    )
                     .await;
+
+                if let Err(e) = res {
+                    tracing::error!(
+                        "Failed to start message vacuum batch, skipping entire batch: {}",
+                        e
+                    );
+                }
             }
         };
 
@@ -406,10 +388,19 @@ WHERE access_token = $1",
         &self,
         vacuum_messages_every: Duration,
         messages_expire_after: Duration,
-    ) {
-        let channels_with_messages = self.messages.read().await.keys().cloned().collect_vec();
+        max_buffer_size: usize,
+    ) -> Result<(), StorageError> {
+        let db_conn = self.db.get().await?;
+
+        let channels_with_messages: Vec<String> = db_conn
+            .query("SELECT DISTINCT channel_login FROM message", &[])
+            .await?
+            .into_iter()
+            .map(|row| row.get("channel_login"))
+            .collect_vec();
+
         if channels_with_messages.is_empty() {
-            return; // dont want to divide by 0
+            return Ok(()); // dont want to divide by 0
         }
 
         let time_between_channels = vacuum_messages_every / channels_with_messages.len() as u32;
@@ -419,160 +410,46 @@ WHERE access_token = $1",
             interval.tick().await;
             VACUUM_RUNS.inc();
 
-            let messages_map = self.messages.read().await;
-            let channel_messages = messages_map.get(&channel).map(|e| Arc::clone(&e));
-            drop(messages_map); // unlock mutex
+            let execute_result = db_conn
+                .execute(
+                    "DELETE FROM message
+WHERE channel_login = $1
+AND (
+	time_received < (
+		SELECT time_received
+		FROM message
+		WHERE channel_login = $1
+		ORDER BY time_received DESC
+		OFFSET $2
+		LIMIT 1
+	)
 
-            let channel_messages = match channel_messages {
-                Some(channel_messages) => channel_messages,
-                None => continue, // no messages stored for that channel. Check next channel
+	OR
+
+	time_received < now() - make_interval(secs => $3)
+)",
+                    &[
+                        &channel,
+                        &((max_buffer_size as i64) - 1),
+                        &messages_expire_after.as_secs_f64(),
+                    ],
+                )
+                .await;
+
+            let messages_deleted = match execute_result {
+                Ok(messages_deleted) => messages_deleted,
+                Err(e) => {
+                    tracing::error!("Failed to vacuum channel {}: {}", channel, e);
+                    continue;
+                }
             };
 
-            let mut channel_messages = channel_messages.lock().await;
-
-            // iter() begins at the front of the list, which is where the oldest message lives
-            let cutoff_time =
-                Utc::now() - chrono::Duration::from_std(messages_expire_after).unwrap();
-            let mut remove_until: Option<usize> = None;
-            for (i, StoredMessage { time_received, .. }) in channel_messages.iter().enumerate() {
-                if time_received < &cutoff_time {
-                    // this message should be deleted
-                    remove_until = Some(i);
-                } else {
-                    // message should be preserved
-                    // no point further looking since all following messages will be
-                    // younger
-                    break;
-                }
-            }
-
-            if let Some(remove_until) = remove_until {
-                channel_messages.drain(RangeTo {
-                    end: remove_until + 1,
-                });
-                channel_messages.shrink_to_fit(); // free up memory
-
-                let messages_deleted = remove_until as u64 + 1;
-                MESSAGES_VACUUMED.inc_by(messages_deleted);
-                MESSAGES_STORED.add(-(messages_deleted as i64));
-
-                // remove the mapping from the map if there are no more messages.
-                if channel_messages.len() == 0 {
-                    self.messages.write().await.remove(&channel);
-                }
-            }
-        }
-    }
-
-    pub async fn load_messages_from_disk(
-        &self,
-        config: &'static Config,
-    ) -> Result<(), FileStorageError> {
-        tracing::info!("Loading snapshot of messages from disk...");
-        let save_file_directory = &config.app.save_file_directory;
-        let directory_contents_res = tokio::fs::read_dir(save_file_directory).await;
-        let mut directory_contents = match directory_contents_res {
-            Ok(directory_contents) => directory_contents,
-            Err(e) => {
-                if e.kind() == std::io::ErrorKind::NotFound {
-                    return Ok(());
-                } else {
-                    return Err(e.into());
-                }
-            }
-        };
-
-        let mut messages_map = self.messages.write().await;
-        messages_map.clear();
-
-        while let Some(dir_entry) = directory_contents.next_entry().await? {
-            let file_path = dir_entry.path();
-            if file_path
-                .extension()
-                .map(|ext| ext != "dat")
-                .unwrap_or(true)
-            {
-                // either has an extension that is not `dat` or has no extension
-                tracing::debug!(
-                    "Ignoring file {} from messages directory, extension is not `dat`",
-                    file_path.to_string_lossy()
-                );
-                continue;
-            }
-
-            let channel_login = file_path.file_stem().unwrap().to_str().unwrap().to_owned();
-
-            let channel_messages = tokio::task::spawn_blocking(move || {
-                let file = std::fs::File::open(file_path)?;
-                let channel_messages = rmp_serde::decode::from_read(file)?;
-                Ok::<VecDeque<StoredMessage>, FileStorageError>(channel_messages)
-            })
-            .await
-            .unwrap()?;
-
-            let messages_added = channel_messages.len() as i64;
-            MESSAGES_STORED.add(messages_added);
-
-            messages_map.insert(channel_login, Arc::new(Mutex::new(channel_messages)));
+            MESSAGES_VACUUMED.inc_by(messages_deleted);
+            MESSAGES_STORED.add(-(messages_deleted as i64));
         }
 
         Ok(())
     }
-
-    pub async fn save_messages_to_disk(
-        &self,
-        config: &'static Config,
-    ) -> Result<(), FileStorageError> {
-        tracing::info!("Saving snapshot of messages to disk...");
-        let save_file_directory = &config.app.save_file_directory;
-        let mkdir_result = tokio::fs::DirBuilder::new()
-            .create(save_file_directory)
-            .await;
-        if let Err(e) = mkdir_result {
-            // it's not an error condition if the directory already exists.
-            if e.kind() != std::io::ErrorKind::AlreadyExists {
-                return Err(e.into());
-            }
-        }
-
-        // delete files that were there previously
-        let mut directory_contents = tokio::fs::read_dir(save_file_directory).await?;
-        while let Some(dir_entry) = directory_contents.next_entry().await? {
-            tokio::fs::remove_file(&dir_entry.path()).await?;
-        }
-
-        // now save files
-        let messages_map = self.messages.read().await;
-        for (channel_login, messages) in messages_map.iter() {
-            let messages = Arc::clone(messages);
-            let messages = messages.lock_owned().await;
-
-            let save_file_path = save_file_directory
-                .clone()
-                .join(&channel_login)
-                .with_extension("dat");
-
-            tokio::task::spawn_blocking(move || {
-                let mut file = std::fs::File::create(save_file_path)?;
-                rmp_serde::encode::write_named(&mut file, &*messages)?;
-                Ok::<(), FileStorageError>(())
-            })
-            .await
-            .unwrap()?;
-        }
-
-        Ok(())
-    }
-}
-
-#[derive(Error, Debug)]
-pub enum FileStorageError {
-    #[error("I/O error: {0}")]
-    IO(#[from] std::io::Error),
-    #[error("Error while encoding: {0}")]
-    Encode(#[from] rmp_serde::encode::Error),
-    #[error("Error while decoding: {0}")]
-    Decode(#[from] rmp_serde::decode::Error),
 }
 
 #[cfg(test)]

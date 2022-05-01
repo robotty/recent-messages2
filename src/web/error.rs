@@ -50,6 +50,10 @@ pub enum ApiError {
     GetChannelIgnored(StorageError),
     #[error("Failed to set channel's ignored status: {0}")]
     SetChannelIgnored(StorageError),
+    #[error("Failed get a channel's messages: {0}")]
+    GetMessages(StorageError),
+    #[error("Failed to purge a channel's messages: {0}")]
+    PurgeMessages(StorageError),
 }
 
 impl ApiError {
@@ -63,7 +67,9 @@ impl ApiError {
             | ApiError::FailedTwitchAccessTokenRefresh(_)
             | ApiError::AuthorizationRevokeFailed(_)
             | ApiError::GetChannelIgnored(_)
-            | ApiError::SetChannelIgnored(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            | ApiError::SetChannelIgnored(_)
+            | ApiError::GetMessages(_)
+            | ApiError::PurgeMessages(_) => StatusCode::INTERNAL_SERVER_ERROR,
             ApiError::NotFound => StatusCode::NOT_FOUND,
             ApiError::MethodNotAllowed => StatusCode::METHOD_NOT_ALLOWED,
             ApiError::InvalidPath => StatusCode::BAD_REQUEST,
@@ -91,7 +97,9 @@ impl ApiError {
             | ApiError::FailedTwitchAccessTokenRefresh(_)
             | ApiError::AuthorizationRevokeFailed(_)
             | ApiError::GetChannelIgnored(_)
-            | ApiError::SetChannelIgnored(_) => "Internal Server Error".to_owned(),
+            | ApiError::SetChannelIgnored(_)
+            | ApiError::GetMessages(_)
+            | ApiError::PurgeMessages(_) => "Internal Server Error".to_owned(),
             rest => format!("{}", rest),
         }
     }
@@ -106,7 +114,9 @@ impl ApiError {
             | ApiError::FailedTwitchAccessTokenRefresh(_)
             | ApiError::AuthorizationRevokeFailed(_)
             | ApiError::GetChannelIgnored(_)
-            | ApiError::SetChannelIgnored(_) => "internal_server_error",
+            | ApiError::SetChannelIgnored(_)
+            | ApiError::GetMessages(_)
+            | ApiError::PurgeMessages(_) => "internal_server_error",
             ApiError::NotFound => "not_found",
             ApiError::MethodNotAllowed => "method_not_allowed",
             ApiError::InvalidPath => "invalid_path",

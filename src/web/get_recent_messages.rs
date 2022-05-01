@@ -67,8 +67,13 @@ pub async fn get_recent_messages(
 
     let stored_messages = app_data
         .data_storage
-        .get_messages(&channel_login, query_options.limit)
-        .await;
+        .get_messages(
+            &channel_login,
+            query_options.limit,
+            app_data.config.app.max_buffer_size,
+        )
+        .await
+        .map_err(ApiError::GetMessages)?;
 
     let exported_messages =
         crate::message_export::export_stored_messages(stored_messages, query_options);

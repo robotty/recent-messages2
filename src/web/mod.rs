@@ -3,19 +3,19 @@ use crate::irc_listener::IrcListener;
 use crate::web::error::ApiError;
 use crate::{Config, DataStorage};
 use axum::handler::Handler;
+use axum::response::IntoResponse;
 use axum::routing::{get, post};
 use axum::{middleware, Extension, Router};
-use axum::response::IntoResponse;
 use futures::future::BoxFuture;
 use http::{header, Method, Request, StatusCode};
+use hyper::Body;
 use lazy_static::lazy_static;
 use thiserror::Error;
 use tokio_util::sync::CancellationToken;
+use tower::Service;
 use tower::ServiceBuilder;
 use tower_http::cors::{self, CorsLayer};
 use tower_http::services::{ServeDir, ServeFile};
-use hyper::Body;
-use tower::Service;
 
 pub mod auth;
 mod auth_endpoints;
@@ -116,20 +116,24 @@ pub async fn run(
 
     let app = Router::new()
         .nest("/api/v2", api)
-        .fallback((|request: Request<Body>| async move {
-            if request.uri().path().starts_with("/api/v2/") || request.uri().path() == "/api/v2" {
-                ApiError::NotFound.into_response()
-            } else {
-                // try for a file
-                match servedir.call(request).await {
-                    Ok(response) => response.into_response(),
-                    Err(e) => {
-                        tracing::error!("Error trying to serve static file: {}", e);
-                        StatusCode::INTERNAL_SERVER_ERROR.into_response()
+        .fallback(
+            (|request: Request<Body>| async move {
+                if request.uri().path().starts_with("/api/v2/") || request.uri().path() == "/api/v2"
+                {
+                    ApiError::NotFound.into_response()
+                } else {
+                    // try for a file
+                    match servedir.call(request).await {
+                        Ok(response) => response.into_response(),
+                        Err(e) => {
+                            tracing::error!("Error trying to serve static file: {}", e);
+                            StatusCode::INTERNAL_SERVER_ERROR.into_response()
+                        }
                     }
                 }
-            }
-        }).into_service())
+            })
+            .into_service(),
+        )
         .route_layer(middleware::from_fn(record_metrics::record_metrics));
 
     Ok(match &config.web.listen_address {

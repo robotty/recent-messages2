@@ -60,13 +60,17 @@ pub async fn set_ignored(
         app_data
             .data_storage
             .purge_messages(&authorization.user_login)
-            .await;
+            .await
+            .map_err(ApiError::PurgeMessages)?;
         tokio::spawn(async move {
             tokio::time::sleep(Duration::from_secs(3)).await;
-            app_data
+            let result = app_data
                 .data_storage
                 .purge_messages(&authorization.user_login)
                 .await;
+            if let Err(e) = result {
+                tracing::error!("Failed to purge messages a second time: {}", e);
+            }
         });
     } else {
         app_data
