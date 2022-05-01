@@ -20,47 +20,21 @@ where
 }
 
 fn main() {
-    let messages = load_messages_from_disk();
-
-    let f = OpenOptions::new()
+    let dir_contents = std::fs::read_dir("messages")
+        .expect("messages directory missing")
+        .collect_vec();
+    let output_file = OpenOptions::new()
         .write(true)
         .append(false)
         .create(true)
         .truncate(true)
         .open("messages.csv")
         .unwrap();
-    let mut csv_writer = csv::Writer::from_writer(f);
-
-    let total = messages.len();
-    let mut idx: usize = 0;
-    print!("Exporting 0/{}", total);
-    for (channel_login, messages) in messages {
-        for message in messages {
-            csv_writer
-                .write_record(&[
-                    &channel_login,
-                    &message.time_received.to_rfc3339(),
-                    &message.message_source,
-                ])
-                .unwrap();
-        }
-        idx += 1;
-        print!("\rExporting {}/{}", idx, total);
-    }
-    println!();
-}
-
-fn load_messages_from_disk() -> HashMap<String, Vec<StoredMessage>> {
-    tracing::info!("Loading snapshot of messages from disk...");
-    let directory_contents = std::fs::read_dir("messages").expect("messages directory missing");
-
-    let mut messages_map = HashMap::new();
-
-    let dir_contents = directory_contents.collect_vec();
+    let mut csv_writer = csv::Writer::from_writer(output_file);
 
     let mut idx: usize = 0;
     let total = dir_contents.len();
-    print!("Reading 0/{}", total);
+    print!("Processing... 0/{}", total);
 
     for dir_entry in dir_contents {
         let file_path = dir_entry.unwrap().path();
@@ -81,13 +55,20 @@ fn load_messages_from_disk() -> HashMap<String, Vec<StoredMessage>> {
 
         let file = std::fs::File::open(file_path).unwrap();
         let channel_messages = rmp_serde::decode::from_read(file).unwrap();
-        messages_map.insert(channel_login, channel_messages);
+
+        for message in channel_messages {
+            csv_writer
+                .write_record(&[
+                    &channel_login,
+                    &message.time_received.to_rfc3339(),
+                    &message.message_source,
+                ])
+                .unwrap();
+        }
 
         idx += 1;
-        print!("\rReading {}/{}", idx, total);
+        print!("\rProcessing... {}/{}", idx, total);
     }
 
-    println!();
-
-    messages_map
+    println!(" Done");
 }
