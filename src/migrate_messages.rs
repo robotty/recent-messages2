@@ -2,10 +2,7 @@ use chrono::{DateTime, TimeZone, Utc};
 use itertools::Itertools;
 use serde::{Deserialize, Deserializer};
 use std::collections::HashMap;
-use std::fmt::Write as StdFmtWrite;
 use std::fs::OpenOptions;
-use std::io::BufWriter;
-use std::io::Write as StdIoWrite;
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct StoredMessage {
@@ -30,25 +27,22 @@ fn main() {
         .append(false)
         .create(true)
         .truncate(true)
-        .open("messages.txt")
+        .open("messages.csv")
         .unwrap();
-    let mut f = BufWriter::new(f);
+    let mut csv_writer = csv::Writer::from_writer(f);
 
     let total = messages.len();
     let mut idx: usize = 0;
     print!("Exporting 0/{}", total);
     for (channel_login, messages) in messages {
-        let escaped_channel_login = escape(channel_login);
-
         for message in messages {
-            writeln!(
-                f,
-                "\"{}\"\t\"{}\"\t\"{}\"",
-                &escaped_channel_login,
-                message.time_received.to_rfc3339(),
-                escape(message.message_source)
-            )
-            .unwrap();
+            csv_writer
+                .write_record(&[
+                    &channel_login,
+                    &message.time_received.to_rfc3339(),
+                    &message.message_source,
+                ])
+                .unwrap();
         }
         idx += 1;
         print!("\rExporting {}/{}", idx, total);
@@ -96,40 +90,4 @@ fn load_messages_from_disk() -> HashMap<String, Vec<StoredMessage>> {
     println!();
 
     messages_map
-}
-fn escape(input: String) -> String {
-    let mut output = String::new();
-    for char in input.chars() {
-        match char {
-            '\u{0022}' => {
-                // double quotes
-                write!(output, "\u{0022}\u{0022}").unwrap();
-            }
-            '\u{005C}' => {
-                // backslash
-                write!(output, "\u{005C}\u{005C}").unwrap();
-            }
-            rest => {
-                output.write_char(rest).unwrap();
-            }
-        }
-    }
-    output
-}
-
-#[cfg(test)]
-mod tests {
-    use super::escape;
-
-    #[test]
-    pub fn test_escape() {
-        assert_eq!("asdf", escape("asdf".to_owned()));
-        assert_eq!("asdf bfg", escape("asdf bfg".to_owned()));
-
-        assert_eq!(
-            "He said \"\"lol\"\"!",
-            escape("He said \"lol\"!".to_owned())
-        );
-        assert_eq!(r#"\\OwO/"#, escape(r#"\OwO/"#.to_owned()));
-    }
 }
