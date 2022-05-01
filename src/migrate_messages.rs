@@ -1,7 +1,6 @@
 use chrono::{DateTime, TimeZone, Utc};
 use itertools::Itertools;
 use serde::{Deserialize, Deserializer};
-use std::collections::HashMap;
 use std::fs::OpenOptions;
 
 #[derive(Debug, Clone, Deserialize)]
@@ -54,7 +53,7 @@ fn main() {
         let channel_login = file_path.file_stem().unwrap().to_str().unwrap().to_owned();
 
         let file = std::fs::File::open(file_path).unwrap();
-        let channel_messages = rmp_serde::decode::from_read(file).unwrap();
+        let channel_messages: Vec<StoredMessage> = rmp_serde::decode::from_read(file).unwrap();
 
         for message in channel_messages {
             csv_writer
