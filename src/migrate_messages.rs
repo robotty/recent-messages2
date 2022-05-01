@@ -101,10 +101,12 @@ fn escape(input: String) -> String {
     let mut output = String::new();
     for char in input.chars() {
         match char {
-            '\u{0022}' => { // double quotes
+            '\u{0022}' => {
+                // double quotes
                 write!(output, "\u{0022}\u{0022}").unwrap();
             }
-            '\u{005C}' => { // backslash
+            '\u{005C}' => {
+                // backslash
                 write!(output, "\u{005C}\u{005C}").unwrap();
             }
             rest => {
@@ -124,7 +126,10 @@ mod tests {
         assert_eq!("asdf", escape("asdf".to_owned()));
         assert_eq!("asdf bfg", escape("asdf bfg".to_owned()));
 
-        assert_eq!("He said \"\"lol\"\"!", escape("He said \"lol\"!".to_owned()));
+        assert_eq!(
+            "He said \"\"lol\"\"!",
+            escape("He said \"lol\"!".to_owned())
+        );
         assert_eq!(r#"\\OwO/"#, escape(r#"\OwO/"#.to_owned()));
     }
 }
