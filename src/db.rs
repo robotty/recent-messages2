@@ -67,6 +67,7 @@ pub async fn connect_to_postgresql(config: &Config) -> PgPool {
     let manager = deadpool_postgres::Manager::from_config(pg_config, NoTls, mgr_config);
     PgPool::builder(manager)
         .config(pool_config)
+        .runtime(deadpool_postgres::Runtime::Tokio1)
         .build()
         .unwrap()
 }
