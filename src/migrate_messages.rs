@@ -45,7 +45,7 @@ fn main() {
             // either has an extension that is not `dat` or has no extension
             tracing::debug!(
                 "Ignoring file {} from messages directory, extension is not `dat`",
-                file_path.to_string_lossy()
+                file_path.display()
             );
             continue;
         }

@@ -107,16 +107,6 @@ pub enum ListenAddr {
     Unix { path: PathBuf },
 }
 
-impl std::fmt::Display for ListenAddr {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            ListenAddr::Tcp { address } => write!(f, "{}", address),
-            #[cfg(unix)]
-            ListenAddr::Unix { path } => write!(f, "{}", path.to_string_lossy()),
-        }
-    }
-}
-
 #[derive(Debug, Clone, Deserialize)]
 #[serde(default)]
 pub struct DatabaseConfig {

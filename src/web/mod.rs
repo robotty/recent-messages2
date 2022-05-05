@@ -10,12 +10,18 @@ use futures::future::BoxFuture;
 use http::{header, Method, Request, StatusCode};
 use hyper::Body;
 use lazy_static::lazy_static;
+use std::net::SocketAddr;
 use thiserror::Error;
 use tokio_util::sync::CancellationToken;
 use tower::Service;
 use tower::ServiceBuilder;
 use tower_http::cors::{self, CorsLayer};
 use tower_http::services::{ServeDir, ServeFile};
+#[cfg(unix)]
+use {
+    hyperlocal::UnixServerExt, std::fs::Permissions, std::os::unix::fs::PermissionsExt,
+    std::path::Path,
+};
 
 pub mod auth;
 mod auth_endpoints;
@@ -36,6 +42,18 @@ pub struct WebAppData {
 
 lazy_static! {
     static ref HTTP_CLIENT: reqwest::Client = reqwest::Client::new();
+}
+
+#[derive(Error, Debug)]
+pub enum BindError {
+    #[error("Failed to bind to address `{0}`: {1}")]
+    BindTcp(&'static SocketAddr, hyper::Error),
+    #[cfg(unix)]
+    #[error("Failed to bind to unix socket `{}`: {1}", .0.display())]
+    BindUnix(&'static Path, std::io::Error),
+    #[cfg(unix)]
+    #[error("Failed to alter permissions on unix socket `{}` to `{1:?}`: {2}", .0.display())]
+    SetPermissions(&'static Path, Permissions, std::io::Error),
 }
 
 pub async fn run(
@@ -138,7 +156,8 @@ pub async fn run(
 
     Ok(match &config.web.listen_address {
         ListenAddr::Tcp { address } => Box::pin(
-            axum::Server::try_bind(address)?
+            axum::Server::try_bind(address)
+                .map_err(|e| BindError::BindTcp(address, e))?
                 .serve(app.into_make_service())
                 .with_graceful_shutdown(async move {
                     shutdown_signal.cancelled().await;
@@ -146,10 +165,14 @@ pub async fn run(
         ),
         #[cfg(unix)]
         ListenAddr::Unix { path } => {
-            use hyperlocal::UnixServerExt;
-
+            let builder =
+                axum::Server::bind_unix(path).map_err(|e| BindError::BindUnix(path, e))?;
+            let permissions = Permissions::from_mode(0o777);
+            tokio::fs::set_permissions(path, permissions.clone())
+                .await
+                .map_err(|e| BindError::SetPermissions(path, permissions, e))?;
             Box::pin(
-                axum::Server::bind_unix(path)?
+                builder
                     .serve(app.into_make_service())
                     .with_graceful_shutdown(async move {
                         shutdown_signal.cancelled().await;
@@ -157,13 +180,4 @@ pub async fn run(
             )
         }
     })
-}
-
-#[derive(Error, Debug)]
-pub enum BindError {
-    #[error("{0}")]
-    Tcp(#[from] hyper::Error),
-    #[cfg(unix)]
-    #[error("{0}")]
-    Unix(#[from] std::io::Error),
 }

@@ -32,7 +32,7 @@ async fn main() {
         Err(e) => {
             tracing::error!(
                 "Failed to load config from `{}`: {}",
-                args.config_path.to_string_lossy(),
+                args.config_path.display(),
                 e,
             );
             std::process::exit(1);
@@ -76,11 +76,7 @@ async fn main() {
         match web::run(data_storage, irc_listener, config, shutdown_signal.clone()).await {
             Ok(webserver) => webserver,
             Err(bind_error) => {
-                tracing::error!(
-                    "Failed to bind webserver to {}: {}",
-                    config.web.listen_address,
-                    bind_error
-                );
+                tracing::error!("{}", bind_error);
                 std::process::exit(1);
             }
         };
