@@ -9,7 +9,7 @@ use std::time::Duration;
 
 lazy_static! {
     static ref HTTP_REQUEST_TIMEOUTS: IntCounter =
-        register_int_counter!("http_requests_total", "Total number of HTTP requests").unwrap();
+        register_int_counter!("http_request_timeouts", "Total number of HTTP requests that timed out").unwrap();
 }
 
 pub async fn timeout<B>(req: Request<B>, next: Next<B>) -> impl IntoResponse {
