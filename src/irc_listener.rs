@@ -1,5 +1,6 @@
 use crate::config::Config;
 use crate::db::DataStorage;
+use std::time::Duration;
 use tokio::sync::mpsc;
 use tokio::task::JoinHandle;
 use tokio_util::sync::CancellationToken;
@@ -18,7 +19,10 @@ impl IrcListener {
         config: &'static Config,
         shutdown_signal: CancellationToken,
     ) -> (IrcListener, JoinHandle<()>, JoinHandle<()>) {
-        let (incoming_messages, client) = TwitchIRCClient::new(ClientConfig::default());
+        let (incoming_messages, client) = TwitchIRCClient::new(ClientConfig {
+            new_connection_every: Duration::from_millis(200), // TODO should make this and probably some more options configurable
+            ..ClientConfig::default()
+        });
 
         let forwarder_join_handle = tokio::spawn(IrcListener::run_forwarder(
             incoming_messages,

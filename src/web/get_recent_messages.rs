@@ -4,8 +4,19 @@ use axum::extract::rejection::{PathRejection, QueryRejection};
 use axum::extract::{Path, Query};
 use axum::response::IntoResponse;
 use axum::{Extension, Json};
+use lazy_static::lazy_static;
+use prometheus::{register_histogram_vec, HistogramVec};
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
+
+lazy_static! {
+    static ref GET_RM2_AWAITS: HistogramVec = register_histogram_vec!(
+        "recentmessages_get_recent_messages_endpoint_async_components",
+        "Time taken to complete the different async stages of the /api/v2/recent-messages/:channel_login endpoint",
+        &["stage"]
+    )
+    .unwrap();
+}
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct GetRecentMessagesPath {
@@ -56,32 +67,43 @@ pub async fn get_recent_messages(
         return Err(ApiError::InvalidChannelLogin(e));
     }
 
-    if app_data
+    let timer = GET_RM2_AWAITS
+        .with_label_values(&["is_channel_ignored"])
+        .start_timer();
+    let result = app_data
         .data_storage
         .is_channel_ignored(&channel_login)
-        .await
-        .map_err(ApiError::GetChannelIgnored)?
-    {
+        .await;
+    timer.observe_duration();
+    if result.map_err(ApiError::GetChannelIgnored)? {
         return Err(ApiError::ChannelIgnored(channel_login));
     }
 
-    let stored_messages = app_data
+    let timer = GET_RM2_AWAITS
+        .with_label_values(&["get_messages"])
+        .start_timer();
+    let result = app_data
         .data_storage
         .get_messages(
             &channel_login,
             query_options.limit,
             app_data.config.app.max_buffer_size,
         )
-        .await
-        .map_err(ApiError::GetMessages)?;
+        .await;
+    timer.observe_duration();
+    let stored_messages = result.map_err(ApiError::GetMessages)?;
 
     let exported_messages =
         crate::message_export::export_stored_messages(stored_messages, query_options);
 
+    let timer = GET_RM2_AWAITS
+        .with_label_values(&["is_join_confirmed"])
+        .start_timer();
     let mut is_confirmed_joined = app_data
         .irc_listener
         .is_join_confirmed(channel_login.clone())
         .await;
+    timer.observe_duration();
 
     tokio::spawn(async move {
         app_data.irc_listener.join_if_needed(channel_login.clone());

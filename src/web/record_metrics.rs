@@ -28,7 +28,8 @@ pub async fn record_metrics<B>(req: Request<B>, next: Next<B>) -> impl IntoRespo
     let path = if let Some(matched_path) = req.extensions().get::<MatchedPath>() {
         matched_path.as_str().to_owned()
     } else {
-        req.uri().path().to_owned()
+        // req.uri().path().to_owned()
+        "other".to_owned()
     };
     let method = req.method().clone();
 

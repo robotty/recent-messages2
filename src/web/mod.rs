@@ -2,6 +2,7 @@ use crate::config::ListenAddr;
 use crate::irc_listener::IrcListener;
 use crate::web::error::ApiError;
 use crate::{Config, DataStorage};
+use axum::error_handling::HandleErrorLayer;
 use axum::handler::Handler;
 use axum::response::IntoResponse;
 use axum::routing::{get, post};
@@ -11,12 +12,14 @@ use http::{header, Method, Request, StatusCode};
 use hyper::Body;
 use lazy_static::lazy_static;
 use std::net::SocketAddr;
+use std::time::Duration;
 use thiserror::Error;
 use tokio_util::sync::CancellationToken;
 use tower::Service;
 use tower::ServiceBuilder;
 use tower_http::cors::{self, CorsLayer};
 use tower_http::services::{ServeDir, ServeFile};
+use tower_timeout::TimeoutLayer;
 #[cfg(unix)]
 use {
     hyperlocal::UnixServerExt, std::fs::Permissions, std::os::unix::fs::PermissionsExt,
@@ -83,7 +86,6 @@ pub async fn run(
         })
     };
     let method_fallback = || (|| async { ApiError::MethodNotAllowed }).into_service();
-
     let api = Router::new()
         .route(
             "/recent-messages/:channel_login",
@@ -152,7 +154,15 @@ pub async fn run(
             })
             .into_service(),
         )
-        .route_layer(middleware::from_fn(record_metrics::record_metrics));
+        .layer(
+            ServiceBuilder::new()
+                .layer(middleware::from_fn(record_metrics::record_metrics))
+                .layer(HandleErrorLayer::new(|_| async {
+                    tracing::info!("Request Timeout!");
+                    ApiError::RequestTimeout
+                }))
+                .layer(TimeoutLayer::new(Duration::from_secs(10))), // TODO should make this configurable
+        );
 
     Ok(match &config.web.listen_address {
         ListenAddr::Tcp { address } => Box::pin(

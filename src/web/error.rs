@@ -10,6 +10,8 @@ use thiserror::Error;
 pub enum ApiError {
     #[error("Not Found")]
     NotFound,
+    #[error("Request Timeout")]
+    RequestTimeout,
     #[error("Method Not Allowed")]
     MethodNotAllowed,
     #[error("Invalid or missing path parameters")]
@@ -71,6 +73,7 @@ impl ApiError {
             | ApiError::GetMessages(_)
             | ApiError::PurgeMessages(_) => StatusCode::INTERNAL_SERVER_ERROR,
             ApiError::NotFound => StatusCode::NOT_FOUND,
+            ApiError::RequestTimeout => StatusCode::REQUEST_TIMEOUT,
             ApiError::MethodNotAllowed => StatusCode::METHOD_NOT_ALLOWED,
             ApiError::InvalidPath => StatusCode::BAD_REQUEST,
             ApiError::InvalidQuery => StatusCode::BAD_REQUEST,
@@ -118,6 +121,7 @@ impl ApiError {
             | ApiError::GetMessages(_)
             | ApiError::PurgeMessages(_) => "internal_server_error",
             ApiError::NotFound => "not_found",
+            ApiError::RequestTimeout => "request_timeout",
             ApiError::MethodNotAllowed => "method_not_allowed",
             ApiError::InvalidPath => "invalid_path",
             ApiError::InvalidQuery => "invalid_query",
