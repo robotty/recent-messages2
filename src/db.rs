@@ -98,6 +98,18 @@ impl DataStorage {
         DataStorage { db }
     }
 
+    pub async fn fetch_initial_metrics_values(&self) -> Result<(), StorageError> {
+        let count: i64 = self
+            .db
+            .get()
+            .await?
+            .query_one("SELECT COUNT(*) AS count FROM message", &[])
+            .await?
+            .get("count");
+        MESSAGES_STORED.set(count);
+        Ok(())
+    }
+
     pub async fn get_channel_logins_to_join(
         &self,
         channel_expiry: Duration,

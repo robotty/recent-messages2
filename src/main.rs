@@ -64,6 +64,10 @@ async fn main() {
 
     let data_storage = DataStorage::new(db);
     let data_storage: &'static DataStorage = Box::leak(Box::new(data_storage));
+    if let Err(e) = data_storage.fetch_initial_metrics_values().await {
+        tracing::error!("Failed to query some initial message count from the DB to initialize exported metrics: {}", e);
+        std::process::exit(1);
+    }
 
     let (irc_listener, forwarder_join_handle, channel_jp_join_handle) =
         irc_listener::IrcListener::start(data_storage, config, shutdown_signal.clone());
