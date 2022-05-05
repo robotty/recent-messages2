@@ -155,7 +155,7 @@ pub async fn run(
         .layer(
             ServiceBuilder::new()
                 .layer(middleware::from_fn(record_metrics::record_metrics))
-                .layer(middleware::from_fn(timeout::timeout))
+                .layer(middleware::from_fn(timeout::timeout)),
         );
 
     Ok(match &config.web.listen_address {

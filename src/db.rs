@@ -4,8 +4,8 @@ use chrono::{DateTime, Utc};
 use deadpool_postgres::{ManagerConfig, PoolConfig, RecyclingMethod};
 use itertools::Itertools;
 use lazy_static::lazy_static;
-use prometheus::{register_int_counter, register_int_gauge};
-use prometheus::{IntCounter, IntGauge};
+use prometheus::{register_histogram, register_int_counter, register_int_gauge};
+use prometheus::{Histogram, IntCounter, IntGauge};
 use std::collections::HashSet;
 use std::ops::DerefMut;
 use std::time::Duration;
@@ -35,6 +35,11 @@ lazy_static! {
     static ref VACUUM_RUNS: IntCounter = register_int_counter!(
         "recentmessages_message_vacuum_runs",
         "Total number of times the automatic vacuum runner has been started for a certain channel"
+    )
+    .unwrap();
+    static ref TIME_TAKEN_TO_GET_DB_CONN: Histogram = register_histogram!(
+        "recentmessages_db_pool_retrieval_time_seconds",
+        "Time taken to retrieve a DB connection from the database pool"
     )
     .unwrap();
 }
@@ -98,10 +103,16 @@ impl DataStorage {
         DataStorage { db }
     }
 
+    async fn get_db_conn(&self) -> Result<deadpool_postgres::Object, StorageError> {
+        let timer = TIME_TAKEN_TO_GET_DB_CONN.start_timer();
+        let db_conn = self.db.get().await;
+        timer.observe_duration();
+        db_conn
+    }
+
     pub async fn fetch_initial_metrics_values(&self) -> Result<(), StorageError> {
         let count: i64 = self
-            .db
-            .get()
+            .get_db_conn()
             .await?
             .query_one("SELECT COUNT(*) AS count FROM message", &[])
             .await?
@@ -114,7 +125,7 @@ impl DataStorage {
         &self,
         channel_expiry: Duration,
     ) -> Result<HashSet<String>, StorageError> {
-        let db_conn = self.db.get().await?;
+        let db_conn = self.get_db_conn().await?;
 
         // TODO figure out whether this has to be sped up using an index.
         let rows = db_conn
@@ -133,7 +144,7 @@ ORDER BY last_access DESC",
     }
 
     pub async fn touch_or_add_channel(&self, channel_login: &str) -> Result<(), StorageError> {
-        let db_conn = self.db.get().await?;
+        let db_conn = self.get_db_conn().await?;
         // this way we only update the last_access if it's been at least 30 minutes since
         // the last time the last_access was updated for that channel. For high traffic
         // channels this massively cuts down on the amount of writes the DB has to do
@@ -150,7 +161,7 @@ ON CONFLICT ON CONSTRAINT channel_pkey DO UPDATE
     }
 
     pub async fn is_channel_ignored(&self, channel_login: &str) -> Result<bool, StorageError> {
-        let db_conn = self.db.get().await?;
+        let db_conn = self.get_db_conn().await?;
         let rows = db_conn
             .query(
                 r"SELECT ignored_at IS NOT NULL FROM channel
@@ -168,7 +179,7 @@ WHERE channel_login = $1",
         channel_login: &str,
         ignored: bool,
     ) -> Result<(), StorageError> {
-        let db_conn = self.db.get().await?;
+        let db_conn = self.get_db_conn().await?;
         db_conn
             .query(
                 r"INSERT INTO channel (channel_login, ignored_at)
@@ -185,7 +196,7 @@ ON CONFLICT ON CONSTRAINT channel_pkey DO UPDATE
         &self,
         user_authorization: &UserAuthorization,
     ) -> Result<(), StorageError> {
-        let db_conn = self.db.get().await?;
+        let db_conn = self.get_db_conn().await?;
 
         db_conn
             .execute(
@@ -214,7 +225,7 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
         &self,
         access_token: &str,
     ) -> Result<Option<UserAuthorization>, StorageError> {
-        let db_conn = self.db.get().await?;
+        let db_conn = self.get_db_conn().await?;
 
         let rows = db_conn
             .query(
@@ -253,7 +264,7 @@ AND valid_until >= now()",
         &self,
         user_authorization: &UserAuthorization,
     ) -> Result<(), StorageError> {
-        let db_conn = self.db.get().await?;
+        let db_conn = self.get_db_conn().await?;
 
         db_conn
             .execute(
@@ -287,7 +298,7 @@ WHERE access_token = $1",
     // TODO background task to purge expired authorizations
 
     pub async fn delete_user_authorization(&self, access_token: &str) -> Result<(), StorageError> {
-        let db_conn = self.db.get().await?;
+        let db_conn = self.get_db_conn().await?;
 
         db_conn
             .execute(
@@ -307,7 +318,7 @@ WHERE access_token = $1",
         max_buffer_size: usize,
     ) -> Result<Vec<StoredMessage>, StorageError> {
         // limit: If specified, take the newest N messages.
-        let db_conn = self.db.get().await?;
+        let db_conn = self.get_db_conn().await?;
 
         let limit = match limit {
             Some(limit) => usize::min(limit, max_buffer_size),
@@ -333,8 +344,7 @@ LIMIT $2";
     }
 
     pub async fn purge_messages(&self, channel_login: &str) -> Result<(), StorageError> {
-        self.db
-            .get()
+        self.get_db_conn()
             .await?
             .execute(
                 "DELETE FROM message WHERE channel_login = $1",
@@ -350,7 +360,7 @@ LIMIT $2";
         channel_login: String,
         message_source: String,
     ) -> Result<(), StorageError> {
-        self.db.get().await?.execute("INSERT INTO message(channel_login, time_received, message_source) VALUES ($1, now(), $2)", &[&channel_login, &message_source]).await?;
+        self.get_db_conn().await?.execute("INSERT INTO message(channel_login, time_received, message_source) VALUES ($1, now(), $2)", &[&channel_login, &message_source]).await?;
         MESSAGES_APPENDED.inc();
         MESSAGES_STORED.inc();
         Ok(())
@@ -402,7 +412,7 @@ LIMIT $2";
         messages_expire_after: Duration,
         max_buffer_size: usize,
     ) -> Result<(), StorageError> {
-        let db_conn = self.db.get().await?;
+        let db_conn = self.get_db_conn().await?;
 
         let channels_with_messages: Vec<String> = db_conn
             .query("SELECT DISTINCT channel_login FROM message", &[])
