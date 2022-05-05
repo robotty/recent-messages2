@@ -56,10 +56,11 @@ pub async fn connect_to_postgresql(config: &Config) -> PgPool {
     let pool_config = PoolConfig {
         max_size: config.app.db_pool_max_size,
         // For now I've set all of these to `None` intentionally
+        // TODO make configurable, then remove comment above
         timeouts: deadpool_postgres::Timeouts {
-            create: None,
-            wait: None,
-            recycle: None,
+            create: Some(Duration::from_secs(5)),
+            wait: Some(Duration::from_secs(5)),
+            recycle: Some(Duration::from_secs(5)),
         },
     };
 
