@@ -11,7 +11,7 @@ use std::time::Duration;
 
 lazy_static! {
     static ref GET_RM2_AWAITS: HistogramVec = register_histogram_vec!(
-        "recentmessages_get_recent_messages_endpoint_async_components",
+        "recentmessages_get_recent_messages_endpoint_async_components_seconds",
         "Time taken to complete the different async stages of the /api/v2/recent-messages/:channel_login endpoint",
         &["stage"]
     )
