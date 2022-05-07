@@ -3,7 +3,7 @@ use crate::db::DataStorage;
 use chrono::Utc;
 use futures::StreamExt;
 use lazy_static::lazy_static;
-use prometheus::{register_histogram, register_int_counter, Histogram, IntCounter};
+use prometheus::{linear_buckets, register_histogram, register_int_counter, Histogram, IntCounter};
 use std::time::Duration;
 use tokio::sync::mpsc;
 use tokio::task::JoinHandle;
@@ -18,11 +18,6 @@ lazy_static! {
     static ref STORE_CHUNK_TIME_TAKEN: Histogram = register_histogram!(
         "recentmessages_irc_forwarder_store_chunk_time_taken_seconds",
         "Time taken to forward individual chunks of messages to the database"
-    )
-    .unwrap();
-    static ref STORE_CHUNK_CHUNK_SIZE: Histogram = register_histogram!(
-        "recentmessages_irc_forwarder_store_chunk_chunk_size",
-        "Number of messages per individual chunk of messages forwarded to the database"
     )
     .unwrap();
     static ref STORE_CHUNK_RUNS: IntCounter = register_int_counter!(
@@ -80,6 +75,16 @@ impl IrcListener {
         config: &'static Config,
         shutdown_signal: CancellationToken,
     ) {
+        let num_buckets = config.app.irc_listener_max_chunk_size / 10;
+        let buckets = linear_buckets(10.0, 10.0, num_buckets as usize).unwrap();
+
+        let store_chunk_chunk_size = register_histogram!(
+            "recentmessages_irc_forwarder_store_chunk_chunk_size",
+            "Number of messages per individual chunk of messages forwarded to the database",
+            buckets
+        )
+        .unwrap();
+
         let (tx, rx) = mpsc::channel(10 * config.app.irc_listener_max_chunk_size);
 
         let forward_worker = async move {
@@ -107,7 +112,7 @@ impl IrcListener {
                     None => break,
                 };
 
-                STORE_CHUNK_CHUNK_SIZE.observe(chunk.len() as f64);
+                store_chunk_chunk_size.observe(chunk.len() as f64);
 
                 let timer = STORE_CHUNK_TIME_TAKEN.start_timer();
                 let res = data_storage.append_messages(chunk).await;
