@@ -48,6 +48,9 @@ pub struct AppConfig {
     pub max_buffer_size: usize,
     pub save_file_directory: PathBuf,
     pub db_pool_max_size: usize,
+    #[serde(with = "humantime_serde")]
+    pub irc_listener_append_every: Duration,
+    pub irc_listener_max_chunk_size: usize,
 }
 
 impl Default for AppConfig {
@@ -60,6 +63,8 @@ impl Default for AppConfig {
             max_buffer_size: 500,
             save_file_directory: "messages".into(),
             db_pool_max_size: num_cpus::get() * 4,
+            irc_listener_append_every: Duration::from_millis(100),
+            irc_listener_max_chunk_size: 256,
         }
     }
 }

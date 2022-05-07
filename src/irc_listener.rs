@@ -1,12 +1,41 @@
 use crate::config::Config;
 use crate::db::DataStorage;
+use chrono::Utc;
+use futures::StreamExt;
+use lazy_static::lazy_static;
+use prometheus::{register_histogram, register_int_counter, Histogram, IntCounter};
 use std::time::Duration;
 use tokio::sync::mpsc;
 use tokio::task::JoinHandle;
+use tokio::time::MissedTickBehavior;
+use tokio_stream::wrappers::ReceiverStream;
 use tokio_util::sync::CancellationToken;
 use twitch_irc::login::StaticLoginCredentials;
 use twitch_irc::message::{AsRawIRC, ServerMessage};
 use twitch_irc::{ClientConfig, SecureTCPTransport, TwitchIRCClient};
+
+lazy_static! {
+    static ref STORE_CHUNK_TIME_TAKEN: Histogram = register_histogram!(
+        "recentmessages_irc_forwarder_store_chunk_time_taken_seconds",
+        "Time taken to forward individual chunks of messages to the database"
+    )
+    .unwrap();
+    static ref STORE_CHUNK_CHUNK_SIZE: Histogram = register_histogram!(
+        "recentmessages_irc_forwarder_store_chunk_chunk_size",
+        "Number of messages per individual chunk of messages forwarded to the database"
+    )
+    .unwrap();
+    static ref STORE_CHUNK_RUNS: IntCounter = register_int_counter!(
+        "recentmessages_irc_forwarder_store_chunk_runs",
+        "Number of runs the IRC forwarder has completed"
+    )
+    .unwrap();
+    static ref STORE_CHUNK_ERRORS: IntCounter = register_int_counter!(
+        "recentmessages_irc_forwarder_store_chunk_errors",
+        "Number of times a chunk could not be appended to the database successfully"
+    )
+    .unwrap();
+}
 
 #[derive(Debug, Clone)]
 pub struct IrcListener {
@@ -27,6 +56,7 @@ impl IrcListener {
         let forwarder_join_handle = tokio::spawn(IrcListener::run_forwarder(
             incoming_messages,
             data_storage,
+            config,
             shutdown_signal.clone(),
         ));
 
@@ -47,27 +77,53 @@ impl IrcListener {
     async fn run_forwarder(
         mut incoming_messages: mpsc::UnboundedReceiver<ServerMessage>,
         data_storage: &'static DataStorage,
+        config: &'static Config,
         shutdown_signal: CancellationToken,
     ) {
-        let worker = async move {
-            while let Some(message) = incoming_messages.recv().await {
-                tokio::spawn(async move {
-                    if let Some(channel_login) = message.channel_login() {
-                        let message_source = message.source().as_raw_irc();
-                        let res = data_storage
-                            .append_message(channel_login.to_owned(), message_source)
-                            .await;
+        let (tx, rx) = mpsc::channel(10 * config.app.irc_listener_max_chunk_size);
 
-                        if let Err(e) = res {
-                            tracing::error!("Failed to append message to storage: {}", e);
-                        }
-                    }
-                });
+        let forward_worker = async move {
+            while let Some(message) = incoming_messages.recv().await {
+                if let Some(channel_login) = message.channel_login() {
+                    let message_source = message.source().as_raw_irc();
+                    tx.send((channel_login.to_owned(), Utc::now(), message_source))
+                        .await
+                        .unwrap();
+                }
+            }
+        };
+
+        let chunk_worker = async move {
+            let mut stream =
+                ReceiverStream::new(rx).ready_chunks(config.app.irc_listener_max_chunk_size);
+
+            let mut interval = tokio::time::interval(config.app.irc_listener_append_every);
+            interval.set_missed_tick_behavior(MissedTickBehavior::Delay);
+
+            loop {
+                interval.tick().await;
+                let chunk = match stream.next().await {
+                    Some(chunk) => chunk,
+                    None => break,
+                };
+
+                STORE_CHUNK_CHUNK_SIZE.observe(chunk.len() as f64);
+
+                let timer = STORE_CHUNK_TIME_TAKEN.start_timer();
+                let res = data_storage.append_messages(chunk).await;
+                timer.observe_duration();
+
+                if let Err(e) = res {
+                    tracing::error!("Failed to append message to storage: {}", e);
+                    STORE_CHUNK_ERRORS.inc();
+                }
+                STORE_CHUNK_RUNS.inc();
             }
         };
 
         tokio::select! {
-            _ = worker => {},
+            _ = forward_worker => {},
+            _ = chunk_worker => {},
             _ = shutdown_signal.cancelled() => {}
         }
     }

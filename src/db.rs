@@ -357,14 +357,22 @@ LIMIT $2";
     }
 
     /// Append a message to the storage.
-    pub async fn append_message(
+    pub async fn append_messages(
         &self,
-        channel_login: String,
-        message_source: String,
+        messages: Vec<(String, DateTime<Utc>, String)>,
     ) -> Result<(), StorageError> {
-        self.get_db_conn().await?.execute("INSERT INTO message(channel_login, time_received, message_source) VALUES ($1, now(), $2)", &[&channel_login, &message_source]).await?;
-        MESSAGES_APPENDED.inc();
-        MESSAGES_STORED.inc();
+        if messages.len() <= 0 {
+            return Ok(());
+        }
+        let mut db_conn = self.get_db_conn().await?;
+        let tx = db_conn.transaction().await?;
+        let num_messages = messages.len();
+        for (channel_login, time_received, message_source) in messages {
+            tx.execute("INSERT INTO message(channel_login, time_received, message_source) VALUES ($1, $2, $3)", &[&channel_login, &time_received, &message_source]).await?;
+        }
+        tx.commit().await?;
+        MESSAGES_APPENDED.inc_by(num_messages as u64);
+        MESSAGES_STORED.add(num_messages as i64);
         Ok(())
     }
 
