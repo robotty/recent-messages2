@@ -105,12 +105,22 @@ impl IrcListener {
             let mut interval = tokio::time::interval(config.app.irc_listener_append_every);
             interval.set_missed_tick_behavior(MissedTickBehavior::Delay);
 
+            let mut last_chunk_was_maxed_out = false;
+
             loop {
-                interval.tick().await;
+                // If previous iteration had a full chunk, skip this tick to catch up
+                if !last_chunk_was_maxed_out {
+                    interval.tick().await;
+                } else {
+                    // to make the next tick be proper
+                    interval.reset();
+                }
                 let chunk = match stream.next().await {
                     Some(chunk) => chunk,
                     None => break,
                 };
+
+                last_chunk_was_maxed_out = chunk.len() >= config.app.irc_listener_max_chunk_size;
 
                 store_chunk_chunk_size.observe(chunk.len() as f64);
 
