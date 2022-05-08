@@ -54,14 +54,8 @@ pub async fn connect_to_postgresql(config: &Config) -> PgPool {
         recycling_method: RecyclingMethod::Fast,
     };
     let pool_config = PoolConfig {
-        max_size: config.app.db_pool_max_size,
-        // For now I've set all of these to `None` intentionally
-        // TODO make configurable, then remove comment above
-        timeouts: deadpool_postgres::Timeouts {
-            create: Some(Duration::from_secs(5)),
-            wait: Some(Duration::from_secs(5)),
-            recycle: Some(Duration::from_secs(5)),
-        },
+        max_size: config.db.pool.max_size,
+        timeouts: deadpool_postgres::Timeouts::from(config.db.pool),
     };
 
     let manager = deadpool_postgres::Manager::from_config(pg_config, NoTls, mgr_config);

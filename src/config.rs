@@ -46,8 +46,6 @@ pub struct AppConfig {
     #[serde(with = "humantime_serde")]
     pub messages_expire_after: Duration,
     pub max_buffer_size: usize,
-    pub save_file_directory: PathBuf,
-    pub db_pool_max_size: usize,
     #[serde(with = "humantime_serde")]
     pub irc_listener_append_every: Duration,
     pub irc_listener_max_chunk_size: usize,
@@ -61,8 +59,6 @@ impl Default for AppConfig {
             vacuum_messages_every: Duration::from_secs(30 * 60), // 30 minutes
             messages_expire_after: Duration::from_secs(24 * 60 * 60), // 24 hours
             max_buffer_size: 500,
-            save_file_directory: "messages".into(),
-            db_pool_max_size: num_cpus::get() * 4,
             irc_listener_append_every: Duration::from_millis(100),
             irc_listener_max_chunk_size: 256,
         }
@@ -140,6 +136,8 @@ pub struct DatabaseConfig {
     pub keepalives_idle: Duration,
     pub target_session_attrs: PgTargetSessionAttrs,
     pub channel_binding: PgChannelBinding,
+    #[serde(default)]
+    pub pool: PoolConfig,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -183,6 +181,38 @@ pub enum PgChannelBinding {
     Disable,
     Prefer,
     Require,
+}
+
+#[derive(Debug, Clone, Copy, Deserialize)]
+pub struct PoolConfig {
+    pub max_size: usize,
+    #[serde(with = "humantime_serde")]
+    pub create_timeout: Duration,
+    #[serde(with = "humantime_serde")]
+    pub wait_timeout: Duration,
+    #[serde(with = "humantime_serde")]
+    pub recycle_timeout: Duration,
+}
+
+impl Default for PoolConfig {
+    fn default() -> Self {
+        PoolConfig {
+            max_size: num_cpus::get() * 4,
+            create_timeout: Duration::from_secs(5),
+            wait_timeout: Duration::from_secs(5),
+            recycle_timeout: Duration::from_secs(5),
+        }
+    }
+}
+
+impl From<PoolConfig> for deadpool_postgres::Timeouts {
+    fn from(cfg: PoolConfig) -> Self {
+        deadpool_postgres::Timeouts {
+            create: Some(cfg.create_timeout),
+            wait: Some(cfg.wait_timeout),
+            recycle: Some(cfg.recycle_timeout),
+        }
+    }
 }
 
 impl Default for DatabaseConfig {
@@ -247,6 +277,7 @@ impl From<postgres::Config> for DatabaseConfig {
                 postgres::config::ChannelBinding::Require => PgChannelBinding::Require,
                 _ => panic!("unhandled variant"),
             },
+            pool: PoolConfig::default(),
         }
     }
 }

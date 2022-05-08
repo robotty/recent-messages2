@@ -15,14 +15,6 @@
 # will be deleted to make room.
 #max_buffer_size = 500
 
-#save_file_directory = "messages"
-
-# maximum number of connections the DB connection pool will create
-# up this setting in case you run into issues on larger deployments,
-# and increase max_connections_count on the PostgreSQL server config (as needed) as well
-# default value is the number of CPUs on the system, multiplied by four
-#db_pool_max_size = 32
-
 # Configure the built-in web server and API service
 [web]
 # address the web server should bind to. Supports IPv4, IPv6 and Unix sockets. Defaults to TCP, 127.0.0.1:2790
@@ -89,3 +81,16 @@ host = [ { path = "/var/run/postgresql" } ]
 # (usually irrelevant, search them up if you need them)
 # TLS (SSL) is not supported at the moment because there has been no demand. It can be added if needed.
 # Create a GitHub issue if you need TLS in your use case.
+
+[db.pool]
+# maximum number of connections the DB connection pool will create
+# up this setting in case you run into issues on larger deployments,
+# and increase max_connections_count on the PostgreSQL server config (as needed) as well
+# default value is the number of CPUs on the system, multiplied by four
+#max_size = 32
+# Timeout for creating a new database connection
+#create_timeout = "5 seconds"
+# Timeout for waiting for a connection from the pool to become available
+#wait_timeout = "5 seconds"
+# Timeout for "recycling", that is checking and putting an object back into the pool
+#recycle_timeout = "5 seconds"
