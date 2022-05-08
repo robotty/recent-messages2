@@ -184,6 +184,7 @@ pub enum PgChannelBinding {
 }
 
 #[derive(Debug, Clone, Copy, Deserialize)]
+#[serde(default)]
 pub struct PoolConfig {
     pub max_size: usize,
     #[serde(with = "humantime_serde")]
