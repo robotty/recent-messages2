@@ -51,7 +51,6 @@ pub async fn set_ignored(
         // and the time that the PART command reaches the Twitch server. The 3 second time delay
         // "solution" is a hack, needs a better solution
         // maybe put a "blocker"/poison type into the db storage
-        // (enum ChannelMessages { Ignored, Normal(VecDeque<StoredMessage> } or so)
         app_data
             .irc_listener
             .irc_client

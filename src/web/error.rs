@@ -145,6 +145,7 @@ struct ApiErrorResponse {
     error_code: &'static str,
 }
 
+// TODO: currently errors from API handlers arent logged, log them here?
 impl IntoResponse for ApiError {
     fn into_response(self) -> Response {
         (
