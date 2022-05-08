@@ -17,9 +17,9 @@
 
 [app.irc]
 # Rate limit for connecting new IRC connections to Twitch.
-#new_connection_every = "500 milliseconds"
+#new_connection_every = "500ms"
 # Messages received from Twitch are forwarded to the database in chunks, separated by this fixed time interval.
-#forwarder_run_every = "100 milliseconds"
+#forwarder_run_every = "100ms"
 # Limit for the number of message in an individual chunk.
 #forwarder_max_chunk_size = 256
 
