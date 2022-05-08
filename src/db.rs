@@ -82,7 +82,6 @@ pub async fn run_migrations(db: &PgPool) -> Result<(), Box<dyn std::error::Error
 
 pub type StorageError = deadpool_postgres::PoolError;
 
-// TODO could possibly optimize further by storing the ServerMessage instead of its source?
 #[derive(Debug, Clone)]
 pub struct StoredMessage {
     pub time_received: DateTime<Utc>,
