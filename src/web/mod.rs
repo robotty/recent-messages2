@@ -122,11 +122,7 @@ pub async fn run(
             "/metrics",
             get(get_metrics::get_metrics).fallback(method_fallback()),
         )
-        .layer(
-            ServiceBuilder::new()
-                .layer(cors)
-                .layer(Extension(shared_state)),
-        );
+        .layer(cors);
 
     let mut servedir = ServeDir::new("web/dist")
         .append_index_html_on_directories(true)
@@ -154,6 +150,7 @@ pub async fn run(
         )
         .layer(
             ServiceBuilder::new()
+                .layer(Extension(shared_state))
                 .layer(middleware::from_fn(record_metrics::record_metrics))
                 .layer(middleware::from_fn(timeout::timeout)),
         );
