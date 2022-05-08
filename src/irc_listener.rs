@@ -127,8 +127,16 @@ impl IrcListener {
         };
 
         tokio::select! {
-            _ = forward_worker => {},
-            _ = chunk_worker => {},
+            _ = forward_worker => {
+                if !shutdown_signal.is_cancelled() {
+                    panic!("forward worker should never end")
+                }
+            },
+            _ = chunk_worker => {
+                if !shutdown_signal.is_cancelled() {
+                    panic!("chunk worker should never end")
+                }
+            },
             _ = shutdown_signal.cancelled() => {}
         }
     }
