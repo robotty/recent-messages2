@@ -41,6 +41,9 @@ redirect_uri = "https://example.com/"
 # Re-validate that the user has not disconnected the Twitch integration after this period.
 #recheck_twitch_auth_after = "1 hour"
 
+# After how many seconds should any webserver requests time out and result in an error?
+#request_timeout = "10 seconds"
+
 # Specify how we should connect to the PostgreSQL database server
 # most options are additionally documented here: https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-PARAMKEYWORDS
 [db]

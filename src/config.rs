@@ -82,10 +82,12 @@ pub struct WebConfig {
     pub listen_address: ListenAddr,
     #[serde(flatten)]
     pub twitch_api_credentials: TwitchApiClientCredentials,
-    #[serde(default = "seven_days")]
+    #[serde(with = "humantime_serde", default = "seven_days")]
     pub sessions_expire_after: Duration,
-    #[serde(default = "one_hour")]
+    #[serde(with = "humantime_serde", default = "one_hour")]
     pub recheck_twitch_auth_after: Duration,
+    #[serde(with = "humantime_serde", default = "ten_seconds")]
+    pub request_timeout: Duration,
 }
 
 fn default_listen_addr() -> ListenAddr {
@@ -100,6 +102,10 @@ fn seven_days() -> Duration {
 
 fn one_hour() -> Duration {
     Duration::from_secs(60 * 60)
+}
+
+fn ten_seconds() -> Duration {
+    Duration::from_secs(10)
 }
 
 #[derive(Debug, Clone, Deserialize)]
