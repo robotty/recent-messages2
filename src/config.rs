@@ -28,6 +28,9 @@ pub struct Config {
     #[serde(default)]
     pub app: AppConfig,
 
+    #[serde(default)]
+    pub irc: IrcConfig,
+
     pub web: WebConfig,
 
     #[serde(default)]
@@ -46,7 +49,18 @@ pub struct AppConfig {
     #[serde(with = "humantime_serde")]
     pub messages_expire_after: Duration,
     pub max_buffer_size: usize,
-    pub irc: IrcConfig,
+}
+
+impl Default for AppConfig {
+    fn default() -> Self {
+        AppConfig {
+            vacuum_channels_every: Duration::from_secs(30 * 60), // 30 minutes
+            channels_expire_after: Duration::from_secs(24 * 60 * 60), // 24 hours
+            vacuum_messages_every: Duration::from_secs(30 * 60), // 30 minutes
+            messages_expire_after: Duration::from_secs(24 * 60 * 60), // 24 hours
+            max_buffer_size: 500,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -63,23 +77,9 @@ pub struct IrcConfig {
 impl Default for IrcConfig {
     fn default() -> Self {
         IrcConfig {
-            new_connection_every: Duration::from_millis(200), // TODO experiment with this value
-            // then maybe adjust default in twitch-irc-rs as well`
+            new_connection_every: Duration::from_millis(550), // value determined empirically
             forwarder_run_every: Duration::from_millis(100),
             forwarder_max_chunk_size: 256,
-        }
-    }
-}
-
-impl Default for AppConfig {
-    fn default() -> Self {
-        AppConfig {
-            vacuum_channels_every: Duration::from_secs(30 * 60), // 30 minutes
-            channels_expire_after: Duration::from_secs(24 * 60 * 60), // 24 hours
-            vacuum_messages_every: Duration::from_secs(30 * 60), // 30 minutes
-            messages_expire_after: Duration::from_secs(24 * 60 * 60), // 24 hours
-            max_buffer_size: 500,
-            irc: IrcConfig::default(),
         }
     }
 }

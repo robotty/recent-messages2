@@ -43,7 +43,7 @@ impl IrcListener {
         shutdown_signal: CancellationToken,
     ) -> (IrcListener, JoinHandle<()>, JoinHandle<()>) {
         let (incoming_messages, client) = TwitchIRCClient::new(ClientConfig {
-            new_connection_every: config.app.irc.new_connection_every,
+            new_connection_every: config.irc.new_connection_every,
             ..ClientConfig::default()
         });
 
@@ -74,7 +74,7 @@ impl IrcListener {
         config: &'static Config,
         shutdown_signal: CancellationToken,
     ) {
-        let num_buckets = config.app.irc.forwarder_max_chunk_size / 10;
+        let num_buckets = config.irc.forwarder_max_chunk_size / 10;
         let buckets = linear_buckets(10.0, 10.0, num_buckets as usize).unwrap();
 
         let store_chunk_chunk_size = register_histogram!(
@@ -84,7 +84,7 @@ impl IrcListener {
         )
         .unwrap();
 
-        let (tx, rx) = mpsc::channel(10 * config.app.irc.forwarder_max_chunk_size);
+        let (tx, rx) = mpsc::channel(10 * config.irc.forwarder_max_chunk_size);
 
         let forward_worker = async move {
             while let Some(message) = incoming_messages.recv().await {
@@ -99,9 +99,9 @@ impl IrcListener {
 
         let chunk_worker = async move {
             let mut stream =
-                ReceiverStream::new(rx).ready_chunks(config.app.irc.forwarder_max_chunk_size);
+                ReceiverStream::new(rx).ready_chunks(config.irc.forwarder_max_chunk_size);
 
-            let mut interval = tokio::time::interval(config.app.irc.forwarder_run_every);
+            let mut interval = tokio::time::interval(config.irc.forwarder_run_every);
             interval.set_missed_tick_behavior(MissedTickBehavior::Delay);
 
             let mut last_chunk_was_maxed_out = false;
@@ -119,7 +119,7 @@ impl IrcListener {
                     None => break,
                 };
 
-                last_chunk_was_maxed_out = chunk.len() >= config.app.irc.forwarder_max_chunk_size;
+                last_chunk_was_maxed_out = chunk.len() >= config.irc.forwarder_max_chunk_size;
 
                 store_chunk_chunk_size.observe(chunk.len() as f64);
 
