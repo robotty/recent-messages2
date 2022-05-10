@@ -14,6 +14,11 @@ use twitch_irc::message::{AsRawIRC, ServerMessage};
 use twitch_irc::{ClientConfig, SecureTCPTransport, TwitchIRCClient};
 
 lazy_static! {
+    static ref INTERNAL_FORWARD_TIME_TAKEN: Histogram = register_histogram!(
+        "recentmessages_irc_forwarder_internal_forward_message_time_taken_seconds",
+        "Time taken to add a message to the internal channel, this amount will climb if the system is overloaded"
+    )
+    .unwrap();
     static ref STORE_CHUNK_TIME_TAKEN: Histogram = register_histogram!(
         "recentmessages_irc_forwarder_store_chunk_time_taken_seconds",
         "Time taken to forward individual chunks of messages to the database"
@@ -41,18 +46,18 @@ impl IrcListener {
         data_storage: &'static DataStorage,
         config: &'static Config,
         shutdown_signal: CancellationToken,
-    ) -> (IrcListener, JoinHandle<()>, JoinHandle<()>) {
+    ) -> (IrcListener, JoinHandle<()>, JoinHandle<()>, JoinHandle<()>) {
         let (incoming_messages, client) = TwitchIRCClient::new(ClientConfig {
             new_connection_every: config.irc.new_connection_every,
             ..ClientConfig::default()
         });
 
-        let forwarder_join_handle = tokio::spawn(IrcListener::run_forwarder(
+        let (forward_worker_join_handle, chunk_worker_join_handle) = IrcListener::run_forwarder(
             incoming_messages,
             data_storage,
             config,
             shutdown_signal.clone(),
-        ));
+        );
 
         let channel_jp_join_handle = tokio::spawn(IrcListener::run_channel_join_parter(
             client.clone(),
@@ -63,17 +68,18 @@ impl IrcListener {
 
         (
             IrcListener { irc_client: client },
-            forwarder_join_handle,
+            forward_worker_join_handle,
+            chunk_worker_join_handle,
             channel_jp_join_handle,
         )
     }
 
-    async fn run_forwarder(
+    fn run_forwarder(
         mut incoming_messages: mpsc::UnboundedReceiver<ServerMessage>,
         data_storage: &'static DataStorage,
         config: &'static Config,
         shutdown_signal: CancellationToken,
-    ) {
+    ) -> (JoinHandle<()>, JoinHandle<()>) {
         let num_buckets = config.irc.forwarder_max_chunk_size / 10;
         let buckets = linear_buckets(10.0, 10.0, num_buckets as usize).unwrap();
 
@@ -90,9 +96,11 @@ impl IrcListener {
             while let Some(message) = incoming_messages.recv().await {
                 if let Some(channel_login) = message.channel_login() {
                     let message_source = message.source().as_raw_irc();
+                    let timer = INTERNAL_FORWARD_TIME_TAKEN.start_timer();
                     tx.send((channel_login.to_owned(), Utc::now(), message_source))
                         .await
                         .unwrap();
+                    timer.observe_duration();
                 }
             }
         };
@@ -102,7 +110,7 @@ impl IrcListener {
                 ReceiverStream::new(rx).ready_chunks(config.irc.forwarder_max_chunk_size);
 
             let mut interval = tokio::time::interval(config.irc.forwarder_run_every);
-            interval.set_missed_tick_behavior(MissedTickBehavior::Delay);
+            interval.set_missed_tick_behavior(MissedTickBehavior::Burst);
 
             let mut last_chunk_was_maxed_out = false;
 
@@ -135,19 +143,30 @@ impl IrcListener {
             }
         };
 
-        tokio::select! {
-            _ = forward_worker => {
-                if !shutdown_signal.is_cancelled() {
-                    panic!("forward worker should never end")
-                }
-            },
-            _ = chunk_worker => {
-                if !shutdown_signal.is_cancelled() {
-                    panic!("chunk worker should never end")
-                }
-            },
-            _ = shutdown_signal.cancelled() => {}
-        }
+        let shutdown_signal_1 = shutdown_signal.clone();
+        let forward_worker_join_handle = tokio::spawn(async move {
+            tokio::select! {
+                _ = forward_worker => {
+                    if !shutdown_signal_1.is_cancelled() {
+                        panic!("forward worker should never end")
+                    }
+                },
+                _ = shutdown_signal_1.cancelled() => {}
+            }
+        });
+
+        let chunk_worker_join_handle = tokio::spawn(async move {
+            tokio::select! {
+                _ = chunk_worker => {
+                    if !shutdown_signal.is_cancelled() {
+                        panic!("chunk worker should never end")
+                    }
+                },
+                _ = shutdown_signal.cancelled() => {}
+            }
+        });
+
+        (forward_worker_join_handle, chunk_worker_join_handle)
     }
 
     /// Start background loop to vacuum/part channels that are not used.

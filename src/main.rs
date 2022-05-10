@@ -69,8 +69,12 @@ async fn main() {
         std::process::exit(1);
     }
 
-    let (irc_listener, forwarder_join_handle, channel_jp_join_handle) =
-        irc_listener::IrcListener::start(data_storage, config, shutdown_signal.clone());
+    let (
+        irc_listener,
+        forward_worker_join_handle,
+        chunk_worker_join_handle,
+        channel_jp_join_handle,
+    ) = irc_listener::IrcListener::start(data_storage, config, shutdown_signal.clone());
     let irc_listener = Box::leak(Box::new(irc_listener));
 
     let old_msg_vacuum_join_handle =
@@ -93,7 +97,16 @@ async fn main() {
     let with_name = move |fut: JoinHandle<()>, name| fut.map(move |x| (x, name));
     let mut simple_workers = [
         with_name(process_monitoring_join_handle, "Process Monitoring task").fuse(),
-        with_name(forwarder_join_handle, "IRC message forwarder").fuse(),
+        with_name(
+            forward_worker_join_handle,
+            "IRC message forwarder (preprocessor)",
+        )
+        .fuse(),
+        with_name(
+            chunk_worker_join_handle,
+            "IRC message-to-database-forwarder",
+        )
+        .fuse(),
         with_name(channel_jp_join_handle, "IRC channel join/part task").fuse(),
         with_name(old_msg_vacuum_join_handle, "Old message vacuum task").fuse(),
     ];
