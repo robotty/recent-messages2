@@ -6,15 +6,13 @@ use itertools::Itertools;
 use lazy_static::lazy_static;
 use prometheus::{register_histogram, register_int_counter, register_int_gauge};
 use prometheus::{Histogram, IntCounter, IntGauge};
+use rustls::{OwnedTrustAnchor, RootCertStore};
 use std::collections::HashSet;
 use std::ops::DerefMut;
 use std::time::Duration;
 use tokio::time::MissedTickBehavior;
-use tokio_postgres::tls::NoTls;
+use tokio_postgres_rustls::MakeRustlsConnect;
 use tokio_util::sync::CancellationToken;
-
-// TODO support TLS if needed
-// see https://docs.rs/postgres-native-tls/0.3.0/postgres_native_tls/index.html
 
 lazy_static! {
     static ref MESSAGES_APPENDED: IntCounter = register_int_counter!(
@@ -58,7 +56,24 @@ pub async fn connect_to_postgresql(config: &Config) -> PgPool {
         timeouts: deadpool_postgres::Timeouts::from(config.db.pool),
     };
 
-    let manager = deadpool_postgres::Manager::from_config(pg_config, NoTls, mgr_config);
+    let mut root_certificates = RootCertStore::empty();
+    let trust_anchors = webpki_roots::TLS_SERVER_ROOTS.0.iter().map(|trust_anchor| {
+        OwnedTrustAnchor::from_subject_spki_name_constraints(
+            trust_anchor.subject,
+            trust_anchor.spki,
+            trust_anchor.name_constraints,
+        )
+    });
+    root_certificates.add_server_trust_anchors(trust_anchors);
+
+    let tls_config = rustls::ClientConfig::builder()
+        .with_safe_defaults()
+        .with_root_certificates(root_certificates) // TODO support custom root certificates as well
+        .with_no_client_auth(); // TODO support client auth if needed
+
+    let tls = MakeRustlsConnect::new(tls_config);
+
+    let manager = deadpool_postgres::Manager::from_config(pg_config, tls, mgr_config);
     PgPool::builder(manager)
         .config(pool_config)
         .runtime(deadpool_postgres::Runtime::Tokio1)

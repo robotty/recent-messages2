@@ -34,6 +34,7 @@ refinery = { version = "0.8", features = ["tokio-postgres"] }
 regex = "1"
 reqwest = { version = "0.11", features = ["rustls-tls-webpki-roots", "json"], default-features = false }
 rmp-serde = "1"
+rustls = "0.20"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 simple-process-stats = "1"
@@ -41,6 +42,7 @@ structopt = "0.3"
 thiserror = "1"
 tokio = { version = "1", features = ["full"] }
 tokio-postgres = { version = "0.7", features = ["with-chrono-0_4"] }
+tokio-postgres-rustls = "0.9"
 tokio-stream = { version = "0.1", features = ["net"], default-features = false }
 tokio-util = "0.7"
 toml = "0.5"
@@ -49,6 +51,7 @@ tower-http = { version = "0.3", features = ["cors", "fs"] }
 tracing = "0.1"
 tracing-subscriber = "0.3"
 twitch-irc = { git = "https://github.com/robotty/twitch-irc-rs", branch = "metrics-rework", features = ["transport-tcp", "transport-tcp-rustls-webpki-roots", "metrics-collection"], default-features = false }
+webpki-roots = "0.22"
 
 [patch.crates-io]
 # see https://github.com/heim-rs/darwin-libproc/issues/4
