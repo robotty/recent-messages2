@@ -94,14 +94,17 @@ impl IrcListener {
 
         let forward_worker = async move {
             while let Some(message) = incoming_messages.recv().await {
-                if let Some(channel_login) = message.channel_login() {
-                    let message_source = message.source().as_raw_irc();
-                    let timer = INTERNAL_FORWARD_TIME_TAKEN.start_timer();
-                    tx.send((channel_login.to_owned(), Utc::now(), message_source))
-                        .await
-                        .unwrap();
-                    timer.observe_duration();
-                }
+                let tx = tx.clone();
+                tokio::spawn(async move {
+                    if let Some(channel_login) = message.channel_login() {
+                        let message_source = message.source().as_raw_irc();
+                        let timer = INTERNAL_FORWARD_TIME_TAKEN.start_timer();
+                        tx.send((channel_login.to_owned(), Utc::now(), message_source))
+                            .await
+                            .ok();
+                        timer.observe_duration();
+                    }
+                });
             }
         };
 
@@ -114,22 +117,35 @@ impl IrcListener {
 
             loop {
                 interval.tick().await;
-                let chunk = match stream.next().await {
-                    Some(chunk) => chunk,
-                    None => break,
+                let timeout = tokio::time::sleep(config.irc.forwarder_run_every / 2);
+                let chunk = tokio::select! {
+                    biased;
+                    _ = timeout => {
+                        continue;
+                    }
+                    next = stream.next() => {
+                        match next {
+                            Some(chunk) => chunk,
+                            None => break,
+                        }
+                    }
                 };
 
+                // TODO remove
+                tracing::info!("Chunk size: {}", chunk.len());
                 store_chunk_chunk_size.observe(chunk.len() as f64);
 
-                let timer = STORE_CHUNK_TIME_TAKEN.start_timer();
-                let res = data_storage.append_messages(chunk).await;
-                timer.observe_duration();
+                tokio::spawn(async move {
+                    let timer = STORE_CHUNK_TIME_TAKEN.start_timer();
+                    let res = data_storage.append_messages(chunk).await;
+                    timer.observe_duration();
 
-                if let Err(e) = res {
-                    tracing::error!("Failed to append message to storage: {}", e);
-                    STORE_CHUNK_ERRORS.inc();
-                }
-                STORE_CHUNK_RUNS.inc();
+                    if let Err(e) = res {
+                        tracing::error!("Failed to append message to storage: {}", e);
+                        STORE_CHUNK_ERRORS.inc();
+                    }
+                    STORE_CHUNK_RUNS.inc();
+                });
             }
         };
 
