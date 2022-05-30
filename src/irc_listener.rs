@@ -131,8 +131,6 @@ impl IrcListener {
                     }
                 };
 
-                // TODO remove
-                tracing::info!("Chunk size: {}", chunk.len());
                 store_chunk_chunk_size.observe(chunk.len() as f64);
 
                 tokio::spawn(async move {

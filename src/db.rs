@@ -35,6 +35,16 @@ lazy_static! {
         "Total number of times the automatic vacuum runner has been started for a certain channel"
     )
     .unwrap();
+    static ref DB_CONNECTIONS_IN_USE: IntGauge = register_int_gauge!(
+        "recentmessages_db_pool_connections_in_use",
+        "Number of database connections currently in use"
+    )
+    .unwrap();
+    static ref DB_CONNECTIONS_MAX: IntGauge = register_int_gauge!(
+        "recentmessages_db_pool_connections_max",
+        "Configured maximum size of the database connection pool"
+    )
+    .unwrap();
     static ref TIME_TAKEN_TO_GET_DB_CONN: Histogram = register_histogram!(
         "recentmessages_db_pool_retrieval_time_seconds",
         "Time taken to retrieve a DB connection from the database pool"
@@ -44,7 +54,7 @@ lazy_static! {
 
 type PgPool = deadpool_postgres::Pool;
 
-pub async fn connect_to_postgresql(config: &Config) -> PgPool {
+pub async fn connect_to_postgresql(config: &Config) -> DataStorage {
     let pg_config = tokio_postgres::Config::from(config.db.clone());
     tracing::debug!("PostgreSQL config: {:#?}", pg_config);
 
@@ -55,6 +65,8 @@ pub async fn connect_to_postgresql(config: &Config) -> PgPool {
         max_size: config.db.pool.max_size,
         timeouts: deadpool_postgres::Timeouts::from(config.db.pool),
     };
+    DB_CONNECTIONS_MAX.set(config.db.pool.max_size as i64);
+    DB_CONNECTIONS_IN_USE.set(0);
 
     let mut root_certificates = RootCertStore::empty();
     let trust_anchors = webpki_roots::TLS_SERVER_ROOTS.0.iter().map(|trust_anchor| {
@@ -74,25 +86,19 @@ pub async fn connect_to_postgresql(config: &Config) -> PgPool {
     let tls = MakeRustlsConnect::new(tls_config);
 
     let manager = deadpool_postgres::Manager::from_config(pg_config, tls, mgr_config);
-    PgPool::builder(manager)
-        .config(pool_config)
-        .runtime(deadpool_postgres::Runtime::Tokio1)
-        .build()
-        .unwrap()
+    DataStorage::new(
+        PgPool::builder(manager)
+            .config(pool_config)
+            .runtime(deadpool_postgres::Runtime::Tokio1)
+            .build()
+            .unwrap(),
+    )
 }
 
 mod migrations {
     use refinery::embed_migrations;
     // refers to the "migrations" directory in the project root
     embed_migrations!("migrations");
-}
-
-pub async fn run_migrations(db: &PgPool) -> Result<(), Box<dyn std::error::Error>> {
-    let mut db = db.get().await?;
-    migrations::migrations::runner()
-        .run_async(db.as_mut().deref_mut())
-        .await?;
-    Ok(())
 }
 
 pub type StorageError = deadpool_postgres::PoolError;
@@ -108,22 +114,45 @@ pub struct DataStorage {
     db: PgPool,
 }
 
+struct WrappedDbConn(deadpool_postgres::Object);
+
+impl WrappedDbConn {
+    pub fn new(inner: deadpool_postgres::Object) -> WrappedDbConn {
+        DB_CONNECTIONS_IN_USE.inc();
+        WrappedDbConn(inner)
+    }
+}
+
+impl Drop for WrappedDbConn {
+    fn drop(&mut self) {
+        DB_CONNECTIONS_IN_USE.dec();
+    }
+}
+
 impl DataStorage {
     pub fn new(db: PgPool) -> DataStorage {
         DataStorage { db }
     }
 
-    async fn get_db_conn(&self) -> Result<deadpool_postgres::Object, StorageError> {
+    async fn get_db_conn(&self) -> Result<WrappedDbConn, StorageError> {
         let timer = TIME_TAKEN_TO_GET_DB_CONN.start_timer();
         let db_conn = self.db.get().await;
         timer.observe_duration();
-        db_conn
+        Ok(WrappedDbConn::new(db_conn?))
+    }
+
+    pub async fn run_migrations(&self) -> Result<(), Box<dyn std::error::Error>> {
+        migrations::migrations::runner()
+            .run_async(self.get_db_conn().await?.0.as_mut().deref_mut())
+            .await?;
+        Ok(())
     }
 
     pub async fn fetch_initial_metrics_values(&self) -> Result<(), StorageError> {
         let count: i64 = self
             .get_db_conn()
             .await?
+            .0
             .query_one("SELECT COUNT(*) AS count FROM message", &[])
             .await?
             .get("count");
@@ -139,6 +168,7 @@ impl DataStorage {
 
         // TODO figure out whether this has to be sped up using an index.
         let rows = db_conn
+            .0
             .query(
                 r"SELECT channel_login
 FROM channel
@@ -159,6 +189,7 @@ ORDER BY last_access DESC",
         // the last time the last_access was updated for that channel. For high traffic
         // channels this massively cuts down on the amount of writes the DB has to do
         db_conn
+            .0
             .execute(
                 r"INSERT INTO channel (channel_login) VALUES ($1)
 ON CONFLICT ON CONSTRAINT channel_pkey DO UPDATE
@@ -173,6 +204,7 @@ ON CONFLICT ON CONSTRAINT channel_pkey DO UPDATE
     pub async fn is_channel_ignored(&self, channel_login: &str) -> Result<bool, StorageError> {
         let db_conn = self.get_db_conn().await?;
         let rows = db_conn
+            .0
             .query(
                 r"SELECT ignored_at IS NOT NULL FROM channel
 WHERE channel_login = $1",
@@ -191,6 +223,7 @@ WHERE channel_login = $1",
     ) -> Result<(), StorageError> {
         let db_conn = self.get_db_conn().await?;
         db_conn
+            .0
             .query(
                 r"INSERT INTO channel (channel_login, ignored_at)
 VALUES ($1, CASE WHEN $2 THEN now() ELSE NULL END)
@@ -209,6 +242,7 @@ ON CONFLICT ON CONSTRAINT channel_pkey DO UPDATE
         let db_conn = self.get_db_conn().await?;
 
         db_conn
+            .0
             .execute(
                 "INSERT INTO user_authorization(access_token, twitch_access_token,
 twitch_refresh_token, twitch_authorization_last_validated, valid_until, user_id,
@@ -238,6 +272,7 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
         let db_conn = self.get_db_conn().await?;
 
         let rows = db_conn
+            .0
             .query(
                 "SELECT access_token, twitch_access_token, twitch_refresh_token,
 twitch_authorization_last_validated, valid_until, user_id,
@@ -277,6 +312,7 @@ AND valid_until >= now()",
         let db_conn = self.get_db_conn().await?;
 
         db_conn
+            .0
             .execute(
                 "UPDATE user_authorization
 SET twitch_access_token = $2,
@@ -311,6 +347,7 @@ WHERE access_token = $1",
         let db_conn = self.get_db_conn().await?;
 
         db_conn
+            .0
             .execute(
                 "DELETE FROM user_authorization WHERE access_token = $1",
                 &[&access_token],
@@ -342,6 +379,7 @@ ORDER BY time_received DESC
 LIMIT $2";
 
         Ok(db_conn
+            .0
             .query(query, &[&channel_login, &(limit as i64)])
             .await?
             .into_iter()
@@ -356,6 +394,7 @@ LIMIT $2";
     pub async fn purge_messages(&self, channel_login: &str) -> Result<(), StorageError> {
         self.get_db_conn()
             .await?
+            .0
             .execute(
                 "DELETE FROM message WHERE channel_login = $1",
                 &[&channel_login],
@@ -373,7 +412,7 @@ LIMIT $2";
             return Ok(());
         }
         let mut db_conn = self.get_db_conn().await?;
-        let tx = db_conn.transaction().await?;
+        let tx = db_conn.0.transaction().await?;
         let num_messages = messages.len();
         for (channel_login, time_received, message_source) in messages {
             tx.execute("INSERT INTO message(channel_login, time_received, message_source) VALUES ($1, $2, $3)", &[&channel_login, &time_received, &message_source]).await?;
@@ -433,6 +472,7 @@ LIMIT $2";
         let db_conn = self.get_db_conn().await?;
 
         let channels_with_messages: Vec<String> = db_conn
+            .0
             .query("SELECT DISTINCT channel_login FROM message", &[])
             .await?
             .into_iter()
@@ -451,6 +491,7 @@ LIMIT $2";
             VACUUM_RUNS.inc();
 
             let execute_result = db_conn
+                .0
                 .execute(
                     "DELETE FROM message
 WHERE channel_login = $1

@@ -50,8 +50,8 @@ async fn main() {
         tokio::spawn(monitoring::run_process_monitoring(shutdown_signal.clone()));
 
     // db init
-    let db = db::connect_to_postgresql(&config).await;
-    let migrations_result = db::run_migrations(&db).await;
+    let data_storage = Box::leak(Box::new(db::connect_to_postgresql(&config).await));
+    let migrations_result = data_storage.run_migrations().await;
     match migrations_result {
         Ok(()) => {
             tracing::info!("Successfully ran database migrations");
@@ -61,9 +61,6 @@ async fn main() {
             std::process::exit(1);
         }
     }
-
-    let data_storage = DataStorage::new(db);
-    let data_storage: &'static DataStorage = Box::leak(Box::new(data_storage));
     if let Err(e) = data_storage.fetch_initial_metrics_values().await {
         tracing::error!("Failed to query some initial message count from the DB to initialize exported metrics: {}", e);
         std::process::exit(1);
