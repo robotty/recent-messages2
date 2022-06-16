@@ -1930,7 +1930,7 @@ checksum = "59547bce71d9c38b83d9c0e92b6066c4253371f15005def0c30d9657f50c7642"
 [[package]]
 name = "twitch-irc"
 version = "4.0.0"
-source = "git+https://github.com/robotty/twitch-irc-rs?branch=metrics-rework#6c1f3d3c5ceedd006b2947d20c86ded7b9971b4d"
+source = "git+https://github.com/robotty/twitch-irc-rs?rev=159b566cac0c21a96b930b345d1e96ee1ec05083#159b566cac0c21a96b930b345d1e96ee1ec05083"
 dependencies = [
  "async-trait",
  "bytes",
