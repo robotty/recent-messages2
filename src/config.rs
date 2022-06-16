@@ -71,7 +71,6 @@ pub struct IrcConfig {
 
     #[serde(with = "humantime_serde")]
     pub forwarder_run_every: Duration,
-    pub forwarder_max_chunk_size: usize,
 }
 
 impl Default for IrcConfig {
@@ -79,7 +78,6 @@ impl Default for IrcConfig {
         IrcConfig {
             new_connection_every: Duration::from_millis(550), // value determined empirically
             forwarder_run_every: Duration::from_millis(100),
-            forwarder_max_chunk_size: 256,
         }
     }
 }

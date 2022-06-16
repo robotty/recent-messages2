@@ -7,7 +7,7 @@ use prometheus::{linear_buckets, register_histogram, register_int_counter, Histo
 use tokio::sync::mpsc;
 use tokio::task::JoinHandle;
 use tokio::time::MissedTickBehavior;
-use tokio_stream::wrappers::ReceiverStream;
+use tokio_stream::wrappers::UnboundedReceiverStream;
 use tokio_util::sync::CancellationToken;
 use twitch_irc::login::StaticLoginCredentials;
 use twitch_irc::message::{AsRawIRC, ServerMessage};
@@ -80,8 +80,7 @@ impl IrcListener {
         config: &'static Config,
         shutdown_signal: CancellationToken,
     ) -> (JoinHandle<()>, JoinHandle<()>) {
-        let num_buckets = config.irc.forwarder_max_chunk_size / 10;
-        let buckets = linear_buckets(10.0, 10.0, num_buckets as usize).unwrap();
+        let buckets = linear_buckets(10.0, 10.0, 50).unwrap();
 
         let store_chunk_chunk_size = register_histogram!(
             "recentmessages_irc_forwarder_store_chunk_chunk_size",
@@ -90,27 +89,23 @@ impl IrcListener {
         )
         .unwrap();
 
-        let (tx, rx) = mpsc::channel(10 * config.irc.forwarder_max_chunk_size);
+        let (tx, rx) = mpsc::unbounded_channel();
 
         let forward_worker = async move {
             while let Some(message) = incoming_messages.recv().await {
                 let tx = tx.clone();
-                tokio::spawn(async move {
-                    if let Some(channel_login) = message.channel_login() {
-                        let message_source = message.source().as_raw_irc();
-                        let timer = INTERNAL_FORWARD_TIME_TAKEN.start_timer();
-                        tx.send((channel_login.to_owned(), Utc::now(), message_source))
-                            .await
-                            .ok();
-                        timer.observe_duration();
-                    }
-                });
+                if let Some(channel_login) = message.channel_login() {
+                    let message_source = message.source().as_raw_irc();
+                    let timer = INTERNAL_FORWARD_TIME_TAKEN.start_timer();
+                    tx.send((channel_login.to_owned(), Utc::now(), message_source))
+                        .ok();
+                    timer.observe_duration();
+                }
             }
         };
 
         let chunk_worker = async move {
-            let mut stream =
-                ReceiverStream::new(rx).ready_chunks(config.irc.forwarder_max_chunk_size);
+            let mut stream = UnboundedReceiverStream::new(rx).ready_chunks(512);
 
             let mut interval = tokio::time::interval(config.irc.forwarder_run_every);
             interval.set_missed_tick_behavior(MissedTickBehavior::Burst);
