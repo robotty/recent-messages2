@@ -3,24 +3,36 @@
     "list": [
       {
         "builtIn": 1,
-        "datasource": "-- Grafana --",
+        "datasource": {
+          "type": "datasource",
+          "uid": "grafana"
+        },
         "enable": true,
         "hide": true,
         "iconColor": "rgba(0, 211, 255, 1)",
         "name": "Annotations & Alerts",
+        "target": {
+          "limit": 100,
+          "matchAny": false,
+          "tags": [],
+          "type": "dashboard"
+        },
         "type": "dashboard"
       }
     ]
   },
   "editable": true,
-  "gnetId": null,
+  "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "id": 46,
-  "iteration": 1614606746585,
+  "id": 48,
   "links": [],
+  "liveNow": false,
   "panels": [
     {
-      "datasource": null,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "000000006"
+      },
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -32,24 +44,56 @@
       "type": "row"
     },
     {
-      "cacheTimeout": null,
-      "colorBackground": true,
-      "colorValue": false,
-      "colors": ["#d44a3a", "#299c46", "#299c46"],
-      "datasource": null,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "000000006"
+      },
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "options": {
+                "0": {
+                  "text": "Down"
+                },
+                "1": {
+                  "text": "Up"
+                }
+              },
+              "type": "value"
+            },
+            {
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "N/A"
+                }
+              },
+              "type": "special"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#d44a3a",
+                "value": null
+              },
+              {
+                "color": "#299c46",
+                "value": 1
+              },
+              {
+                "color": "#299c46"
+              }
+            ]
+          },
+          "unit": "none"
         },
         "overrides": []
-      },
-      "format": "none",
-      "gauge": {
-        "maxValue": 100,
-        "minValue": 0,
-        "show": false,
-        "thresholdLabels": false,
-        "thresholdMarkers": true
       },
       "gridPos": {
         "h": 5,
@@ -58,93 +102,79 @@
         "y": 1
       },
       "id": 28,
-      "interval": null,
       "links": [],
-      "mappingType": 1,
-      "mappingTypes": [
-        {
-          "name": "value to text",
-          "value": 1
-        },
-        {
-          "name": "range to text",
-          "value": 2
-        }
-      ],
       "maxDataPoints": 100,
-      "nullPointMode": "connected",
-      "nullText": null,
-      "postfix": "",
-      "postfixFontSize": "50%",
-      "prefix": "",
-      "prefixFontSize": "50%",
-      "rangeMaps": [
-        {
-          "from": "null",
-          "text": "N/A",
-          "to": "null"
-        }
-      ],
-      "sparkline": {
-        "fillColor": "rgba(31, 118, 189, 0.18)",
-        "full": false,
-        "lineColor": "rgb(31, 120, 193)",
-        "show": false
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "text": {},
+        "textMode": "auto"
       },
-      "tableColumn": "",
+      "pluginVersion": "9.1.5",
       "targets": [
         {
-          "expr": "up{instance=~\"$instance\",job=~\"$job\"}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "editorMode": "code",
+          "exemplar": false,
+          "expr": "up{instance=\"$instance\",job=\"$job\"}",
           "format": "time_series",
           "instant": true,
+          "interval": "",
           "intervalFactor": 1,
+          "range": false,
           "refId": "A"
         }
       ],
-      "thresholds": "1",
-      "timeFrom": null,
-      "timeShift": null,
       "title": "Up/Down",
-      "type": "singlestat",
-      "valueFontSize": "80%",
-      "valueMaps": [
-        {
-          "op": "=",
-          "text": "N/A",
-          "value": "null"
-        },
-        {
-          "op": "=",
-          "text": "Up",
-          "value": "1"
-        },
-        {
-          "op": "=",
-          "text": "Down",
-          "value": "0"
-        }
-      ],
-      "valueName": "current"
+      "type": "stat"
     },
     {
-      "cacheTimeout": null,
-      "colorBackground": false,
-      "colorValue": false,
-      "colors": ["#299c46", "rgba(237, 129, 40, 0.89)", "#d44a3a"],
-      "datasource": null,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "000000006"
+      },
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "N/A"
+                }
+              },
+              "type": "special"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "dthms"
         },
         "overrides": []
-      },
-      "format": "dthms",
-      "gauge": {
-        "maxValue": 100,
-        "minValue": 0,
-        "show": false,
-        "thresholdLabels": false,
-        "thresholdMarkers": true
       },
       "gridPos": {
         "h": 5,
@@ -153,43 +183,29 @@
         "y": 1
       },
       "id": 17,
-      "interval": null,
       "links": [],
-      "mappingType": 1,
-      "mappingTypes": [
-        {
-          "name": "value to text",
-          "value": 1
-        },
-        {
-          "name": "range to text",
-          "value": 2
-        }
-      ],
       "maxDataPoints": 100,
-      "nullPointMode": "connected",
-      "nullText": null,
-      "postfix": "",
-      "postfixFontSize": "50%",
-      "prefix": "",
-      "prefixFontSize": "50%",
-      "rangeMaps": [
-        {
-          "from": "null",
-          "text": "N/A",
-          "to": "null"
-        }
-      ],
-      "sparkline": {
-        "fillColor": "rgba(31, 118, 189, 0.18)",
-        "full": false,
-        "lineColor": "rgb(31, 120, 193)",
-        "show": false
+      "options": {
+        "colorMode": "none",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "text": {},
+        "textMode": "auto"
       },
-      "tableColumn": "",
+      "pluginVersion": "9.1.5",
       "targets": [
         {
-          "expr": "time() - process_start_time_seconds{instance=~\"$instance\",job=~\"$job\"}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "expr": "time() - process_start_time_seconds{instance=\"$instance\",job=\"$job\"}",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -197,40 +213,46 @@
           "refId": "A"
         }
       ],
-      "thresholds": "",
-      "timeFrom": null,
-      "timeShift": null,
       "title": "Uptime",
-      "type": "singlestat",
-      "valueFontSize": "80%",
-      "valueMaps": [
-        {
-          "op": "=",
-          "text": "N/A",
-          "value": "null"
-        }
-      ],
-      "valueName": "current"
+      "type": "stat"
     },
     {
-      "cacheTimeout": null,
-      "colorBackground": false,
-      "colorValue": false,
-      "colors": ["#299c46", "rgba(237, 129, 40, 0.89)", "#d44a3a"],
-      "datasource": null,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "000000006"
+      },
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "N/A"
+                }
+              },
+              "type": "special"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "none"
         },
         "overrides": []
-      },
-      "format": "none",
-      "gauge": {
-        "maxValue": 100,
-        "minValue": 0,
-        "show": false,
-        "thresholdLabels": false,
-        "thresholdMarkers": true
       },
       "gridPos": {
         "h": 2,
@@ -239,86 +261,81 @@
         "y": 1
       },
       "id": 61,
-      "interval": null,
       "links": [],
-      "mappingType": 1,
-      "mappingTypes": [
-        {
-          "name": "value to text",
-          "value": 1
-        },
-        {
-          "name": "range to text",
-          "value": 2
-        }
-      ],
       "maxDataPoints": 100,
-      "nullPointMode": "connected",
-      "nullText": null,
-      "postfix": "",
-      "postfixFontSize": "50%",
-      "prefix": "",
-      "prefixFontSize": "50%",
-      "rangeMaps": [
-        {
-          "from": "null",
-          "text": "N/A",
-          "to": "null"
-        }
-      ],
-      "sparkline": {
-        "fillColor": "rgba(31, 118, 189, 0.18)",
-        "full": false,
-        "lineColor": "rgb(31, 120, 193)",
-        "show": false,
-        "ymax": null,
-        "ymin": null
+      "options": {
+        "colorMode": "none",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": ["mean"],
+          "fields": "",
+          "values": false
+        },
+        "text": {},
+        "textMode": "auto"
       },
-      "tableColumn": "",
+      "pluginVersion": "9.1.5",
       "targets": [
         {
-          "expr": "twitch_irc_channels{job=~\"$job\",instance=~\"$instance\",type=\"server\",client=~\"$client\"}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "expr": "twitchirc_channels{job=\"$job\",instance=\"$instance\",type=\"server\"}",
           "instant": true,
           "interval": "",
           "legendFormat": "",
           "refId": "A"
         }
       ],
-      "thresholds": "",
-      "timeFrom": null,
-      "timeShift": null,
       "title": "Joined Channels",
-      "type": "singlestat",
-      "valueFontSize": "80%",
-      "valueMaps": [
-        {
-          "op": "=",
-          "text": "N/A",
-          "value": "null"
-        }
-      ],
-      "valueName": "avg"
+      "type": "stat"
     },
     {
-      "cacheTimeout": null,
-      "colorBackground": false,
-      "colorValue": false,
-      "colors": ["#d44a3a", "rgba(237, 129, 40, 0.89)", "#299c46"],
-      "datasource": null,
-      "decimals": null,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "000000006"
+      },
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "N/A"
+                }
+              },
+              "type": "special"
+            }
+          ],
+          "max": 100,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#d44a3a",
+                "value": null
+              },
+              {
+                "color": "rgba(237, 129, 40, 0.89)",
+                "value": 50
+              },
+              {
+                "color": "#299c46",
+                "value": 90
+              }
+            ]
+          },
+          "unit": "percent"
         },
         "overrides": []
-      },
-      "format": "percent",
-      "gauge": {
-        "maxValue": 100,
-        "minValue": 0,
-        "show": true,
-        "thresholdLabels": false,
-        "thresholdMarkers": true
       },
       "gridPos": {
         "h": 5,
@@ -327,43 +344,27 @@
         "y": 1
       },
       "id": 54,
-      "interval": null,
       "links": [],
-      "mappingType": 1,
-      "mappingTypes": [
-        {
-          "name": "value to text",
-          "value": 1
-        },
-        {
-          "name": "range to text",
-          "value": 2
-        }
-      ],
       "maxDataPoints": 100,
-      "nullPointMode": "connected",
-      "nullText": null,
-      "postfix": "",
-      "postfixFontSize": "50%",
-      "prefix": "",
-      "prefixFontSize": "50%",
-      "rangeMaps": [
-        {
-          "from": "null",
-          "text": "N/A",
-          "to": "null"
-        }
-      ],
-      "sparkline": {
-        "fillColor": "rgba(31, 118, 189, 0.18)",
-        "full": false,
-        "lineColor": "rgb(31, 120, 193)",
-        "show": false
+      "options": {
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "text": {}
       },
-      "tableColumn": "",
+      "pluginVersion": "9.1.5",
       "targets": [
         {
-          "expr": "twitch_irc_channels{instance=~\"$instance\",job=~\"$job\",client=~\"$client\",type=\"server\"} / ignoring(type) twitch_irc_channels{instance=~\"$instance\",job=~\"$job\",client=~\"$client\",type=\"wanted\"} * 100",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "expr": "twitchirc_channels{instance=\"$instance\",job=\"$job\",type=\"server\"} / ignoring(type) twitchirc_channels{instance=\"$instance\",job=\"$job\",type=\"wanted\"} * 100",
           "format": "time_series",
           "instant": true,
           "interval": "",
@@ -372,40 +373,50 @@
           "refId": "A"
         }
       ],
-      "thresholds": "50, 90",
-      "timeFrom": null,
-      "timeShift": null,
       "title": "Joined Ratio",
-      "type": "singlestat",
-      "valueFontSize": "80%",
-      "valueMaps": [
-        {
-          "op": "=",
-          "text": "N/A",
-          "value": "null"
-        }
-      ],
-      "valueName": "current"
+      "type": "gauge"
     },
     {
-      "cacheTimeout": null,
-      "colorBackground": true,
-      "colorValue": false,
-      "colors": ["#d44a3a", "rgba(237, 129, 40, 0.89)", "#299c46"],
-      "datasource": null,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "000000006"
+      },
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "N/A"
+                }
+              },
+              "type": "special"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#d44a3a",
+                "value": null
+              },
+              {
+                "color": "rgba(237, 129, 40, 0.89)",
+                "value": 100
+              },
+              {
+                "color": "#299c46",
+                "value": 175
+              }
+            ]
+          },
+          "unit": "ops"
         },
         "overrides": []
-      },
-      "format": "ops",
-      "gauge": {
-        "maxValue": 100,
-        "minValue": 0,
-        "show": false,
-        "thresholdLabels": false,
-        "thresholdMarkers": true
       },
       "gridPos": {
         "h": 5,
@@ -414,43 +425,29 @@
         "y": 1
       },
       "id": 52,
-      "interval": null,
       "links": [],
-      "mappingType": 1,
-      "mappingTypes": [
-        {
-          "name": "value to text",
-          "value": 1
-        },
-        {
-          "name": "range to text",
-          "value": 2
-        }
-      ],
       "maxDataPoints": 100,
-      "nullPointMode": "connected",
-      "nullText": null,
-      "postfix": "",
-      "postfixFontSize": "50%",
-      "prefix": "",
-      "prefixFontSize": "50%",
-      "rangeMaps": [
-        {
-          "from": "null",
-          "text": "N/A",
-          "to": "null"
-        }
-      ],
-      "sparkline": {
-        "fillColor": "rgba(31, 118, 189, 0.18)",
-        "full": false,
-        "lineColor": "rgb(31, 120, 193)",
-        "show": true
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "text": {},
+        "textMode": "auto"
       },
-      "tableColumn": "",
+      "pluginVersion": "9.1.5",
       "targets": [
         {
-          "expr": "sum(rate(twitch_irc_messages_received{instance=~\"$instance\",job=~\"$job\",client=~\"$client\",command=\"PRIVMSG\"}[30s]))",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "expr": "sum(rate(twitchirc_messages_received{instance=\"$instance\",job=\"$job\",command=\"PRIVMSG\"}[30s]))",
           "format": "time_series",
           "instant": false,
           "interval": "",
@@ -459,41 +456,47 @@
           "refId": "A"
         }
       ],
-      "thresholds": "100,175",
-      "timeFrom": null,
-      "timeShift": null,
       "title": "Incoming messages (PRIVMSG)",
-      "type": "singlestat",
-      "valueFontSize": "80%",
-      "valueMaps": [
-        {
-          "op": "=",
-          "text": "N/A",
-          "value": "null"
-        }
-      ],
-      "valueName": "current"
+      "type": "stat"
     },
     {
-      "cacheTimeout": null,
-      "colorBackground": false,
-      "colorValue": false,
-      "colors": ["#299c46", "rgba(237, 129, 40, 0.89)", "#d44a3a"],
-      "datasource": null,
-      "decimals": null,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "000000006"
+      },
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "color": {
+            "fixedColor": "rgb(31, 120, 193)",
+            "mode": "fixed"
+          },
+          "mappings": [
+            {
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "N/A"
+                }
+              },
+              "type": "special"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "none"
         },
         "overrides": []
-      },
-      "format": "none",
-      "gauge": {
-        "maxValue": 100,
-        "minValue": 0,
-        "show": false,
-        "thresholdLabels": false,
-        "thresholdMarkers": true
       },
       "gridPos": {
         "h": 5,
@@ -502,43 +505,29 @@
         "y": 1
       },
       "id": 69,
-      "interval": null,
       "links": [],
-      "mappingType": 1,
-      "mappingTypes": [
-        {
-          "name": "value to text",
-          "value": 1
-        },
-        {
-          "name": "range to text",
-          "value": 2
-        }
-      ],
       "maxDataPoints": 100,
-      "nullPointMode": "connected",
-      "nullText": null,
-      "postfix": "",
-      "postfixFontSize": "50%",
-      "prefix": "",
-      "prefixFontSize": "50%",
-      "rangeMaps": [
-        {
-          "from": "null",
-          "text": "N/A",
-          "to": "null"
-        }
-      ],
-      "sparkline": {
-        "fillColor": "rgba(31, 118, 189, 0.18)",
-        "full": false,
-        "lineColor": "rgb(31, 120, 193)",
-        "show": true
+      "options": {
+        "colorMode": "none",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "text": {},
+        "textMode": "auto"
       },
-      "tableColumn": "",
+      "pluginVersion": "9.1.5",
       "targets": [
         {
-          "expr": "recent_messages_messages_stored{instance=~\"$instance\",job=~\"$job\"}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "expr": "recentmessages_messages_stored{instance=\"$instance\",job=\"$job\"}",
           "format": "time_series",
           "instant": false,
           "interval": "",
@@ -547,40 +536,46 @@
           "refId": "A"
         }
       ],
-      "thresholds": "",
-      "timeFrom": null,
-      "timeShift": null,
       "title": "Msg stored",
-      "type": "singlestat",
-      "valueFontSize": "80%",
-      "valueMaps": [
-        {
-          "op": "=",
-          "text": "N/A",
-          "value": "null"
-        }
-      ],
-      "valueName": "current"
+      "type": "stat"
     },
     {
-      "cacheTimeout": null,
-      "colorBackground": false,
-      "colorValue": false,
-      "colors": ["#299c46", "rgba(237, 129, 40, 0.89)", "#d44a3a"],
-      "datasource": null,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "000000006"
+      },
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "N/A"
+                }
+              },
+              "type": "special"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "none"
         },
         "overrides": []
-      },
-      "format": "none",
-      "gauge": {
-        "maxValue": 100,
-        "minValue": 0,
-        "show": false,
-        "thresholdLabels": false,
-        "thresholdMarkers": true
       },
       "gridPos": {
         "h": 5,
@@ -589,43 +584,29 @@
         "y": 1
       },
       "id": 58,
-      "interval": null,
       "links": [],
-      "mappingType": 1,
-      "mappingTypes": [
-        {
-          "name": "value to text",
-          "value": 1
-        },
-        {
-          "name": "range to text",
-          "value": 2
-        }
-      ],
       "maxDataPoints": 100,
-      "nullPointMode": "connected",
-      "nullText": null,
-      "postfix": "",
-      "postfixFontSize": "50%",
-      "prefix": "",
-      "prefixFontSize": "50%",
-      "rangeMaps": [
-        {
-          "from": "null",
-          "text": "N/A",
-          "to": "null"
-        }
-      ],
-      "sparkline": {
-        "fillColor": "rgba(31, 118, 189, 0.18)",
-        "full": false,
-        "lineColor": "rgb(31, 120, 193)",
-        "show": false
+      "options": {
+        "colorMode": "none",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "text": {},
+        "textMode": "auto"
       },
-      "tableColumn": "",
+      "pluginVersion": "9.1.5",
       "targets": [
         {
-          "expr": "sum(twitch_irc_connections{instance=~\"$instance\",job=~\"$job\",client=~\"$client\"})",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "expr": "sum(twitchirc_connections{instance=\"$instance\",job=\"$job\"})",
           "format": "time_series",
           "instant": false,
           "interval": "",
@@ -634,40 +615,52 @@
           "refId": "A"
         }
       ],
-      "thresholds": "",
-      "timeFrom": null,
-      "timeShift": null,
       "title": "Connections (total)",
-      "type": "singlestat",
-      "valueFontSize": "80%",
-      "valueMaps": [
-        {
-          "op": "=",
-          "text": "N/A",
-          "value": "null"
-        }
-      ],
-      "valueName": "current"
+      "type": "stat"
     },
     {
-      "cacheTimeout": null,
-      "colorBackground": false,
-      "colorValue": false,
-      "colors": ["#d44a3a", "rgba(237, 129, 40, 0.89)", "#299c46"],
-      "datasource": null,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "000000006"
+      },
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "N/A"
+                }
+              },
+              "type": "special"
+            }
+          ],
+          "max": 100,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#d44a3a",
+                "value": null
+              },
+              {
+                "color": "rgba(237, 129, 40, 0.89)",
+                "value": 90
+              },
+              {
+                "color": "#299c46",
+                "value": 95
+              }
+            ]
+          },
+          "unit": "percent"
         },
         "overrides": []
-      },
-      "format": "percent",
-      "gauge": {
-        "maxValue": 100,
-        "minValue": 0,
-        "show": true,
-        "thresholdLabels": false,
-        "thresholdMarkers": true
       },
       "gridPos": {
         "h": 5,
@@ -676,43 +669,27 @@
         "y": 1
       },
       "id": 59,
-      "interval": null,
       "links": [],
-      "mappingType": 1,
-      "mappingTypes": [
-        {
-          "name": "value to text",
-          "value": 1
-        },
-        {
-          "name": "range to text",
-          "value": 2
-        }
-      ],
       "maxDataPoints": 100,
-      "nullPointMode": "connected",
-      "nullText": null,
-      "postfix": "",
-      "postfixFontSize": "50%",
-      "prefix": "",
-      "prefixFontSize": "50%",
-      "rangeMaps": [
-        {
-          "from": "null",
-          "text": "N/A",
-          "to": "null"
-        }
-      ],
-      "sparkline": {
-        "fillColor": "rgba(31, 118, 189, 0.18)",
-        "full": false,
-        "lineColor": "rgb(31, 120, 193)",
-        "show": false
+      "options": {
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "text": {}
       },
-      "tableColumn": "",
+      "pluginVersion": "9.1.5",
       "targets": [
         {
-          "expr": "twitch_irc_connections{instance=~\"$instance\",job=~\"$job\",client=~\"$client\",state=\"open\"} / ignoring(instance, job, client, state) sum(twitch_irc_connections{instance=~\"$instance\",job=~\"$job\",client=~\"$client\"}) * 100",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "expr": "twitchirc_connections{instance=\"$instance\",job=\"$job\",state=\"open\"} / ignoring(instance, job, state) sum(twitchirc_connections{instance=\"$instance\",job=\"$job\"}) * 100",
           "format": "time_series",
           "instant": true,
           "interval": "",
@@ -721,32 +698,14 @@
           "refId": "A"
         }
       ],
-      "thresholds": "90,95",
-      "timeFrom": null,
-      "timeShift": null,
       "title": "Connections connected",
-      "type": "singlestat",
-      "valueFontSize": "80%",
-      "valueMaps": [
-        {
-          "op": "=",
-          "text": "N/A",
-          "value": "null"
-        }
-      ],
-      "valueName": "current"
+      "type": "gauge"
     },
     {
-      "dashboardFilter": "",
-      "dashboardTags": [],
-      "datasource": null,
-      "fieldConfig": {
-        "defaults": {
-          "custom": {}
-        },
-        "overrides": []
+      "datasource": {
+        "type": "prometheus",
+        "uid": "000000006"
       },
-      "folderId": null,
       "gridPos": {
         "h": 5,
         "w": 5,
@@ -754,37 +713,72 @@
         "y": 1
       },
       "id": 34,
-      "limit": "50",
       "links": [],
-      "nameFilter": "",
-      "onlyAlertsOnDashboard": true,
-      "show": "current",
-      "sortOrder": 3,
-      "stateFilter": [],
-      "timeFrom": null,
-      "timeShift": null,
+      "options": {
+        "alertInstanceLabelFilter": "",
+        "alertName": "",
+        "dashboardAlerts": true,
+        "dashboardTitle": "",
+        "groupBy": [],
+        "groupMode": "default",
+        "maxItems": "50",
+        "showOptions": "current",
+        "sortOrder": 3,
+        "stateFilter": {
+          "alerting": false,
+          "error": true,
+          "execution_error": false,
+          "firing": true,
+          "noData": false,
+          "no_data": false,
+          "normal": false,
+          "ok": false,
+          "paused": false,
+          "pending": false
+        },
+        "tags": []
+      },
+      "pluginVersion": "8.0.3",
       "title": "Alerts",
       "type": "alertlist"
     },
     {
-      "cacheTimeout": null,
-      "colorBackground": false,
-      "colorValue": false,
-      "colors": ["#299c46", "rgba(237, 129, 40, 0.89)", "#d44a3a"],
-      "datasource": null,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "000000006"
+      },
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "N/A"
+                }
+              },
+              "type": "special"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "none"
         },
         "overrides": []
-      },
-      "format": "none",
-      "gauge": {
-        "maxValue": 100,
-        "minValue": 0,
-        "show": false,
-        "thresholdLabels": false,
-        "thresholdMarkers": true
       },
       "gridPos": {
         "h": 2,
@@ -793,69 +787,44 @@
         "y": 3
       },
       "id": 62,
-      "interval": null,
       "links": [],
-      "mappingType": 1,
-      "mappingTypes": [
-        {
-          "name": "value to text",
-          "value": 1
-        },
-        {
-          "name": "range to text",
-          "value": 2
-        }
-      ],
       "maxDataPoints": 100,
-      "nullPointMode": "connected",
-      "nullText": null,
-      "postfix": "",
-      "postfixFontSize": "50%",
-      "prefix": "",
-      "prefixFontSize": "50%",
-      "rangeMaps": [
-        {
-          "from": "null",
-          "text": "N/A",
-          "to": "null"
-        }
-      ],
-      "sparkline": {
-        "fillColor": "rgba(31, 118, 189, 0.18)",
-        "full": false,
-        "lineColor": "rgb(31, 120, 193)",
-        "show": false,
-        "ymax": null,
-        "ymin": null
+      "options": {
+        "colorMode": "none",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": ["mean"],
+          "fields": "",
+          "values": false
+        },
+        "text": {},
+        "textMode": "auto"
       },
-      "tableColumn": "",
+      "pluginVersion": "9.1.5",
       "targets": [
         {
-          "expr": "twitch_irc_channels{job=~\"$job\",instance=~\"$instance\",type=\"wanted\",client=~\"$client\"}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "expr": "twitchirc_channels{job=\"$job\",instance=\"$instance\",type=\"wanted\"}",
           "instant": true,
           "interval": "",
           "legendFormat": "",
           "refId": "A"
         }
       ],
-      "thresholds": "",
-      "timeFrom": null,
-      "timeShift": null,
       "title": "Wanted Channels",
-      "type": "singlestat",
-      "valueFontSize": "80%",
-      "valueMaps": [
-        {
-          "op": "=",
-          "text": "N/A",
-          "value": "null"
-        }
-      ],
-      "valueName": "avg"
+      "type": "stat"
     },
     {
       "collapsed": false,
-      "datasource": null,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "000000006"
+      },
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -868,61 +837,123 @@
       "type": "row"
     },
     {
-      "aliasColors": {
-        "PRIVMSG": "dark-green",
-        "all commands": "dark-purple"
+      "datasource": {
+        "type": "prometheus",
+        "uid": "000000006"
       },
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": null,
-      "decimals": 2,
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "ops"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "PRIVMSG"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "all commands"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-purple",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
       },
-      "fill": 1,
-      "fillGradient": 0,
       "gridPos": {
         "h": 8,
         "w": 12,
         "x": 0,
         "y": 7
       },
-      "hiddenSeries": false,
       "id": 39,
-      "legend": {
-        "avg": false,
-        "current": false,
-        "hideZero": false,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": false
-      },
-      "lines": true,
-      "linewidth": 1,
       "links": [],
-      "nullPointMode": "null",
       "options": {
-        "alertThreshold": true
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
       },
-      "paceLength": 10,
-      "percentage": false,
-      "pluginVersion": "7.4.3",
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
+      "pluginVersion": "8.5.0",
       "targets": [
         {
-          "expr": "rate(twitch_irc_messages_received{instance=~\"$instance\",job=~\"$job\",client=~\"$client\"}[30s])",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "expr": "rate(twitchirc_messages_received{instance=\"$instance\",job=\"$job\"}[30s])",
           "format": "time_series",
           "instant": false,
           "interval": "",
@@ -931,7 +962,11 @@
           "refId": "A"
         },
         {
-          "expr": "sum(rate(twitch_irc_messages_received{instance=~\"$instance\",job=~\"$job\",client=~\"$client\"}[30s]))",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "expr": "sum(rate(twitchirc_messages_received{instance=\"$instance\",job=\"$job\"}[30s]))",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -939,103 +974,127 @@
           "refId": "B"
         }
       ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
       "title": "Messages (30s)",
-      "tooltip": {
-        "shared": true,
-        "sort": 2,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "$$hashKey": "object:723",
-          "format": "ops",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": "0",
-          "show": true
-        },
-        {
-          "$$hashKey": "object:724",
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
+      "type": "timeseries"
     },
     {
-      "aliasColors": {
-        "joined": "dark-green",
-        "wanted": "purple"
+      "datasource": {
+        "type": "prometheus",
+        "uid": "000000006"
       },
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": null,
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "joined"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "wanted"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "purple",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
       },
-      "fill": 1,
-      "fillGradient": 0,
       "gridPos": {
         "h": 8,
         "w": 12,
         "x": 12,
         "y": 7
       },
-      "hiddenSeries": false,
       "id": 2,
-      "legend": {
-        "avg": false,
-        "current": true,
-        "max": true,
-        "min": true,
-        "show": true,
-        "total": false,
-        "values": true
-      },
-      "lines": true,
-      "linewidth": 1,
       "links": [],
-      "nullPointMode": "null",
       "options": {
-        "alertThreshold": true
+        "legend": {
+          "calcs": ["lastNotNull", "max", "min"],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
       },
-      "paceLength": 10,
-      "percentage": false,
-      "pluginVersion": "7.4.3",
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
+      "pluginVersion": "8.5.0",
       "targets": [
         {
-          "expr": "twitch_irc_channels{instance=~\"$instance\",job=~\"$job\",client=~\"$client\"}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "expr": "twitchirc_channels{instance=\"$instance\",job=\"$job\"}",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -1043,105 +1102,143 @@
           "refId": "A"
         }
       ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
       "title": "Connected channels",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "$$hashKey": "object:772",
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": "0",
-          "show": true
-        },
-        {
-          "$$hashKey": "object:773",
-          "format": "short",
-          "label": "",
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
+      "type": "timeseries"
     },
     {
-      "aliasColors": {
-        "PRIVMSG": "dark-green",
-        "all commands": "dark-purple",
-        "command": "dark-purple"
+      "datasource": {
+        "type": "prometheus",
+        "uid": "000000006"
       },
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": null,
-      "decimals": 2,
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "decimals": 0,
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "ops"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "PRIVMSG"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "all commands"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-purple",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "command"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-purple",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
       },
-      "fill": 1,
-      "fillGradient": 0,
       "gridPos": {
         "h": 8,
         "w": 12,
         "x": 0,
         "y": 15
       },
-      "hiddenSeries": false,
       "id": 4,
-      "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": false
-      },
-      "lines": true,
-      "linewidth": 1,
       "links": [],
-      "nullPointMode": "null",
       "options": {
-        "alertThreshold": true
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
       },
-      "paceLength": 10,
-      "percentage": false,
-      "pluginVersion": "7.4.3",
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
+      "pluginVersion": "8.5.0",
       "targets": [
         {
-          "expr": "rate(twitch_irc_messages_received{instance=~\"$instance\",job=~\"$job\",client=~\"$client\"}[10m])",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "expr": "rate(twitchirc_messages_received{instance=\"$instance\",job=\"$job\"}[10m])",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -1149,7 +1246,11 @@
           "refId": "A"
         },
         {
-          "expr": "sum(rate(twitch_irc_messages_received{instance=~\"$instance\",job=~\"$job\",client=~\"$client\"}[10m]))",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "expr": "sum(rate(twitchirc_messages_received{instance=\"$instance\",job=\"$job\"}[10m]))",
           "format": "time_series",
           "hide": false,
           "interval": "",
@@ -1158,106 +1259,98 @@
           "refId": "B"
         }
       ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
       "title": "Messages (10m)",
-      "tooltip": {
-        "shared": true,
-        "sort": 2,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "$$hashKey": "object:821",
-          "decimals": 0,
-          "format": "ops",
-          "label": "",
-          "logBase": 1,
-          "max": null,
-          "min": "0",
-          "show": true
-        },
-        {
-          "$$hashKey": "object:822",
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
+      "type": "timeseries"
     },
     {
-      "aliasColors": {},
-      "bars": true,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": null,
-      "decimals": null,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "000000006"
+      },
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 100,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "decimals": 0,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "none"
         },
         "overrides": []
       },
-      "fill": 1,
-      "fillGradient": 0,
       "gridPos": {
         "h": 8,
         "w": 12,
         "x": 12,
         "y": 15
       },
-      "hiddenSeries": false,
       "hideTimeOverride": false,
       "id": 23,
       "interval": "",
-      "legend": {
-        "alignAsTable": false,
-        "avg": false,
-        "current": false,
-        "max": true,
-        "min": false,
-        "rightSide": false,
-        "show": true,
-        "total": true,
-        "values": true
-      },
-      "lines": false,
-      "linewidth": 1,
       "links": [],
-      "nullPointMode": "null",
       "options": {
-        "alertThreshold": true
+        "legend": {
+          "calcs": ["max", "sum"],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
       },
-      "paceLength": 10,
-      "percentage": false,
-      "pluginVersion": "7.4.3",
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
+      "pluginVersion": "8.5.0",
       "targets": [
         {
-          "expr": "delta(twitch_irc_channels{instance=~\"$instance\",job=~\"$job\",client=~\"$client\",type=\"wanted\"}[$__interval])",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "expr": "delta(twitchirc_channels{instance=\"$instance\",job=\"$job\",type=\"wanted\"}[$__interval])",
           "format": "time_series",
           "instant": false,
           "interval": "10m",
@@ -1266,1458 +1359,128 @@
           "refId": "A"
         }
       ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
       "title": "Channel count 10 minute increase/decrease",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "$$hashKey": "object:175",
-          "decimals": 0,
-          "format": "none",
-          "label": "",
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "$$hashKey": "object:176",
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
+      "type": "timeseries"
     },
     {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": null,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "000000006"
+      },
+      "description": "",
       "fieldConfig": {
         "defaults": {
-          "custom": {}
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "ops"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "PRIVMSG"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "all commands"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-purple",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
       },
-      "fill": 1,
-      "fillGradient": 0,
       "gridPos": {
         "h": 8,
         "w": 12,
         "x": 0,
         "y": 23
       },
-      "hiddenSeries": false,
-      "id": 64,
-      "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": false,
-        "total": false,
-        "values": false
-      },
-      "lines": true,
-      "linewidth": 1,
-      "nullPointMode": "null",
-      "options": {
-        "alertThreshold": true
-      },
-      "percentage": false,
-      "pluginVersion": "7.4.3",
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "expr": "rate(recent_messages_messages_vacuumed{instance=~\"$instance\",job=~\"$job\"}[5m])",
-          "interval": "",
-          "legendFormat": "messages",
-          "refId": "A"
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "Expired messages vacuumed per second",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "$$hashKey": "object:170",
-          "format": "ops",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": "0",
-          "show": true
-        },
-        {
-          "$$hashKey": "object:171",
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "aliasColors": {
-        "Reconnects": "dark-purple"
-      },
-      "bars": true,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": null,
-      "fieldConfig": {
-        "defaults": {
-          "custom": {}
-        },
-        "overrides": []
-      },
-      "fill": 1,
-      "fillGradient": 0,
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 23
-      },
-      "hiddenSeries": false,
-      "id": 56,
-      "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": false,
-        "total": false,
-        "values": false
-      },
-      "lines": false,
-      "linewidth": 1,
-      "nullPointMode": "null",
-      "options": {
-        "alertThreshold": true
-      },
-      "percentage": false,
-      "pluginVersion": "7.4.3",
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "expr": "round(increase(twitch_irc_reconnects{instance=~\"$instance\",job=~\"$job\",client=~\"$client\"}[$__interval]))",
-          "format": "time_series",
-          "instant": false,
-          "interval": "20m",
-          "intervalFactor": 1,
-          "legendFormat": "Reconnects",
-          "refId": "A"
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "Reconnects (20 minute blocks)",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "$$hashKey": "object:129",
-          "decimals": 0,
-          "format": "none",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": "0",
-          "show": true
-        },
-        {
-          "$$hashKey": "object:130",
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": null,
-      "fieldConfig": {
-        "defaults": {
-          "custom": {}
-        },
-        "overrides": []
-      },
-      "fill": 1,
-      "fillGradient": 0,
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 31
-      },
-      "hiddenSeries": false,
-      "id": 65,
-      "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": false,
-        "total": false,
-        "values": false
-      },
-      "lines": true,
-      "linewidth": 1,
-      "nullPointMode": "null",
-      "options": {
-        "alertThreshold": true
-      },
-      "percentage": false,
-      "pluginVersion": "7.4.3",
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "expr": "rate(recent_messages_message_vacuum_runs{instance=~\"$instance\",job=~\"$job\"}[5m])",
-          "interval": "",
-          "legendFormat": "runs",
-          "refId": "B"
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "Vacuum runs per second",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "$$hashKey": "object:170",
-          "format": "ops",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": "0",
-          "show": true
-        },
-        {
-          "$$hashKey": "object:171",
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": null,
-      "fieldConfig": {
-        "defaults": {
-          "custom": {}
-        },
-        "overrides": []
-      },
-      "fill": 1,
-      "fillGradient": 0,
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 31
-      },
-      "hiddenSeries": false,
-      "id": 57,
-      "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": false
-      },
-      "lines": true,
-      "linewidth": 1,
-      "nullPointMode": "null",
-      "options": {
-        "alertThreshold": true
-      },
-      "percentage": false,
-      "pluginVersion": "7.4.3",
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "expr": "twitch_irc_connections{instance=~\"$instance\",job=~\"$job\",client=~\"$client\"}",
-          "interval": "",
-          "legendFormat": "{{state}}",
-          "refId": "A"
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "Connections",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "$$hashKey": "object:467",
-          "format": "none",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": "0",
-          "show": true
-        },
-        {
-          "$$hashKey": "object:468",
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": null,
-      "description": "",
-      "fieldConfig": {
-        "defaults": {
-          "custom": {}
-        },
-        "overrides": []
-      },
-      "fill": 1,
-      "fillGradient": 0,
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 39
-      },
-      "hiddenSeries": false,
-      "id": 67,
-      "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": false,
-        "total": false,
-        "values": false
-      },
-      "lines": true,
-      "linewidth": 1,
-      "nullPointMode": "null",
-      "options": {
-        "alertThreshold": true
-      },
-      "percentage": false,
-      "pluginVersion": "7.4.3",
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "expr": "recent_messages_messages_stored{instance=~\"$instance\",job=~\"$job\"}",
-          "interval": "",
-          "legendFormat": "",
-          "refId": "B"
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "Messages stored",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "$$hashKey": "object:170",
-          "format": "none",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": "0",
-          "show": true
-        },
-        {
-          "$$hashKey": "object:171",
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": null,
-      "description": "",
-      "fieldConfig": {
-        "defaults": {
-          "custom": {}
-        },
-        "overrides": []
-      },
-      "fill": 1,
-      "fillGradient": 0,
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 39
-      },
-      "hiddenSeries": false,
-      "id": 66,
-      "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": false,
-        "total": false,
-        "values": false
-      },
-      "lines": true,
-      "linewidth": 1,
-      "nullPointMode": "null",
-      "options": {
-        "alertThreshold": true
-      },
-      "percentage": false,
-      "pluginVersion": "7.4.3",
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "expr": "rate(recent_messages_messages_appended{instance=~\"$instance\",job=~\"$job\"}[5m])",
-          "interval": "",
-          "legendFormat": "",
-          "refId": "B"
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "Messages appended to storage",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "$$hashKey": "object:170",
-          "format": "ops",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": "0",
-          "show": true
-        },
-        {
-          "$$hashKey": "object:171",
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": null,
-      "description": "",
-      "fieldConfig": {
-        "defaults": {
-          "custom": {}
-        },
-        "overrides": []
-      },
-      "fill": 1,
-      "fillGradient": 0,
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 47
-      },
-      "hiddenSeries": false,
-      "id": 68,
-      "legend": {
-        "avg": false,
-        "current": true,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": true
-      },
-      "lines": true,
-      "linewidth": 1,
-      "nullPointMode": "null",
-      "options": {
-        "alertThreshold": true
-      },
-      "percentage": false,
-      "pluginVersion": "7.4.3",
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "expr": "deriv(recent_messages_messages_stored{instance=~\"$instance\",job=~\"$job\"}[5m])",
-          "interval": "",
-          "legendFormat": "Increase/Decrease on number of messages stored",
-          "refId": "B"
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "Increase/Decrease on number of messages stored",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "$$hashKey": "object:170",
-          "format": "ops",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "$$hashKey": "object:171",
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "collapsed": false,
-      "datasource": null,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 55
-      },
-      "id": 49,
-      "panels": [],
-      "title": "Performance statistics",
-      "type": "row"
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": null,
-      "fieldConfig": {
-        "defaults": {
-          "custom": {}
-        },
-        "overrides": []
-      },
-      "fill": 1,
-      "fillGradient": 0,
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 56
-      },
-      "hiddenSeries": false,
-      "id": 15,
-      "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": false
-      },
-      "lines": true,
-      "linewidth": 1,
-      "links": [],
-      "nullPointMode": "null",
-      "options": {
-        "alertThreshold": true
-      },
-      "paceLength": 10,
-      "percentage": false,
-      "pluginVersion": "7.4.3",
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "expr": "rate(process_cpu_user_seconds_total{instance=~\"$instance\",job=~\"$job\"}[5m])",
-          "format": "time_series",
-          "hide": false,
-          "intervalFactor": 1,
-          "legendFormat": "User",
-          "refId": "A"
-        },
-        {
-          "expr": "rate(process_cpu_system_seconds_total{instance=~\"$instance\",job=~\"$job\"}[5m])",
-          "format": "time_series",
-          "hide": false,
-          "intervalFactor": 1,
-          "legendFormat": "System",
-          "refId": "B"
-        },
-        {
-          "expr": "rate(process_cpu_seconds_total{instance=~\"$instance\",job=~\"$job\"}[5m])",
-          "format": "time_series",
-          "hide": false,
-          "intervalFactor": 1,
-          "legendFormat": "Total",
-          "refId": "C"
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "Process CPU usage",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "decimals": null,
-          "format": "percentunit",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": "0",
-          "show": true
-        },
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "cacheTimeout": null,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": null,
-      "fieldConfig": {
-        "defaults": {
-          "custom": {}
-        },
-        "overrides": []
-      },
-      "fill": 1,
-      "fillGradient": 0,
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 56
-      },
-      "hiddenSeries": false,
-      "id": 22,
-      "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": false,
-        "total": false,
-        "values": false
-      },
-      "lines": true,
-      "linewidth": 1,
-      "links": [],
-      "nullPointMode": "null",
-      "options": {
-        "alertThreshold": true
-      },
-      "paceLength": 10,
-      "percentage": false,
-      "pluginVersion": "7.4.3",
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "expr": "process_resident_memory_bytes{instance=~\"$instance\",job=~\"$job\"}",
-          "format": "time_series",
-          "interval": "",
-          "intervalFactor": 1,
-          "legendFormat": "",
-          "refId": "A"
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "Memory usage",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "$$hashKey": "object:524",
-          "format": "decbytes",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": "0",
-          "show": true
-        },
-        {
-          "$$hashKey": "object:525",
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "collapsed": false,
-      "datasource": null,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 64
-      },
-      "id": 32,
-      "panels": [],
-      "title": "Request statistics",
-      "type": "row"
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": null,
-      "fieldConfig": {
-        "defaults": {
-          "custom": {}
-        },
-        "overrides": []
-      },
-      "fill": 1,
-      "fillGradient": 0,
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 65
-      },
-      "hiddenSeries": false,
-      "id": 11,
-      "legend": {
-        "alignAsTable": true,
-        "avg": true,
-        "current": false,
-        "max": true,
-        "min": true,
-        "rightSide": true,
-        "show": true,
-        "total": false,
-        "values": true
-      },
-      "lines": true,
-      "linewidth": 1,
-      "links": [],
-      "nullPointMode": "connected",
-      "options": {
-        "alertThreshold": true
-      },
-      "paceLength": 10,
-      "percentage": false,
-      "pluginVersion": "7.4.3",
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "expr": "rate(http_request_duration_milliseconds_sum{instance=~\"$instance\",job=~\"$job\"}[5m]) / rate(http_request_duration_milliseconds_count{instance=~\"$instance\",job=~\"$job\"}[5m])",
-          "format": "time_series",
-          "interval": "",
-          "intervalFactor": 1,
-          "legendFormat": "{{method}} {{status_code}}",
-          "refId": "A"
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "average response time",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "$$hashKey": "object:680",
-          "decimals": null,
-          "format": "ms",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": "0",
-          "show": true
-        },
-        {
-          "$$hashKey": "object:681",
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": null,
-      "fieldConfig": {
-        "defaults": {
-          "custom": {}
-        },
-        "overrides": []
-      },
-      "fill": 1,
-      "fillGradient": 0,
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 65
-      },
-      "hiddenSeries": false,
-      "id": 6,
-      "legend": {
-        "alignAsTable": true,
-        "avg": true,
-        "current": true,
-        "max": true,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": true
-      },
-      "lines": true,
-      "linewidth": 1,
-      "links": [],
-      "nullPointMode": "null as zero",
-      "options": {
-        "alertThreshold": true
-      },
-      "paceLength": 10,
-      "percentage": false,
-      "pluginVersion": "7.4.3",
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "expr": "sum(rate(http_request{instance=~\"$instance\",job=~\"$job\"}[1m]))",
-          "format": "time_series",
-          "interval": "",
-          "intervalFactor": 1,
-          "legendFormat": "total, 1m avg",
-          "refId": "D"
-        },
-        {
-          "expr": "sum(rate(http_request{instance=~\"$instance\",job=~\"$job\"}[1h]))",
-          "format": "time_series",
-          "interval": "",
-          "intervalFactor": 1,
-          "legendFormat": "total, 1h avg",
-          "refId": "A"
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "requests per second",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "$$hashKey": "object:1406",
-          "format": "reqps",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "$$hashKey": "object:1407",
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": null,
-      "fieldConfig": {
-        "defaults": {
-          "custom": {}
-        },
-        "overrides": []
-      },
-      "fill": 1,
-      "fillGradient": 0,
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 73
-      },
-      "hiddenSeries": false,
-      "id": 26,
-      "legend": {
-        "alignAsTable": false,
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "rightSide": false,
-        "show": false,
-        "total": false,
-        "values": false
-      },
-      "lines": true,
-      "linewidth": 1,
-      "links": [],
-      "nullPointMode": "connected",
-      "options": {
-        "alertThreshold": true
-      },
-      "paceLength": 10,
-      "percentage": false,
-      "pluginVersion": "7.4.3",
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "expr": "avg_over_time(http_request_duration_milliseconds{instance=~\"$instance\",job=~\"$job\",quantile!=\"1\",method=\"GET\",status_code=\"200\"}[5m:])",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "{{quantile}}",
-          "refId": "B"
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "percentile response times",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "$$hashKey": "object:1504",
-          "decimals": null,
-          "format": "ms",
-          "label": "",
-          "logBase": 1,
-          "max": null,
-          "min": "0",
-          "show": true
-        },
-        {
-          "$$hashKey": "object:1505",
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": null,
-      "fieldConfig": {
-        "defaults": {
-          "custom": {}
-        },
-        "overrides": []
-      },
-      "fill": 1,
-      "fillGradient": 0,
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 73
-      },
-      "hiddenSeries": false,
-      "id": 24,
-      "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": false
-      },
-      "lines": true,
-      "linewidth": 1,
-      "links": [],
-      "nullPointMode": "null as zero",
-      "options": {
-        "alertThreshold": true
-      },
-      "paceLength": 10,
-      "percentage": false,
-      "pluginVersion": "7.4.3",
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "expr": "sum(rate(http_request_duration_milliseconds_count{instance=~\"$instance\",job=~\"$job\",status_code=~\"^[45].*\"}[1m])) by (status_code)",
-          "format": "time_series",
-          "interval": "",
-          "intervalFactor": 1,
-          "legendFormat": "{{status_code}}",
-          "refId": "B"
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "Requests per second, 4xx/5xx",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "$$hashKey": "object:1455",
-          "format": "reqps",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": "0",
-          "show": true
-        },
-        {
-          "$$hashKey": "object:1456",
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "aliasColors": {
-        "PRIVMSG": "dark-green",
-        "all commands": "dark-purple"
-      },
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": null,
-      "description": "",
-      "fieldConfig": {
-        "defaults": {
-          "custom": {}
-        },
-        "overrides": []
-      },
-      "fill": 1,
-      "fillGradient": 0,
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 81
-      },
-      "hiddenSeries": false,
       "id": 70,
-      "legend": {
-        "avg": false,
-        "current": false,
-        "hideZero": false,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": false
-      },
-      "lines": true,
-      "linewidth": 1,
       "links": [],
-      "nullPointMode": "null",
       "options": {
-        "alertThreshold": true
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
       },
-      "paceLength": 10,
-      "percentage": false,
-      "pluginVersion": "7.4.3",
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
+      "pluginVersion": "8.5.0",
       "targets": [
         {
-          "expr": "rate(twitch_irc_messages_sent{instance=~\"$instance\",job=~\"$job\",client=~\"$client\"}[30s])",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "expr": "rate(twitchirc_messages_sent{instance=\"$instance\",job=\"$job\"}[30s])",
           "format": "time_series",
           "instant": false,
           "interval": "",
@@ -2726,7 +1489,11 @@
           "refId": "A"
         },
         {
-          "expr": "sum(rate(twitch_irc_messages_sent{instance=~\"$instance\",job=~\"$job\",client=~\"$client\"}[30s]))",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "expr": "sum(rate(twitchirc_messages_sent{instance=\"$instance\",job=\"$job\"}[30s]))",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -2734,70 +1501,3105 @@
           "refId": "B"
         }
       ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
       "title": "Messages SENT (30s)",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "000000006"
       },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "$$hashKey": "object:723",
-          "format": "ops",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": "0",
-          "show": true
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 100,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "decimals": 0,
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "none"
         },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Reconnects"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-purple",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 23
+      },
+      "id": 56,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "8.5.0",
+      "targets": [
         {
-          "$$hashKey": "object:724",
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "editorMode": "code",
+          "expr": "round(increase(twitchirc_connections_failed{instance=\"$instance\",job=\"$job\"}[$__interval]))",
+          "format": "time_series",
+          "instant": false,
+          "interval": "20m",
+          "intervalFactor": 1,
+          "legendFormat": "Failed connections",
+          "refId": "A"
         }
       ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
+      "title": "Connection failures (20 minute blocks)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "000000006"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "ops"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 31
+      },
+      "id": 64,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "8.5.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "expr": "rate(recentmessages_messages_vacuumed{instance=\"$instance\",job=\"$job\"}[5m])",
+          "interval": "",
+          "legendFormat": "messages",
+          "refId": "A"
+        }
+      ],
+      "title": "Expired messages vacuumed per second",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "000000006"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 31
+      },
+      "id": 57,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "8.5.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "expr": "twitchirc_connections{instance=\"$instance\",job=\"$job\"}",
+          "interval": "",
+          "legendFormat": "{{state}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Connections",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "000000006"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "ops"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 39
+      },
+      "id": 65,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "8.5.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "expr": "rate(recentmessages_message_vacuum_runs{instance=\"$instance\",job=\"$job\"}[5m])",
+          "interval": "",
+          "legendFormat": "runs",
+          "refId": "B"
+        }
+      ],
+      "title": "Vacuum runs per second",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "000000006"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "ops"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 39
+      },
+      "id": 66,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "8.5.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "expr": "rate(recentmessages_messages_appended{instance=\"$instance\",job=\"$job\"}[5m])",
+          "interval": "",
+          "legendFormat": "",
+          "refId": "B"
+        }
+      ],
+      "title": "Messages appended to storage",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "000000006"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 47
+      },
+      "id": 67,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "8.5.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "expr": "recentmessages_messages_stored{instance=\"$instance\",job=\"$job\"}",
+          "interval": "",
+          "legendFormat": "",
+          "refId": "B"
+        }
+      ],
+      "title": "Messages stored",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "000000006"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "ops"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 47
+      },
+      "id": 68,
+      "options": {
+        "legend": {
+          "calcs": ["lastNotNull"],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "8.5.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "expr": "deriv(recentmessages_messages_stored{instance=\"$instance\",job=\"$job\"}[5m])",
+          "interval": "",
+          "legendFormat": "Increase/Decrease on number of messages stored",
+          "refId": "B"
+        }
+      ],
+      "title": "Increase/Decrease on number of messages stored",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "000000006"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "ops"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 55
+      },
+      "id": 79,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "editorMode": "code",
+          "expr": "rate(recentmessages_irc_forwarder_store_chunk_runs{instance=\"$instance\",job=\"$job\"}[5m])",
+          "legendFormat": "Chunk rate (all)",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "editorMode": "code",
+          "expr": "rate(recentmessages_irc_forwarder_store_chunk_errors{instance=\"$instance\",job=\"$job\"}[5m])",
+          "hide": false,
+          "legendFormat": "Chunk rate (failed)",
+          "range": true,
+          "refId": "B"
+        }
+      ],
+      "title": "Processing rate for message chunks",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "000000006"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "max": 10,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 55
+      },
+      "id": 83,
+      "links": [],
+      "options": {
+        "legend": {
+          "calcs": ["mean", "max", "min"],
+          "displayMode": "list",
+          "placement": "right",
+          "showLegend": false
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "8.5.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.99, rate(recentmessages_irc_forwarder_internal_forward_message_time_taken_seconds_bucket{instance=\"$instance\",job=\"$job\"}[5m]))",
+          "format": "time_series",
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "99th percentile",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.95, rate(recentmessages_irc_forwarder_internal_forward_message_time_taken_seconds_bucket{instance=\"$instance\",job=\"$job\"}[5m]))",
+          "format": "time_series",
+          "hide": false,
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "95th percentile",
+          "range": true,
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.5, rate(recentmessages_irc_forwarder_internal_forward_message_time_taken_seconds_bucket{instance=\"$instance\",job=\"$job\"}[5m]))",
+          "format": "time_series",
+          "hide": false,
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "average",
+          "range": true,
+          "refId": "C"
+        }
+      ],
+      "title": "Time taken to forward a message internally to the chunk worker",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "000000006"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 63
+      },
+      "id": 81,
+      "links": [],
+      "options": {
+        "legend": {
+          "calcs": ["mean", "max", "min"],
+          "displayMode": "list",
+          "placement": "right",
+          "showLegend": false
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "8.5.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.99, rate(recentmessages_irc_forwarder_store_chunk_chunk_size_bucket{instance=\"$instance\",job=\"$job\"}[5m]))",
+          "format": "time_series",
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "99th percentile",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.95, rate(recentmessages_irc_forwarder_store_chunk_chunk_size_bucket{instance=\"$instance\",job=\"$job\"}[5m]))",
+          "format": "time_series",
+          "hide": false,
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "95th percentile",
+          "range": true,
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.5, rate(recentmessages_irc_forwarder_store_chunk_chunk_size_bucket{instance=\"$instance\",job=\"$job\"}[5m]))",
+          "format": "time_series",
+          "hide": false,
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "average",
+          "range": true,
+          "refId": "C"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(1, rate(recentmessages_irc_forwarder_store_chunk_chunk_size_bucket{instance=\"$instance\",job=\"$job\"}[5m]))",
+          "format": "time_series",
+          "hide": false,
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "max (100th percentile)",
+          "range": true,
+          "refId": "D"
+        }
+      ],
+      "title": "Chunk sizes",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "000000006"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 63
+      },
+      "id": 82,
+      "links": [],
+      "options": {
+        "legend": {
+          "calcs": ["mean", "max", "min"],
+          "displayMode": "list",
+          "placement": "right",
+          "showLegend": false
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "8.5.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.99, rate(recentmessages_irc_forwarder_store_chunk_time_taken_seconds_bucket{instance=\"$instance\",job=\"$job\"}[5m]))",
+          "format": "time_series",
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "99th percentile",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.95, rate(recentmessages_irc_forwarder_store_chunk_time_taken_seconds_bucket{instance=\"$instance\",job=\"$job\"}[5m]))",
+          "format": "time_series",
+          "hide": false,
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "95th percentile",
+          "range": true,
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.5, rate(recentmessages_irc_forwarder_store_chunk_time_taken_seconds_bucket{instance=\"$instance\",job=\"$job\"}[5m]))",
+          "format": "time_series",
+          "hide": false,
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "average",
+          "range": true,
+          "refId": "C"
+        }
+      ],
+      "title": "Time taken to process chunks",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "000000006"
+      },
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 72
+      },
+      "id": 49,
+      "panels": [],
+      "title": "Performance statistics",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "000000006"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 73
+      },
+      "id": 15,
+      "links": [],
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "8.5.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "expr": "rate(process_cpu_user_seconds_total{instance=\"$instance\",job=\"$job\"}[5m])",
+          "format": "time_series",
+          "hide": false,
+          "intervalFactor": 1,
+          "legendFormat": "User",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "expr": "rate(process_cpu_system_seconds_total{instance=\"$instance\",job=\"$job\"}[5m])",
+          "format": "time_series",
+          "hide": false,
+          "intervalFactor": 1,
+          "legendFormat": "System",
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "editorMode": "code",
+          "expr": "rate(process_cpu_user_seconds_total{instance=\"$instance\",job=\"$job\"}[5m]) + rate(process_cpu_system_seconds_total{instance=\"$instance\",job=\"$job\"}[5m])",
+          "hide": false,
+          "legendFormat": "Total",
+          "range": true,
+          "refId": "C"
+        }
+      ],
+      "title": "Process CPU usage",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "000000006"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "decbytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 73
+      },
+      "id": 22,
+      "links": [],
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "8.5.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "expr": "process_resident_memory_bytes{instance=\"$instance\",job=\"$job\"}",
+          "format": "time_series",
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ],
+      "title": "Memory usage",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "000000006"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 40,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "links": [],
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "percentunit"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Idle - Waiting for something to happen"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Irq - Servicing interrupts"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "light-red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Nice - Niced processes executing in user mode"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "super-light-orange",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Softirq - Servicing softirqs"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "super-light-red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Steal - Time spent in other operating systems when running in a virtualized environment"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "yellow",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "System - Processes executing in kernel mode"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "semi-dark-red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "User - Normal processes executing in user mode"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "guest"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#9AC48A",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "idle"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#052B51",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "iowait"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#EAB839",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "irq"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#BF1B00",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "nice"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#C15C17",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "softirq"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#E24D42",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "steal"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#FCE2DE",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "system"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#508642",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "user"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#5195CE",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 0,
+        "y": 81
+      },
+      "id": 72,
+      "links": [],
+      "options": {
+        "legend": {
+          "calcs": ["mean", "lastNotNull", "max", "min"],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "8.5.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "expr": "sum by (mode)(irate(node_cpu_seconds_total{mode=\"system\",instance=~\"$instance\",job=\"machine\"}[5m]))",
+          "format": "time_series",
+          "interval": "10s",
+          "intervalFactor": 2,
+          "legendFormat": "System - Processes executing in kernel mode",
+          "refId": "A",
+          "step": 20
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "expr": "sum by (mode)(irate(node_cpu_seconds_total{mode='user',instance=~\"$instance\",job=\"machine\"}[5m]))",
+          "format": "time_series",
+          "intervalFactor": 2,
+          "legendFormat": "User - Normal processes executing in user mode",
+          "refId": "B",
+          "step": 240
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "expr": "sum by (mode)(irate(node_cpu_seconds_total{mode='nice',instance=~\"$instance\",job=\"machine\"}[5m]))",
+          "format": "time_series",
+          "intervalFactor": 2,
+          "legendFormat": "Nice - Niced processes executing in user mode",
+          "refId": "C",
+          "step": 240
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "expr": "sum by (mode)(irate(node_cpu_seconds_total{mode='iowait',instance=~\"$instance\",job=\"machine\"}[5m]))",
+          "format": "time_series",
+          "intervalFactor": 2,
+          "legendFormat": "Iowait - Waiting for I/O to complete",
+          "refId": "D",
+          "step": 240
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "expr": "sum by (mode)(irate(node_cpu_seconds_total{mode='irq',instance=~\"$instance\",job=\"machine\"}[5m]))",
+          "format": "time_series",
+          "intervalFactor": 2,
+          "legendFormat": "Irq - Servicing interrupts",
+          "refId": "G",
+          "step": 240
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "expr": "sum by (mode)(irate(node_cpu_seconds_total{mode='softirq',instance=~\"$instance\",job=\"machine\"}[5m]))",
+          "format": "time_series",
+          "intervalFactor": 2,
+          "legendFormat": "Softirq - Servicing softirqs",
+          "refId": "H",
+          "step": 240
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "expr": "sum by (mode)(irate(node_cpu_seconds_total{mode='steal',instance=~\"$instance\",job=\"machine\"}[5m]))",
+          "format": "time_series",
+          "intervalFactor": 2,
+          "legendFormat": "Steal - Time spent in other operating systems when running in a virtualized environment",
+          "refId": "E",
+          "step": 240
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "expr": "sum by (mode)(irate(node_cpu_seconds_total{mode='guest',instance=~\"$instance\",job=\"machine\"}[5m]))",
+          "format": "time_series",
+          "intervalFactor": 2,
+          "legendFormat": "Guest - Time spent running a virtual CPU for a guest operating system",
+          "refId": "I",
+          "step": 240
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "expr": "sum by (mode)(irate(node_cpu_seconds_total{mode='idle',instance=~\"$instance\",job=\"machine\"}[5m]))",
+          "format": "time_series",
+          "intervalFactor": 2,
+          "legendFormat": "Idle - Waiting for something to happen",
+          "refId": "F",
+          "step": 240
+        }
+      ],
+      "title": "Whole-host CPU usage",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "000000006"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 12,
+        "y": 81
+      },
+      "id": 77,
+      "links": [],
+      "options": {
+        "legend": {
+          "calcs": ["mean", "max", "min"],
+          "displayMode": "list",
+          "placement": "right",
+          "showLegend": false
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "8.5.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.99, rate(recentmessages_db_pool_retrieval_time_seconds_bucket{instance=\"$instance\",job=\"$job\"}[5m]))",
+          "format": "time_series",
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "99th percentile",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.95, rate(recentmessages_db_pool_retrieval_time_seconds_bucket{instance=\"$instance\",job=\"$job\"}[5m]))",
+          "format": "time_series",
+          "hide": false,
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "95th percentile",
+          "range": true,
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.9, rate(recentmessages_db_pool_retrieval_time_seconds_bucket{instance=\"$instance\",job=\"$job\"}[5m]))",
+          "format": "time_series",
+          "hide": false,
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "90th percentile",
+          "range": true,
+          "refId": "C"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.7, rate(recentmessages_db_pool_retrieval_time_seconds_bucket{instance=\"$instance\",job=\"$job\"}[5m]))",
+          "format": "time_series",
+          "hide": false,
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "70th percentile",
+          "range": true,
+          "refId": "D"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.5, rate(recentmessages_db_pool_retrieval_time_seconds_bucket{instance=\"$instance\",job=\"$job\"}[5m]))",
+          "format": "time_series",
+          "hide": false,
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "average",
+          "range": true,
+          "refId": "E"
+        }
+      ],
+      "title": "Time taken to retrieve a DB connection from the pool",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "000000006"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 91
+      },
+      "id": 85,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "editorMode": "code",
+          "expr": "recentmessages_db_pool_connections_max{instance=\"$instance\",job=\"$job\"}",
+          "legendFormat": "Max",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "editorMode": "code",
+          "expr": "recentmessages_db_pool_connections_in_use{instance=\"$instance\",job=\"$job\"}",
+          "hide": false,
+          "legendFormat": "In Use",
+          "range": true,
+          "refId": "B"
+        }
+      ],
+      "title": "DB connections in use",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "000000006"
+      },
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 99
+      },
+      "id": 32,
+      "panels": [],
+      "title": "Request statistics",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "000000006"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 100
+      },
+      "id": 11,
+      "links": [],
+      "options": {
+        "legend": {
+          "calcs": ["mean", "max", "min"],
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "8.5.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "editorMode": "code",
+          "expr": "rate(http_request_duration_seconds_sum{instance=\"$instance\",job=\"$job\"}[5m]) / rate(http_request_duration_seconds_count{instance=\"$instance\",job=\"$job\"}[5m])",
+          "format": "time_series",
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "{{method}} {{status_code}} {{endpoint}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "average response time",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "000000006"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "reqps"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 100
+      },
+      "id": 6,
+      "links": [],
+      "options": {
+        "legend": {
+          "calcs": ["mean", "lastNotNull", "max"],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "8.5.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "expr": "sum(rate(http_requests_total{instance=\"$instance\",job=\"$job\"}[1m]))",
+          "format": "time_series",
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "total, 1m avg",
+          "refId": "D"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "exemplar": true,
+          "expr": "sum(rate(http_requests_total{instance=\"$instance\",job=\"$job\"}[1h]))",
+          "format": "time_series",
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "total, 1h avg",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "exemplar": true,
+          "expr": "sum(rate(http_requests_total{instance=\"$instance\",job=\"$job\"}[48h]))",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "total, 2d avg",
+          "refId": "B"
+        }
+      ],
+      "title": "requests per second",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "000000006"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 108
+      },
+      "id": 26,
+      "links": [],
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "8.5.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{instance=\"$instance\",job=\"$job\",status_code=\"200\",method=\"GET\",endpoint=\"/api/v2/recent-messages/:channel_login\"}[5m]))",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "0.99",
+          "range": true,
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{instance=\"$instance\",job=\"$job\",status_code=\"200\",method=\"GET\",endpoint=\"/api/v2/recent-messages/:channel_login\"}[5m]))",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "0.95",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.5, rate(http_request_duration_seconds_bucket{instance=\"$instance\",job=\"$job\",status_code=\"200\",method=\"GET\",endpoint=\"/api/v2/recent-messages/:channel_login\"}[5m]))",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "0.50",
+          "range": true,
+          "refId": "C"
+        }
+      ],
+      "title": "percentile response times (get recent messages endpoint, 200 OK)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "000000006"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "reqps"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 108
+      },
+      "id": 24,
+      "links": [],
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "8.5.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "expr": "sum(rate(http_requests_total{instance=\"$instance\",job=\"$job\",status_code=~\"^[45].*\"}[1m])) by (status_code)",
+          "format": "time_series",
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "{{status_code}}",
+          "refId": "B"
+        }
+      ],
+      "title": "Requests per second, 4xx/5xx",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "000000006"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "max": 10,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 13,
+        "w": 8,
+        "x": 0,
+        "y": 116
+      },
+      "id": 73,
+      "links": [],
+      "options": {
+        "legend": {
+          "calcs": ["mean", "max", "min"],
+          "displayMode": "list",
+          "placement": "right",
+          "showLegend": false
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "8.5.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.99, rate(recentmessages_get_recent_messages_endpoint_async_components_seconds_bucket{instance=\"$instance\",job=\"$job\",stage=\"get_messages\"}[5m]))",
+          "format": "time_series",
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "99th percentile",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.95, rate(recentmessages_get_recent_messages_endpoint_async_components_seconds_bucket{instance=\"$instance\",job=\"$job\",stage=\"get_messages\"}[5m]))",
+          "format": "time_series",
+          "hide": false,
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "95th percentile",
+          "range": true,
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.5, rate(recentmessages_get_recent_messages_endpoint_async_components_seconds_bucket{instance=\"$instance\",job=\"$job\",stage=\"get_messages\"}[5m]))",
+          "format": "time_series",
+          "hide": false,
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "average",
+          "range": true,
+          "refId": "C"
+        }
+      ],
+      "title": "Get recent messages: Time taken on async component get_messages",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "000000006"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "max": 10,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 13,
+        "w": 8,
+        "x": 8,
+        "y": 116
+      },
+      "id": 74,
+      "links": [],
+      "options": {
+        "legend": {
+          "calcs": ["mean", "max", "min"],
+          "displayMode": "list",
+          "placement": "right",
+          "showLegend": false
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "8.5.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.99, rate(recentmessages_get_recent_messages_endpoint_async_components_seconds_bucket{instance=\"$instance\",job=\"$job\",stage=\"is_channel_ignored\"}[5m]))",
+          "format": "time_series",
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "99th percentile",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.95, rate(recentmessages_get_recent_messages_endpoint_async_components_seconds_bucket{instance=\"$instance\",job=\"$job\",stage=\"is_channel_ignored\"}[5m]))",
+          "format": "time_series",
+          "hide": false,
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "95th percentile",
+          "range": true,
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.5, rate(recentmessages_get_recent_messages_endpoint_async_components_seconds_bucket{instance=\"$instance\",job=\"$job\",stage=\"is_channel_ignored\"}[5m]))",
+          "format": "time_series",
+          "hide": false,
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "average",
+          "range": true,
+          "refId": "C"
+        }
+      ],
+      "title": "Get recent messages: Time taken on async component is_channel_ignored",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "000000006"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "max": 10,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 13,
+        "w": 8,
+        "x": 16,
+        "y": 116
+      },
+      "id": 75,
+      "links": [],
+      "options": {
+        "legend": {
+          "calcs": ["mean", "max", "min"],
+          "displayMode": "list",
+          "placement": "right",
+          "showLegend": false
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "8.5.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.99, rate(recentmessages_get_recent_messages_endpoint_async_components_seconds_bucket{instance=\"$instance\",job=\"$job\",stage=\"is_join_confirmed\"}[5m]))",
+          "format": "time_series",
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "99th percentile",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.95, rate(recentmessages_get_recent_messages_endpoint_async_components_seconds_bucket{instance=\"$instance\",job=\"$job\",stage=\"is_join_confirmed\"}[5m]))",
+          "format": "time_series",
+          "hide": false,
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "95th percentile",
+          "range": true,
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.5, rate(recentmessages_get_recent_messages_endpoint_async_components_seconds_bucket{instance=\"$instance\",job=\"$job\",stage=\"is_join_confirmed\"}[5m]))",
+          "format": "time_series",
+          "hide": false,
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "average",
+          "range": true,
+          "refId": "C"
+        }
+      ],
+      "title": "Get recent messages: Time taken on async component is_join_confirmed",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "000000006"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "reqps"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 129
+      },
+      "id": 76,
+      "links": [],
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "8.5.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "expr": "sum(rate(http_request_timeouts{instance=\"$instance\",job=\"$job\"}[5m]))",
+          "format": "time_series",
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "{{status_code}}",
+          "refId": "B"
+        }
+      ],
+      "title": "Timed out requests",
+      "type": "timeseries"
     }
   ],
   "refresh": false,
-  "schemaVersion": 27,
+  "schemaVersion": 37,
   "style": "dark",
   "tags": [],
   "templating": {
     "list": [
       {
-        "allValue": null,
         "current": {
           "selected": false,
-          "text": "monitor.h03.kiwi-servers.de:443",
-          "value": "monitor.h03.kiwi-servers.de:443"
+          "text": "monitor.h05.kiwi-servers.de:443",
+          "value": "monitor.h05.kiwi-servers.de:443"
         },
-        "datasource": "Prometheus",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "000000006"
+        },
         "definition": "label_values(instance)",
-        "description": null,
-        "error": null,
         "hide": 0,
         "includeAll": false,
-        "label": null,
         "multi": false,
         "name": "instance",
         "options": [],
@@ -2810,105 +4612,35 @@
         "skipUrlSync": false,
         "sort": 0,
         "tagValuesQuery": "",
-        "tags": [],
         "tagsQuery": "",
         "type": "query",
         "useTags": false
       },
       {
-        "allValue": null,
         "current": {
-          "selected": true,
+          "selected": false,
           "text": "recent_messages2",
           "value": "recent_messages2"
         },
-        "datasource": "Prometheus",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "000000006"
+        },
         "definition": "label_values(job)",
-        "description": null,
-        "error": null,
         "hide": 0,
         "includeAll": false,
-        "label": null,
         "multi": false,
         "name": "job",
-        "options": [
-          {
-            "selected": false,
-            "text": "grafana",
-            "value": "grafana"
-          },
-          {
-            "selected": false,
-            "text": "machine",
-            "value": "machine"
-          },
-          {
-            "selected": false,
-            "text": "postgresql",
-            "value": "postgresql"
-          },
-          {
-            "selected": false,
-            "text": "prometheus",
-            "value": "prometheus"
-          },
-          {
-            "selected": false,
-            "text": "recent_messages",
-            "value": "recent_messages"
-          },
-          {
-            "selected": true,
-            "text": "recent_messages2",
-            "value": "recent_messages2"
-          },
-          {
-            "selected": false,
-            "text": "redis",
-            "value": "redis"
-          }
-        ],
-        "query": "label_values(job)",
-        "refresh": 0,
-        "regex": "",
-        "skipUrlSync": false,
-        "sort": 0,
-        "tagValuesQuery": "",
-        "tags": [],
-        "tagsQuery": "",
-        "type": "query",
-        "useTags": false
-      },
-      {
-        "allValue": null,
-        "current": {
-          "selected": false,
-          "text": "listener",
-          "value": "listener"
+        "options": [],
+        "query": {
+          "query": "label_values(job)",
+          "refId": "Prometheus-job-Variable-Query"
         },
-        "datasource": "Prometheus",
-        "definition": "label_values(client)",
-        "description": null,
-        "error": null,
-        "hide": 0,
-        "includeAll": false,
-        "label": null,
-        "multi": false,
-        "name": "client",
-        "options": [
-          {
-            "selected": true,
-            "text": "listener",
-            "value": "listener"
-          }
-        ],
-        "query": "label_values(client)",
-        "refresh": 0,
+        "refresh": 1,
         "regex": "",
         "skipUrlSync": false,
         "sort": 0,
         "tagValuesQuery": "",
-        "tags": [],
         "tagsQuery": "",
         "type": "query",
         "useTags": false
@@ -2916,7 +4648,7 @@
     ]
   },
   "time": {
-    "from": "now-1d",
+    "from": "now-6h",
     "to": "now"
   },
   "timepicker": {
@@ -2935,6 +4667,7 @@
   },
   "timezone": "",
   "title": "recent-messages2",
-  "uid": "t2kvE74Gk",
-  "version": 59
+  "uid": "acbSh3w7k",
+  "version": 56,
+  "weekStart": ""
 }
