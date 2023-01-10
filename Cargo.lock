@@ -1697,16 +1697,15 @@ checksum = "cda74da7e1a664f795bb1f8a87ec406fb89a02522cf6e50620d016add6dbbf5c"
 
 [[package]]
 name = "tokio"
-version = "1.18.1"
+version = "1.18.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dce653fb475565de9f6fb0614b28bca8df2c430c0cf84bcd9c843f15de5414cc"
+checksum = "8bfb875c82dc0a4f1f37a30e720dee181a2b3a06a428b0fc6873ea38d6407850"
 dependencies = [
  "bytes",
  "libc",
  "memchr",
  "mio",
  "num_cpus",
- "once_cell",
  "parking_lot 0.12.0",
  "pin-project-lite",
  "signal-hook-registry",
@@ -1929,15 +1928,16 @@ checksum = "59547bce71d9c38b83d9c0e92b6066c4253371f15005def0c30d9657f50c7642"
 
 [[package]]
 name = "twitch-irc"
-version = "4.0.0"
-source = "git+https://github.com/robotty/twitch-irc-rs?rev=159b566cac0c21a96b930b345d1e96ee1ec05083#159b566cac0c21a96b930b345d1e96ee1ec05083"
+version = "5.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "37784b5551aef05babf0f948683b4a1daedf0135a1954607639491955206f2e3"
 dependencies = [
  "async-trait",
  "bytes",
  "chrono",
+ "either",
  "enum_dispatch",
  "futures-util",
- "itertools",
  "prometheus",
  "smallvec",
  "thiserror",
