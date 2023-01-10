@@ -38,9 +38,9 @@ export type Config = typeof cfg;
 if (process.env.NODE_ENV === "development") {
   cfg = {
     ...cfg,
-    client_id: "iwucnx8zmbzucoan8ga33j355lb7nc",
-    redirect_uri: "http://localhost:1234/authorized",
-    api_base_url: "http://127.0.0.1:2790/api/v2",
+    client_id: "199iyze11rzmuu05ddxqzix4g8soou",
+    redirect_uri: "http://localhost:2790/authorized",
+    api_base_url: "http://localhost:2790/api/v2",
   };
 }
 

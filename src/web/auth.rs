@@ -1,20 +1,13 @@
 use crate::config::TwitchApiClientCredentials;
-use crate::db::DataStorage;
 use crate::web::ApiError;
 use chrono::{DateTime, Utc};
 use futures::prelude::*;
 use http::StatusCode;
 use lazy_static::lazy_static;
-use rand::distributions::Standard;
-use rand::Rng;
-use regex::Regex;
 use serde::{Deserialize, Serialize};
-use std::fmt::Write;
 use std::future::Future;
 use std::pin::Pin;
 use std::time::Duration;
-use warp::Filter;
-use warp::Rejection;
 
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 pub struct TwitchUserAccessToken {
@@ -44,28 +37,28 @@ pub struct UserAuthorization {
 }
 
 #[derive(Serialize)]
-struct UserAuthorizationResponse<'a> {
-    access_token: &'a str,
-    valid_until: DateTime<Utc>,
-    user_id: &'a str,
-    user_login: &'a str,
-    user_name: &'a str,
-    user_profile_image_url: &'a str,
-    user_details_valid_until: DateTime<Utc>,
+pub struct UserAuthorizationResponse {
+    pub access_token: String,
+    pub valid_until: DateTime<Utc>,
+    pub user_id: String,
+    pub user_login: String,
+    pub user_name: String,
+    pub user_profile_image_url: String,
+    pub user_details_valid_until: DateTime<Utc>,
 }
 
-impl<'a> UserAuthorizationResponse<'a> {
-    fn from_auth(
-        auth: &'a UserAuthorization,
+impl UserAuthorizationResponse {
+    pub(crate) fn from_auth(
+        auth: &UserAuthorization,
         user_details_valid_for: Duration,
-    ) -> UserAuthorizationResponse<'a> {
+    ) -> UserAuthorizationResponse {
         UserAuthorizationResponse {
-            access_token: &auth.access_token,
+            access_token: auth.access_token.clone(),
             valid_until: auth.valid_until,
-            user_id: &auth.user_id,
-            user_login: &auth.user_login,
-            user_name: &auth.user_name,
-            user_profile_image_url: &auth.user_profile_image_url,
+            user_id: auth.user_id.clone(),
+            user_login: auth.user_login.clone(),
+            user_name: auth.user_name.clone(),
+            user_profile_image_url: auth.user_profile_image_url.clone(),
             user_details_valid_until: auth.twitch_authorization_last_validated
                 + chrono::Duration::from_std(user_details_valid_for).unwrap(),
         }
@@ -73,17 +66,17 @@ impl<'a> UserAuthorizationResponse<'a> {
 }
 
 #[derive(Deserialize)]
-struct HelixGetUserResponse {
+pub struct HelixGetUserResponse {
     // we expect a list of size 1
-    data: (HelixUser,),
+    pub data: (HelixUser,),
 }
 
 #[derive(Deserialize)]
-struct HelixUser {
-    id: String,
-    login: String,
-    display_name: String,
-    profile_image_url: String,
+pub struct HelixUser {
+    pub id: String,
+    pub login: String,
+    pub display_name: String,
+    pub profile_image_url: String,
 }
 
 lazy_static! {
@@ -93,97 +86,6 @@ lazy_static! {
 #[derive(Deserialize)]
 pub struct GetAuthorizationQueryOptions {
     pub code: String,
-}
-
-// POST /api/v2/auth/create?code=abcdef123456
-pub async fn create_token(
-    data_storage: &'static DataStorage,
-    credentials: &'static TwitchApiClientCredentials,
-    sessions_expire_after: Duration,
-    recheck_twitch_auth_after: Duration,
-    code: String,
-) -> Result<impl warp::Reply, Rejection> {
-    let user_access_token = HTTP_CLIENT
-        .post("https://id.twitch.tv/oauth2/token")
-        .query(&[
-            ("client_id", credentials.client_id.as_str()),
-            ("client_secret", &credentials.client_secret.as_str()),
-            ("redirect_uri", &credentials.redirect_uri.as_str()),
-            ("code", code.as_str()),
-            ("grant_type", "authorization_code"),
-        ])
-        .send()
-        .await
-        .map_err(ApiError::ExchangeCodeForAccessToken)?
-        .error_for_status()
-        .map_err(|e| {
-            if e.status().unwrap() == StatusCode::BAD_REQUEST {
-                ApiError::InvalidAuthorizationCode
-            } else {
-                ApiError::ExchangeCodeForAccessToken(e)
-            }
-        })?
-        .json::<TwitchUserAccessToken>()
-        .await
-        .map_err(ApiError::ExchangeCodeForAccessToken)?;
-
-    let user_api_response = HTTP_CLIENT
-        .get("https://api.twitch.tv/helix/users")
-        .header("Client-ID", credentials.client_id.as_str())
-        .header(
-            "Authorization",
-            format!("Bearer {}", user_access_token.access_token),
-        )
-        .send()
-        .await
-        .map_err(ApiError::QueryUserDetails)?
-        .error_for_status()
-        .map_err(ApiError::QueryUserDetails)?
-        .json::<HelixGetUserResponse>()
-        .await
-        .map_err(ApiError::QueryUserDetails)?
-        .data
-        .0;
-
-    // 512 bit random hex string
-    // thread_rng() is cryptographically safe
-    let access_token = rand::thread_rng().sample_iter(Standard).take(512 / 8).fold(
-        String::with_capacity(512 / 4),
-        |mut s, x: u8| {
-            // format as hex, padded with a leading 0 if needed (e.g. 0x0 -> "00", 0xFF -> "ff")
-            write!(&mut s, "{:02x}", x).unwrap();
-            s
-        },
-    );
-
-    let now = Utc::now();
-    let user_authorization = UserAuthorization {
-        access_token,
-        twitch_token: user_access_token,
-        twitch_authorization_last_validated: now,
-        valid_until: now + chrono::Duration::from_std(sessions_expire_after).unwrap(),
-        user_id: user_api_response.id,
-        user_login: user_api_response.login,
-        user_name: user_api_response.display_name,
-        user_profile_image_url: user_api_response.profile_image_url,
-    };
-
-    data_storage
-        .append_user_authorization(&user_authorization)
-        .await
-        .map_err(ApiError::SaveUserAuthorization)?;
-
-    tracing::debug!(
-        "User {} ({}, {}) authorized successfully",
-        user_authorization.user_name,
-        user_authorization.user_login,
-        user_authorization.user_id
-    );
-
-    Ok(warp::reply::json(&UserAuthorizationResponse::from_auth(
-        &user_authorization,
-        recheck_twitch_auth_after,
-    )))
 }
 
 impl UserAuthorization {
@@ -293,7 +195,7 @@ impl UserAuthorization {
             .boxed()
     }
 
-    async fn validate_still_valid(
+    pub(crate) async fn validate_still_valid(
         &mut self,
         credentials: &TwitchApiClientCredentials,
         recheck_twitch_auth_after: Duration,
@@ -314,83 +216,4 @@ impl UserAuthorization {
         self.validate_still_valid_inner(credentials, recheck_twitch_auth_after, true)
             .await
     }
-}
-
-pub fn with_authorization(
-    data_storage: &'static DataStorage,
-    credentials: &'static TwitchApiClientCredentials,
-    recheck_twitch_auth_after: Duration,
-) -> impl warp::Filter<Extract = (UserAuthorization,), Error = warp::Rejection> + Clone {
-    lazy_static! {
-        static ref RE_AUTHORIZATION_HEADER: Regex = Regex::new("^Bearer ([0-9a-f]{128})$").unwrap();
-    }
-
-    warp::filters::header::header::<String>("Authorization").and_then(
-        move |authorization_header: String| {
-            async move {
-                let access_token = RE_AUTHORIZATION_HEADER
-                    .captures(&authorization_header)
-                    .ok_or(ApiError::MalformedAuthorizationHeader)?
-                    .get(1)
-                    .unwrap()
-                    .as_str();
-
-                // data storage query ensures token is not totally expired
-                let mut authorization = data_storage
-                    .get_user_authorization(access_token)
-                    .await
-                    .map_err(ApiError::QueryAccessToken)?
-                    .ok_or(ApiError::Unauthorized)?;
-
-                // and then this ensures that the user has not revoked the connection from the Twitch side
-                let pre_validation_auth = authorization.clone();
-                authorization
-                    .validate_still_valid(&credentials, recheck_twitch_auth_after)
-                    .await?;
-
-                if pre_validation_auth != authorization {
-                    data_storage
-                        .update_user_authorization(&authorization)
-                        .await
-                        .map_err(ApiError::UpdateUserAuthorization)?;
-                }
-
-                Ok::<UserAuthorization, warp::Rejection>(authorization)
-            }
-        },
-    )
-}
-
-// POST /api/v2/auth/extend
-pub async fn extend_token(
-    mut authorization: UserAuthorization,
-    data_storage: &'static DataStorage,
-    sessions_expire_after: Duration,
-    recheck_twitch_auth_after: Duration,
-) -> Result<impl warp::Reply, Rejection> {
-    let new_expiry = Utc::now() + chrono::Duration::from_std(sessions_expire_after).unwrap();
-    authorization.valid_until = new_expiry;
-
-    data_storage
-        .update_user_authorization(&authorization)
-        .await
-        .map_err(ApiError::UpdateUserAuthorization)?;
-
-    Ok(warp::reply::json(&UserAuthorizationResponse::from_auth(
-        &authorization,
-        recheck_twitch_auth_after,
-    )))
-}
-
-// POST /api/v2/auth/revoke
-pub async fn revoke_token(
-    authorization: UserAuthorization,
-    data_storage: &'static DataStorage,
-) -> Result<impl warp::Reply, Rejection> {
-    data_storage
-        .delete_user_authorization(&authorization.access_token)
-        .await
-        .map_err(ApiError::AuthorizationRevokeFailed)?;
-    // 200 OK with empty body
-    Ok(warp::reply())
 }

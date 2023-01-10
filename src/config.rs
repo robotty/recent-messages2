@@ -28,6 +28,9 @@ pub struct Config {
     #[serde(default)]
     pub app: AppConfig,
 
+    #[serde(default)]
+    pub irc: IrcConfig,
+
     pub web: WebConfig,
 
     #[serde(default)]
@@ -46,8 +49,6 @@ pub struct AppConfig {
     #[serde(with = "humantime_serde")]
     pub messages_expire_after: Duration,
     pub max_buffer_size: usize,
-    pub save_file_directory: PathBuf,
-    pub db_pool_max_size: usize,
 }
 
 impl Default for AppConfig {
@@ -58,8 +59,25 @@ impl Default for AppConfig {
             vacuum_messages_every: Duration::from_secs(30 * 60), // 30 minutes
             messages_expire_after: Duration::from_secs(24 * 60 * 60), // 24 hours
             max_buffer_size: 500,
-            save_file_directory: "messages".into(),
-            db_pool_max_size: num_cpus::get() * 4,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(default)]
+pub struct IrcConfig {
+    #[serde(with = "humantime_serde")]
+    pub new_connection_every: Duration,
+
+    #[serde(with = "humantime_serde")]
+    pub forwarder_run_every: Duration,
+}
+
+impl Default for IrcConfig {
+    fn default() -> Self {
+        IrcConfig {
+            new_connection_every: Duration::from_millis(550), // value determined empirically
+            forwarder_run_every: Duration::from_millis(100),
         }
     }
 }
@@ -77,10 +95,12 @@ pub struct WebConfig {
     pub listen_address: ListenAddr,
     #[serde(flatten)]
     pub twitch_api_credentials: TwitchApiClientCredentials,
-    #[serde(default = "seven_days")]
+    #[serde(with = "humantime_serde", default = "seven_days")]
     pub sessions_expire_after: Duration,
-    #[serde(default = "one_hour")]
+    #[serde(with = "humantime_serde", default = "one_hour")]
     pub recheck_twitch_auth_after: Duration,
+    #[serde(with = "humantime_serde", default = "ten_seconds")]
+    pub request_timeout: Duration,
 }
 
 fn default_listen_addr() -> ListenAddr {
@@ -97,6 +117,10 @@ fn one_hour() -> Duration {
     Duration::from_secs(60 * 60)
 }
 
+fn ten_seconds() -> Duration {
+    Duration::from_secs(10)
+}
+
 #[derive(Debug, Clone, Deserialize)]
 #[serde(tag = "type")]
 pub enum ListenAddr {
@@ -105,16 +129,6 @@ pub enum ListenAddr {
     #[cfg(unix)]
     #[serde(rename = "unix")]
     Unix { path: PathBuf },
-}
-
-impl std::fmt::Display for ListenAddr {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            ListenAddr::Tcp { address } => write!(f, "{}", address),
-            #[cfg(unix)]
-            ListenAddr::Unix { path } => write!(f, "{}", path.to_string_lossy()),
-        }
-    }
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -139,6 +153,8 @@ pub struct DatabaseConfig {
     pub keepalives_idle: Duration,
     pub target_session_attrs: PgTargetSessionAttrs,
     pub channel_binding: PgChannelBinding,
+    #[serde(default)]
+    pub pool: PoolConfig,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -182,6 +198,39 @@ pub enum PgChannelBinding {
     Disable,
     Prefer,
     Require,
+}
+
+#[derive(Debug, Clone, Copy, Deserialize)]
+#[serde(default)]
+pub struct PoolConfig {
+    pub max_size: usize,
+    #[serde(with = "humantime_serde")]
+    pub create_timeout: Duration,
+    #[serde(with = "humantime_serde")]
+    pub wait_timeout: Duration,
+    #[serde(with = "humantime_serde")]
+    pub recycle_timeout: Duration,
+}
+
+impl Default for PoolConfig {
+    fn default() -> Self {
+        PoolConfig {
+            max_size: num_cpus::get() * 4,
+            create_timeout: Duration::from_secs(5),
+            wait_timeout: Duration::from_secs(5),
+            recycle_timeout: Duration::from_secs(5),
+        }
+    }
+}
+
+impl From<PoolConfig> for deadpool_postgres::Timeouts {
+    fn from(cfg: PoolConfig) -> Self {
+        deadpool_postgres::Timeouts {
+            create: Some(cfg.create_timeout),
+            wait: Some(cfg.wait_timeout),
+            recycle: Some(cfg.recycle_timeout),
+        }
+    }
 }
 
 impl Default for DatabaseConfig {
@@ -246,6 +295,7 @@ impl From<postgres::Config> for DatabaseConfig {
                 postgres::config::ChannelBinding::Require => PgChannelBinding::Require,
                 _ => panic!("unhandled variant"),
             },
+            pool: PoolConfig::default(),
         }
     }
 }

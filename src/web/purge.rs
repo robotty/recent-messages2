@@ -1,11 +1,17 @@
-use crate::db::DataStorage;
 use crate::web::auth::UserAuthorization;
-use warp::Rejection;
+use crate::web::error::ApiError;
+use crate::web::WebAppData;
+use axum::Extension;
+use http::StatusCode;
 
 pub async fn purge_messages(
-    authorization: UserAuthorization,
-    data_storage: &'static DataStorage,
-) -> Result<impl warp::Reply, Rejection> {
-    data_storage.purge_messages(&authorization.user_login).await;
-    Ok(warp::reply())
+    Extension(authorization): Extension<UserAuthorization>,
+    app_data: Extension<WebAppData>,
+) -> Result<StatusCode, ApiError> {
+    app_data
+        .data_storage
+        .purge_messages(&authorization.user_login)
+        .await
+        .map_err(ApiError::PurgeMessages)?;
+    Ok(StatusCode::NO_CONTENT)
 }

@@ -10,28 +10,32 @@ readme = "README.md"
 version = "0.1.0"
 authors = ["Ruben Anders <ruben.anders@robotty.de>"]
 edition = "2021"
+default-run = "recent-messages2"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+axum = { version = "0.5", features = ["headers"] }
+axum-extra = { version = "0.3", features = ["spa"] }
 chrono = { version = "0.4", features = ["serde"] }
-deadpool-postgres = "0.10"
+csv = "1"
+deadpool-postgres = { version = "0.10", features = ["rt_tokio_1"] }
 derivative = "2"
 futures = "0.3"
 http = "0.2"
 humantime = "2"
 humantime-serde = "1"
-hyper = "0.14"
+hyper = { version = "0.14", features = ["full"] }
 itertools = "0.10"
 lazy_static = "1"
-metrics = "0.18"
-metrics-exporter-prometheus = { version = "0.9", default-features = false }
 num_cpus = "1"
+prometheus = { version = "0.13", default-features = false }
 rand = "0.8"
 refinery = { version = "0.8", features = ["tokio-postgres"] }
 regex = "1"
 reqwest = { version = "0.11", features = ["rustls-tls-webpki-roots", "json"], default-features = false }
 rmp-serde = "1"
+rustls = "0.20"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 simple-process-stats = "1"
@@ -39,22 +43,33 @@ structopt = "0.3"
 thiserror = "1"
 tokio = { version = "1", features = ["full"] }
 tokio-postgres = { version = "0.7", features = ["with-chrono-0_4"] }
-tokio-stream = { version = "0.1", features = ["net"] }
+tokio-postgres-rustls = "0.9"
+tokio-stream = { version = "0.1", features = ["net"], default-features = false }
+tokio-util = "0.7"
 toml = "0.5"
+tower = "0.4"
+tower-http = { version = "0.3", features = ["cors", "fs"] }
 tracing = "0.1"
-tracing-log = "0.1"
 tracing-subscriber = "0.3"
-twitch-irc = { version = "4", features = ["transport-tcp", "transport-tcp-rustls-webpki-roots", "metrics-collection"], default-features = false }
-warp = { git = "https://github.com/RAnders00/warp", branch = "v030-backports" }
+twitch-irc = { version = "5" , features = ["transport-tcp", "transport-tcp-rustls-webpki-roots", "metrics-collection"], default-features = false }
+webpki-roots = "0.22"
+
+[patch.crates-io]
+# see https://github.com/heim-rs/darwin-libproc/issues/4
+darwin-libproc = { git = "https://github.com/Orycterope/darwin-libproc", rev = "f73ddb1002d51ae74c1b41670fae56bd5896b7a3" }
 
 [target.'cfg(unix)'.dependencies]
 rlimit = "0.7"
+hyperlocal = "0.8"
 
 [profile.release]
 lto = "fat"
 codegen-units = 1
-panic = "abort"
 
 [[bin]]
 name = "recent-messages2"
 path = "src/main.rs"
+
+[[bin]]
+name = "recent-messages2-migrate-messages"
+path = "src/migrate_messages.rs"

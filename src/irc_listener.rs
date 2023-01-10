@@ -1,10 +1,40 @@
 use crate::config::Config;
 use crate::db::DataStorage;
-use std::borrow::Cow;
+use chrono::Utc;
+use futures::StreamExt;
+use lazy_static::lazy_static;
+use prometheus::{linear_buckets, register_histogram, register_int_counter, Histogram, IntCounter};
 use tokio::sync::mpsc;
+use tokio::task::JoinHandle;
+use tokio::time::MissedTickBehavior;
+use tokio_stream::wrappers::UnboundedReceiverStream;
+use tokio_util::sync::CancellationToken;
 use twitch_irc::login::StaticLoginCredentials;
 use twitch_irc::message::{AsRawIRC, ServerMessage};
 use twitch_irc::{ClientConfig, SecureTCPTransport, TwitchIRCClient};
+
+lazy_static! {
+    static ref INTERNAL_FORWARD_TIME_TAKEN: Histogram = register_histogram!(
+        "recentmessages_irc_forwarder_internal_forward_message_time_taken_seconds",
+        "Time taken to add a message to the internal channel, this amount will climb if the system is overloaded"
+    )
+    .unwrap();
+    static ref STORE_CHUNK_TIME_TAKEN: Histogram = register_histogram!(
+        "recentmessages_irc_forwarder_store_chunk_time_taken_seconds",
+        "Time taken to forward individual chunks of messages to the database"
+    )
+    .unwrap();
+    static ref STORE_CHUNK_RUNS: IntCounter = register_int_counter!(
+        "recentmessages_irc_forwarder_store_chunk_runs",
+        "Number of runs the IRC forwarder has completed"
+    )
+    .unwrap();
+    static ref STORE_CHUNK_ERRORS: IntCounter = register_int_counter!(
+        "recentmessages_irc_forwarder_store_chunk_errors",
+        "Number of times a chunk could not be appended to the database successfully"
+    )
+    .unwrap();
+}
 
 #[derive(Debug, Clone)]
 pub struct IrcListener {
@@ -12,43 +42,130 @@ pub struct IrcListener {
 }
 
 impl IrcListener {
-    pub fn start(data_storage: &'static DataStorage, config: &'static Config) -> IrcListener {
+    pub fn start(
+        data_storage: &'static DataStorage,
+        config: &'static Config,
+        shutdown_signal: CancellationToken,
+    ) -> (IrcListener, JoinHandle<()>, JoinHandle<()>, JoinHandle<()>) {
         let (incoming_messages, client) = TwitchIRCClient::new(ClientConfig {
-            metrics_identifier: Some(Cow::Borrowed("listener")),
+            new_connection_every: config.irc.new_connection_every,
             ..ClientConfig::default()
         });
 
-        tokio::spawn(IrcListener::run_forwarder(
+        let (forward_worker_join_handle, chunk_worker_join_handle) = IrcListener::run_forwarder(
             incoming_messages,
             data_storage,
-            config.app.max_buffer_size,
-        ));
+            config,
+            shutdown_signal.clone(),
+        );
 
-        tokio::spawn(IrcListener::run_channel_join_parter(
+        let channel_jp_join_handle = tokio::spawn(IrcListener::run_channel_join_parter(
             client.clone(),
             config,
             data_storage,
+            shutdown_signal,
         ));
 
-        IrcListener { irc_client: client }
+        (
+            IrcListener { irc_client: client },
+            forward_worker_join_handle,
+            chunk_worker_join_handle,
+            channel_jp_join_handle,
+        )
     }
 
-    async fn run_forwarder(
+    fn run_forwarder(
         mut incoming_messages: mpsc::UnboundedReceiver<ServerMessage>,
         data_storage: &'static DataStorage,
-        max_buffer_size: usize,
-    ) {
-        while let Some(message) = incoming_messages.recv().await {
-            tokio::spawn(async move {
+        config: &'static Config,
+        shutdown_signal: CancellationToken,
+    ) -> (JoinHandle<()>, JoinHandle<()>) {
+        let buckets = linear_buckets(10.0, 10.0, 50).unwrap();
+
+        let store_chunk_chunk_size = register_histogram!(
+            "recentmessages_irc_forwarder_store_chunk_chunk_size",
+            "Number of messages per individual chunk of messages forwarded to the database",
+            buckets
+        )
+        .unwrap();
+
+        let (tx, rx) = mpsc::unbounded_channel();
+
+        let forward_worker = async move {
+            while let Some(message) = incoming_messages.recv().await {
+                let tx = tx.clone();
                 if let Some(channel_login) = message.channel_login() {
                     let message_source = message.source().as_raw_irc();
-                    data_storage
-                        .append_message(channel_login.to_owned(), message_source, max_buffer_size)
-                        .await;
+                    let timer = INTERNAL_FORWARD_TIME_TAKEN.start_timer();
+                    tx.send((channel_login.to_owned(), Utc::now(), message_source))
+                        .ok();
+                    timer.observe_duration();
                 }
-            });
-        }
-        unreachable!("stream should never end");
+            }
+        };
+
+        let chunk_worker = async move {
+            let mut stream = UnboundedReceiverStream::new(rx).ready_chunks(512);
+
+            let mut interval = tokio::time::interval(config.irc.forwarder_run_every);
+            interval.set_missed_tick_behavior(MissedTickBehavior::Burst);
+
+            loop {
+                interval.tick().await;
+                let timeout = tokio::time::sleep(config.irc.forwarder_run_every / 2);
+                let chunk = tokio::select! {
+                    biased;
+                    _ = timeout => {
+                        continue;
+                    }
+                    next = stream.next() => {
+                        match next {
+                            Some(chunk) => chunk,
+                            None => break,
+                        }
+                    }
+                };
+
+                store_chunk_chunk_size.observe(chunk.len() as f64);
+
+                tokio::spawn(async move {
+                    let timer = STORE_CHUNK_TIME_TAKEN.start_timer();
+                    let res = data_storage.append_messages(chunk).await;
+                    timer.observe_duration();
+
+                    if let Err(e) = res {
+                        tracing::error!("Failed to append message to storage: {}", e);
+                        STORE_CHUNK_ERRORS.inc();
+                    }
+                    STORE_CHUNK_RUNS.inc();
+                });
+            }
+        };
+
+        let shutdown_signal_1 = shutdown_signal.clone();
+        let forward_worker_join_handle = tokio::spawn(async move {
+            tokio::select! {
+                _ = forward_worker => {
+                    if !shutdown_signal_1.is_cancelled() {
+                        panic!("forward worker should never end")
+                    }
+                },
+                _ = shutdown_signal_1.cancelled() => {}
+            }
+        });
+
+        let chunk_worker_join_handle = tokio::spawn(async move {
+            tokio::select! {
+                _ = chunk_worker => {
+                    if !shutdown_signal.is_cancelled() {
+                        panic!("chunk worker should never end")
+                    }
+                },
+                _ = shutdown_signal.cancelled() => {}
+            }
+        });
+
+        (forward_worker_join_handle, chunk_worker_join_handle)
     }
 
     /// Start background loop to vacuum/part channels that are not used.
@@ -56,28 +173,36 @@ impl IrcListener {
         irc_client: TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
         config: &'static Config,
         data_storage: &'static DataStorage,
+        shutdown_signal: CancellationToken,
     ) {
         let mut check_interval = tokio::time::interval(config.app.vacuum_channels_every);
 
-        loop {
-            check_interval.tick().await;
+        let worker = async move {
+            loop {
+                check_interval.tick().await;
 
-            let res = data_storage
-                .get_channel_logins_to_join(config.app.channels_expire_after)
-                .await;
-            let channels = match res {
-                Ok(channels_to_part) => channels_to_part,
-                Err(e) => {
-                    tracing::error!("Failed to query the DB for a list of channels that should be joined. This iteration will be skipped. Cause: {}", e);
-                    continue;
-                }
-            };
+                let res = data_storage
+                    .get_channel_logins_to_join(config.app.channels_expire_after)
+                    .await;
+                let channels = match res {
+                    Ok(channels_to_part) => channels_to_part,
+                    Err(e) => {
+                        tracing::error!("Failed to query the DB for a list of channels that should be joined. This iteration will be skipped. Cause: {}", e);
+                        continue;
+                    }
+                };
 
-            tracing::info!(
-                "Checked database for channels that should be joined, now at {} channels",
-                channels.len()
-            );
-            irc_client.set_wanted_channels(channels).unwrap();
+                tracing::info!(
+                    "Checked database for channels that should be joined, now at {} channels",
+                    channels.len()
+                );
+                irc_client.set_wanted_channels(channels).unwrap();
+            }
+        };
+
+        tokio::select! {
+            _ = worker => {},
+            _ = shutdown_signal.cancelled() => {}
         }
     }
 
@@ -101,7 +226,6 @@ impl ServerMessageExt for ServerMessage {
         match self {
             ServerMessage::ClearChat(m) => Some(&m.channel_login),
             ServerMessage::ClearMsg(m) => Some(&m.channel_login),
-            ServerMessage::HostTarget(m) => Some(&m.channel_login),
             ServerMessage::Join(m) => Some(&m.channel_login),
             ServerMessage::Notice(m) => m.channel_login.as_deref(),
             ServerMessage::Part(m) => Some(&m.channel_login),

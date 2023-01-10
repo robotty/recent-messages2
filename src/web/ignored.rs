@@ -1,26 +1,27 @@
-use crate::db::DataStorage;
-use crate::irc_listener::IrcListener;
 use crate::web::auth::UserAuthorization;
-use crate::web::ApiError;
+use crate::web::{ApiError, WebAppData};
+use axum::extract::rejection::JsonRejection;
+use axum::{Extension, Json};
+use http::StatusCode;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
-use warp::Rejection;
 
 #[derive(Serialize)]
-struct GetIgnoredResponse {
+pub struct GetIgnoredResponse {
     ignored: bool,
 }
 
 pub async fn get_ignored(
-    authorization: UserAuthorization,
-    data_storage: &'static DataStorage,
-) -> Result<impl warp::Reply, Rejection> {
-    let is_ignored = data_storage
+    Extension(authorization): Extension<UserAuthorization>,
+    Extension(app_data): Extension<WebAppData>,
+) -> Result<Json<GetIgnoredResponse>, ApiError> {
+    let is_ignored = app_data
+        .data_storage
         .is_channel_ignored(&authorization.user_login)
         .await
         .map_err(ApiError::GetChannelIgnored)?;
 
-    Ok(warp::reply::json(&GetIgnoredResponse {
+    Ok(Json(GetIgnoredResponse {
         ignored: is_ignored,
     }))
 }
@@ -31,38 +32,53 @@ pub struct SetIgnoredBodyOptions {
 }
 
 pub async fn set_ignored(
-    authorization: UserAuthorization,
-    data_storage: &'static DataStorage,
-    irc_listener: &'static IrcListener,
-    options: SetIgnoredBodyOptions,
-) -> Result<impl warp::Reply, Rejection> {
-    data_storage
-        .set_channel_ignored(&authorization.user_login, options.ignored)
+    Extension(authorization): Extension<UserAuthorization>,
+    Extension(app_data): Extension<WebAppData>,
+    options: Result<Json<SetIgnoredBodyOptions>, JsonRejection>,
+) -> Result<StatusCode, ApiError> {
+    let Json(SetIgnoredBodyOptions {
+        ignored: should_be_ignored,
+    }) = options.map_err(|_| ApiError::InvalidPayload)?;
+
+    app_data
+        .data_storage
+        .set_channel_ignored(&authorization.user_login, should_be_ignored)
         .await
         .map_err(ApiError::SetChannelIgnored)?;
 
-    if options.ignored {
+    if should_be_ignored {
         // TODO: There can be messages getting added to the message store between the purge
         // and the time that the PART command reaches the Twitch server. The 3 second time delay
         // "solution" is a hack, needs a better solution
         // maybe put a "blocker"/poison type into the db storage
-        // (enum ChannelMessages { Ignored, Normal(VecDeque<StoredMessage> } or so)
-        irc_listener
+        app_data
+            .irc_listener
             .irc_client
             .part(authorization.user_login.clone());
 
-        data_storage.purge_messages(&authorization.user_login).await;
+        app_data
+            .data_storage
+            .purge_messages(&authorization.user_login)
+            .await
+            .map_err(ApiError::PurgeMessages)?;
         tokio::spawn(async move {
             tokio::time::sleep(Duration::from_secs(3)).await;
-            data_storage.purge_messages(&authorization.user_login).await;
+            let result = app_data
+                .data_storage
+                .purge_messages(&authorization.user_login)
+                .await;
+            if let Err(e) = result {
+                tracing::error!("Failed to purge messages a second time: {}", e);
+            }
         });
     } else {
-        irc_listener
+        app_data
+            .irc_listener
             .irc_client
             .join(authorization.user_login)
             .unwrap();
     }
 
-    // 200 OK with empty body
-    Ok(warp::reply())
+    // 204 No Content, empty body
+    Ok(StatusCode::NO_CONTENT)
 }

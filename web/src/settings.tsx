@@ -62,15 +62,18 @@ class SettingsLoggedIn extends React.Component<
 
     (async () => {
       try {
-        let resp = await fetch(`${config.api_base_url}/ignored`, {
+        let response = await fetch(`${config.api_base_url}/ignored`, {
           method: "GET",
           headers: {
             Authorization: `Bearer ${this.props.auth.accessToken}`,
             Accept: "application/json",
           },
         });
+        if (!response.ok) {
+          throw Error(response.statusText);
+        }
 
-        let json = await resp.json();
+        let json = await response.json();
 
         this.setState(() => {
           return {
@@ -108,7 +111,7 @@ class SettingsLoggedIn extends React.Component<
 
     (async () => {
       try {
-        await fetch(`${config.api_base_url}/ignored`, {
+        const response = await fetch(`${config.api_base_url}/ignored`, {
           method: "POST",
           headers: {
             Authorization: `Bearer ${this.props.auth.accessToken}`,
@@ -117,6 +120,9 @@ class SettingsLoggedIn extends React.Component<
           },
           body: JSON.stringify({ ignored: newSetting }),
         });
+        if (!response.ok) {
+          throw Error(response.statusText);
+        }
 
         this.setState(() => {
           return {

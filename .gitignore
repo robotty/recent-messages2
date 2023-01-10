@@ -2,6 +2,7 @@
 /target
 /.idea
 /config.*.toml
+/messages
 
 /web/node_modules/
 /web/dist/

@@ -15,13 +15,11 @@
 # will be deleted to make room.
 #max_buffer_size = 500
 
-#save_file_directory = "messages"
-
-# maximum number of connections the DB connection pool will create
-# up this setting in case you run into issues on larger deployments,
-# and increase max_connections_count on the PostgreSQL server config (as needed) as well
-# default value is the number of CPUs on the system, multiplied by four
-#db_pool_max_size = 32
+[irc]
+# Rate limit for connecting new IRC connections to Twitch.
+#new_connection_every = "550ms"
+# Messages received from Twitch are forwarded to the database in chunks, separated by this fixed time interval.
+#forwarder_run_every = "100ms"
 
 # Configure the built-in web server and API service
 [web]
@@ -40,6 +38,9 @@ redirect_uri = "https://example.com/"
 #sessions_expire_after = "7 days"
 # Re-validate that the user has not disconnected the Twitch integration after this period.
 #recheck_twitch_auth_after = "1 hour"
+
+# After how many seconds should any webserver requests time out and result in an error?
+#request_timeout = "10 seconds"
 
 # Specify how we should connect to the PostgreSQL database server
 # most options are additionally documented here: https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-PARAMKEYWORDS
@@ -86,3 +87,16 @@ host = [ { path = "/var/run/postgresql" } ]
 # (usually irrelevant, search them up if you need them)
 # TLS (SSL) is not supported at the moment because there has been no demand. It can be added if needed.
 # Create a GitHub issue if you need TLS in your use case.
+
+[db.pool]
+# maximum number of connections the DB connection pool will create
+# up this setting in case you run into issues on larger deployments,
+# and increase max_connections_count on the PostgreSQL server config (as needed) as well
+# default value is the number of CPUs on the system, multiplied by four
+#max_size = 32
+# Timeout for creating a new database connection
+#create_timeout = "5 seconds"
+# Timeout for waiting for a connection from the pool to become available
+#wait_timeout = "5 seconds"
+# Timeout for "recycling", that is checking and putting an object back into the pool
+#recycle_timeout = "5 seconds"
