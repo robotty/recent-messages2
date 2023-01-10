@@ -226,7 +226,6 @@ impl ServerMessageExt for ServerMessage {
         match self {
             ServerMessage::ClearChat(m) => Some(&m.channel_login),
             ServerMessage::ClearMsg(m) => Some(&m.channel_login),
-            ServerMessage::HostTarget(m) => Some(&m.channel_login),
             ServerMessage::Join(m) => Some(&m.channel_login),
             ServerMessage::Notice(m) => m.channel_login.as_deref(),
             ServerMessage::Part(m) => Some(&m.channel_login),
