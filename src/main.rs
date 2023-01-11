@@ -50,7 +50,7 @@ async fn main() {
         tokio::spawn(monitoring::run_process_monitoring(shutdown_signal.clone()));
 
     // db init
-    let data_storage = Box::leak(Box::new(db::connect_to_postgresql(&config).await));
+    let data_storage = Box::leak(Box::new(db::connect_to_postgresql(&config)));
     let migrations_result = data_storage.run_migrations().await;
     match migrations_result {
         Ok(()) => {

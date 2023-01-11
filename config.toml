@@ -44,7 +44,7 @@ redirect_uri = "https://example.com/"
 
 # Specify how we should connect to the PostgreSQL database server
 # most options are additionally documented here: https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-PARAMKEYWORDS
-[db]
+[main_db]
 # Username to log into the database server as. Required
 user = "db_username"
 
@@ -88,7 +88,11 @@ host = [ { path = "/var/run/postgresql" } ]
 # TLS (SSL) is not supported at the moment because there has been no demand. It can be added if needed.
 # Create a GitHub issue if you need TLS in your use case.
 
-[db.pool]
+# TODO document
+# [[shard_db]]
+#name = "my_server_name"
+
+[main_db.pool]
 # maximum number of connections the DB connection pool will create
 # up this setting in case you run into issues on larger deployments,
 # and increase max_connections_count on the PostgreSQL server config (as needed) as well
