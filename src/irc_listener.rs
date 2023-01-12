@@ -102,11 +102,11 @@ impl IrcListener {
                 if chunk.len() < max_chunk_size {
                     tokio::time::sleep(config.irc.forwarder_run_every).await;
                 }
+                store_chunk_chunk_size.observe(chunk.len() as f64);
                 if chunk.len() == 0 {
                     continue;
                 }
 
-                store_chunk_chunk_size.observe(chunk.len() as f64);
                 data_storage.append_messages(chunk);
             }
         };
