@@ -89,7 +89,7 @@ impl IrcListener {
         let chunk_worker = async move {
             let max_chunk_size = 10000;
             loop {
-                let mut chunk = Vec::<_>::new();
+                let mut chunk = Vec::<_>::with_capacity(max_chunk_size);
                 loop {
                     match rx.try_recv() {
                         Ok(message) => chunk.push(message),
