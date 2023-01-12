@@ -34,7 +34,10 @@ pub struct Config {
     pub web: WebConfig,
 
     #[serde(default)]
-    pub db: DatabaseConfig,
+    pub main_db: DatabaseConfig,
+
+    #[serde(default)]
+    pub shard_db: Vec<DatabaseConfig>
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -134,6 +137,9 @@ pub enum ListenAddr {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(default)]
 pub struct DatabaseConfig {
+    // Custom name for this database, e.g. db0 or heinrich or whatever the user calls their servers
+    pub name: Option<String>,
+
     pub user: Option<String>,
     // psql seems to accept arbitrary bytes instead of just valid UTF-8 here
     // (the password in the tokio_postgres library is a Vec<u8>)
@@ -267,6 +273,7 @@ impl From<postgres::Config> for DatabaseConfig {
         }
 
         DatabaseConfig {
+            name: None,
             user: config.get_user().map(String::from),
             password: config
                 .get_password()
