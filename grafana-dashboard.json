@@ -24,7 +24,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "id": 48,
+  "id": 49,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -117,7 +117,7 @@
         "text": {},
         "textMode": "auto"
       },
-      "pluginVersion": "9.1.5",
+      "pluginVersion": "9.3.2",
       "targets": [
         {
           "datasource": {
@@ -198,7 +198,7 @@
         "text": {},
         "textMode": "auto"
       },
-      "pluginVersion": "9.1.5",
+      "pluginVersion": "9.3.2",
       "targets": [
         {
           "datasource": {
@@ -276,7 +276,7 @@
         "text": {},
         "textMode": "auto"
       },
-      "pluginVersion": "9.1.5",
+      "pluginVersion": "9.3.2",
       "targets": [
         {
           "datasource": {
@@ -357,7 +357,7 @@
         "showThresholdMarkers": true,
         "text": {}
       },
-      "pluginVersion": "9.1.5",
+      "pluginVersion": "9.3.2",
       "targets": [
         {
           "datasource": {
@@ -440,7 +440,7 @@
         "text": {},
         "textMode": "auto"
       },
-      "pluginVersion": "9.1.5",
+      "pluginVersion": "9.3.2",
       "targets": [
         {
           "datasource": {
@@ -520,19 +520,20 @@
         "text": {},
         "textMode": "auto"
       },
-      "pluginVersion": "9.1.5",
+      "pluginVersion": "9.3.2",
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
             "uid": "000000006"
           },
+          "editorMode": "code",
           "expr": "recentmessages_messages_stored{instance=\"$instance\",job=\"$job\"}",
           "format": "time_series",
           "instant": false,
           "interval": "",
           "intervalFactor": 1,
-          "legendFormat": "",
+          "legendFormat": "{{db}}",
           "refId": "A"
         }
       ],
@@ -599,7 +600,7 @@
         "text": {},
         "textMode": "auto"
       },
-      "pluginVersion": "9.1.5",
+      "pluginVersion": "9.3.2",
       "targets": [
         {
           "datasource": {
@@ -682,7 +683,7 @@
         "showThresholdMarkers": true,
         "text": {}
       },
-      "pluginVersion": "9.1.5",
+      "pluginVersion": "9.3.2",
       "targets": [
         {
           "datasource": {
@@ -736,7 +737,8 @@
           "paused": false,
           "pending": false
         },
-        "tags": []
+        "tags": [],
+        "viewMode": "list"
       },
       "pluginVersion": "8.0.3",
       "title": "Alerts",
@@ -802,7 +804,7 @@
         "text": {},
         "textMode": "auto"
       },
-      "pluginVersion": "9.1.5",
+      "pluginVersion": "9.3.2",
       "targets": [
         {
           "datasource": {
@@ -953,6 +955,7 @@
             "type": "prometheus",
             "uid": "000000006"
           },
+          "editorMode": "code",
           "expr": "rate(twitchirc_messages_received{instance=\"$instance\",job=\"$job\"}[30s])",
           "format": "time_series",
           "instant": false,
@@ -1704,9 +1707,11 @@
             "type": "prometheus",
             "uid": "000000006"
           },
+          "editorMode": "code",
           "expr": "rate(recentmessages_messages_vacuumed{instance=\"$instance\",job=\"$job\"}[5m])",
           "interval": "",
-          "legendFormat": "messages",
+          "legendFormat": "{{db}}",
+          "range": true,
           "refId": "A"
         }
       ],
@@ -1892,9 +1897,11 @@
             "type": "prometheus",
             "uid": "000000006"
           },
+          "editorMode": "code",
           "expr": "rate(recentmessages_message_vacuum_runs{instance=\"$instance\",job=\"$job\"}[5m])",
           "interval": "",
-          "legendFormat": "runs",
+          "legendFormat": "{{db}}",
+          "range": true,
           "refId": "B"
         }
       ],
@@ -1987,9 +1994,11 @@
             "type": "prometheus",
             "uid": "000000006"
           },
+          "editorMode": "code",
           "expr": "rate(recentmessages_messages_appended{instance=\"$instance\",job=\"$job\"}[5m])",
           "interval": "",
-          "legendFormat": "",
+          "legendFormat": "{{db}}",
+          "range": true,
           "refId": "B"
         }
       ],
@@ -2082,9 +2091,11 @@
             "type": "prometheus",
             "uid": "000000006"
           },
+          "editorMode": "code",
           "expr": "recentmessages_messages_stored{instance=\"$instance\",job=\"$job\"}",
           "interval": "",
-          "legendFormat": "",
+          "legendFormat": "{{db}}",
+          "range": true,
           "refId": "B"
         }
       ],
@@ -2176,9 +2187,11 @@
             "type": "prometheus",
             "uid": "000000006"
           },
+          "editorMode": "code",
           "expr": "deriv(recentmessages_messages_stored{instance=\"$instance\",job=\"$job\"}[5m])",
           "interval": "",
-          "legendFormat": "Increase/Decrease on number of messages stored",
+          "legendFormat": "{{db}}",
+          "range": true,
           "refId": "B"
         }
       ],
@@ -3262,11 +3275,13 @@
             "type": "prometheus",
             "uid": "000000006"
           },
-          "expr": "sum by (mode)(irate(node_cpu_seconds_total{mode=\"system\",instance=~\"$instance\",job=\"machine\"}[5m]))",
+          "editorMode": "code",
+          "expr": "sum by (mode)(irate(node_cpu_seconds_total{mode=\"system\",instance=\"$machine_instance\",job=\"$machine_job\"}[5m]))",
           "format": "time_series",
           "interval": "10s",
           "intervalFactor": 2,
           "legendFormat": "System - Processes executing in kernel mode",
+          "range": true,
           "refId": "A",
           "step": 20
         },
@@ -3275,10 +3290,12 @@
             "type": "prometheus",
             "uid": "000000006"
           },
-          "expr": "sum by (mode)(irate(node_cpu_seconds_total{mode='user',instance=~\"$instance\",job=\"machine\"}[5m]))",
+          "editorMode": "code",
+          "expr": "sum by (mode)(irate(node_cpu_seconds_total{mode='user',instance=\"$machine_instance\",job=\"$machine_job\"}[5m]))",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "User - Normal processes executing in user mode",
+          "range": true,
           "refId": "B",
           "step": 240
         },
@@ -3287,10 +3304,12 @@
             "type": "prometheus",
             "uid": "000000006"
           },
-          "expr": "sum by (mode)(irate(node_cpu_seconds_total{mode='nice',instance=~\"$instance\",job=\"machine\"}[5m]))",
+          "editorMode": "code",
+          "expr": "sum by (mode)(irate(node_cpu_seconds_total{mode='nice',instance=\"$machine_instance\",job=\"$machine_job\"}[5m]))",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "Nice - Niced processes executing in user mode",
+          "range": true,
           "refId": "C",
           "step": 240
         },
@@ -3299,10 +3318,12 @@
             "type": "prometheus",
             "uid": "000000006"
           },
-          "expr": "sum by (mode)(irate(node_cpu_seconds_total{mode='iowait',instance=~\"$instance\",job=\"machine\"}[5m]))",
+          "editorMode": "code",
+          "expr": "sum by (mode)(irate(node_cpu_seconds_total{mode='iowait',instance=\"$machine_instance\",job=\"$machine_job\"}[5m]))",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "Iowait - Waiting for I/O to complete",
+          "range": true,
           "refId": "D",
           "step": 240
         },
@@ -3311,10 +3332,12 @@
             "type": "prometheus",
             "uid": "000000006"
           },
-          "expr": "sum by (mode)(irate(node_cpu_seconds_total{mode='irq',instance=~\"$instance\",job=\"machine\"}[5m]))",
+          "editorMode": "code",
+          "expr": "sum by (mode)(irate(node_cpu_seconds_total{mode='irq',instance=\"$machine_instance\",job=\"$machine_job\"}[5m]))",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "Irq - Servicing interrupts",
+          "range": true,
           "refId": "G",
           "step": 240
         },
@@ -3323,10 +3346,12 @@
             "type": "prometheus",
             "uid": "000000006"
           },
-          "expr": "sum by (mode)(irate(node_cpu_seconds_total{mode='softirq',instance=~\"$instance\",job=\"machine\"}[5m]))",
+          "editorMode": "code",
+          "expr": "sum by (mode)(irate(node_cpu_seconds_total{mode='softirq',instance=\"$machine_instance\",job=\"$machine_job\"}[5m]))",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "Softirq - Servicing softirqs",
+          "range": true,
           "refId": "H",
           "step": 240
         },
@@ -3335,10 +3360,12 @@
             "type": "prometheus",
             "uid": "000000006"
           },
-          "expr": "sum by (mode)(irate(node_cpu_seconds_total{mode='steal',instance=~\"$instance\",job=\"machine\"}[5m]))",
+          "editorMode": "code",
+          "expr": "sum by (mode)(irate(node_cpu_seconds_total{mode='steal',instance=\"$machine_instance\",job=\"$machine_job\"}[5m]))",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "Steal - Time spent in other operating systems when running in a virtualized environment",
+          "range": true,
           "refId": "E",
           "step": 240
         },
@@ -3347,10 +3374,12 @@
             "type": "prometheus",
             "uid": "000000006"
           },
-          "expr": "sum by (mode)(irate(node_cpu_seconds_total{mode='guest',instance=~\"$instance\",job=\"machine\"}[5m]))",
+          "editorMode": "code",
+          "expr": "sum by (mode)(irate(node_cpu_seconds_total{mode='guest',instance=\"$machine_instance\",job=\"$machine_job\"}[5m]))",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "Guest - Time spent running a virtual CPU for a guest operating system",
+          "range": true,
           "refId": "I",
           "step": 240
         },
@@ -3359,10 +3388,12 @@
             "type": "prometheus",
             "uid": "000000006"
           },
-          "expr": "sum by (mode)(irate(node_cpu_seconds_total{mode='idle',instance=~\"$instance\",job=\"machine\"}[5m]))",
+          "editorMode": "code",
+          "expr": "sum by (mode)(irate(node_cpu_seconds_total{mode='idle',instance=\"$machine_instance\",job=\"$machine_job\"}[5m]))",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "Idle - Waiting for something to happen",
+          "range": true,
           "refId": "F",
           "step": 240
         }
@@ -3461,7 +3492,7 @@
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
-          "legendFormat": "99th percentile",
+          "legendFormat": "99th percentile {{db}}",
           "range": true,
           "refId": "A"
         },
@@ -3476,7 +3507,7 @@
           "hide": false,
           "interval": "",
           "intervalFactor": 1,
-          "legendFormat": "95th percentile",
+          "legendFormat": "95th percentile {{db}}",
           "range": true,
           "refId": "B"
         },
@@ -3491,7 +3522,7 @@
           "hide": false,
           "interval": "",
           "intervalFactor": 1,
-          "legendFormat": "90th percentile",
+          "legendFormat": "90th percentile {{db}}",
           "range": true,
           "refId": "C"
         },
@@ -3506,7 +3537,7 @@
           "hide": false,
           "interval": "",
           "intervalFactor": 1,
-          "legendFormat": "70th percentile",
+          "legendFormat": "70th percentile {{db}}",
           "range": true,
           "refId": "D"
         },
@@ -3521,12 +3552,108 @@
           "hide": false,
           "interval": "",
           "intervalFactor": 1,
-          "legendFormat": "average",
+          "legendFormat": "average {{db}}",
           "range": true,
           "refId": "E"
         }
       ],
       "title": "Time taken to retrieve a DB connection from the pool",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "000000006"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "max": 1,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 91
+      },
+      "id": 87,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "000000006"
+          },
+          "editorMode": "code",
+          "expr": "rate(node_disk_io_time_seconds_total{instance=\"$machine_instance\",job=\"$machine_job\"}[5m])",
+          "legendFormat": "{{device}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Disk Busy on Host",
       "type": "timeseries"
     },
     {
@@ -3602,7 +3729,7 @@
           "showLegend": true
         },
         "tooltip": {
-          "mode": "single",
+          "mode": "multi",
           "sort": "none"
         }
       },
@@ -3614,7 +3741,7 @@
           },
           "editorMode": "code",
           "expr": "recentmessages_db_pool_connections_max{instance=\"$instance\",job=\"$job\"}",
-          "legendFormat": "Max",
+          "legendFormat": "max for {{db}}",
           "range": true,
           "refId": "A"
         },
@@ -3626,7 +3753,7 @@
           "editorMode": "code",
           "expr": "recentmessages_db_pool_connections_in_use{instance=\"$instance\",job=\"$job\"}",
           "hide": false,
-          "legendFormat": "In Use",
+          "legendFormat": "in use {{db}}",
           "range": true,
           "refId": "B"
         }
@@ -3708,7 +3835,30 @@
           },
           "unit": "s"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "__systemRef": "hideSeriesFrom",
+            "matcher": {
+              "id": "byNames",
+              "options": {
+                "mode": "exclude",
+                "names": ["GET 200 /api/v2/recent-messages/:channel_login"],
+                "prefix": "All except:",
+                "readOnly": true
+              }
+            },
+            "properties": [
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": true
+                }
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 8,
@@ -4605,7 +4755,7 @@
         "options": [],
         "query": {
           "query": "label_values(instance)",
-          "refId": "Prometheus-instance-Variable-Query"
+          "refId": "StandardVariableQuery"
         },
         "refresh": 1,
         "regex": "",
@@ -4644,6 +4794,58 @@
         "tagsQuery": "",
         "type": "query",
         "useTags": false
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": "monitor.h05.kiwi-servers.de:443",
+          "value": "monitor.h05.kiwi-servers.de:443"
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "000000006"
+        },
+        "definition": "label_values(instance)",
+        "hide": 0,
+        "includeAll": false,
+        "multi": false,
+        "name": "machine_instance",
+        "options": [],
+        "query": {
+          "query": "label_values(instance)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "machine",
+          "value": "machine"
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "000000006"
+        },
+        "definition": "label_values(job)",
+        "hide": 0,
+        "includeAll": false,
+        "multi": false,
+        "name": "machine_job",
+        "options": [],
+        "query": {
+          "query": "label_values(job)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
       }
     ]
   },
@@ -4667,7 +4869,7 @@
   },
   "timezone": "",
   "title": "recent-messages2",
-  "uid": "acbSh3w7k",
-  "version": 56,
+  "uid": "cN2QnB24z",
+  "version": 12,
   "weekStart": ""
 }

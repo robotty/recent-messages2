@@ -28,6 +28,7 @@ humantime-serde = "1"
 hyper = { version = "0.14", features = ["full"] }
 itertools = "0.10"
 lazy_static = "1"
+murmur3 = "0.5"
 num_cpus = "1"
 prometheus = { version = "0.13", default-features = false }
 rand = "0.8"

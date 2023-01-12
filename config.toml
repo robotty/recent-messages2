@@ -44,7 +44,14 @@ redirect_uri = "https://example.com/"
 
 # Specify how we should connect to the PostgreSQL database server
 # most options are additionally documented here: https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-PARAMKEYWORDS
-[db]
+# recent_messages2 uses at least one main database and can additional spread the load of storing the messages
+# across zero or more additional [[shard_db]]s (see below)
+# the possible values for [main_db] and [[shard_db]] are the same
+[main_db]
+# Optional. Name the database server/connection, you could for example enter a hostname here to allow you to more
+# easily tell which DB is which in the grafana monitoring or in the log files
+#name = "main_db_server_hostname"
+
 # Username to log into the database server as. Required
 user = "db_username"
 
@@ -83,12 +90,19 @@ host = [ { path = "/var/run/postgresql" } ]
 # Defaults to 2 hours
 #keepalives_idle = "2 hours"
 
-# more supported options: application_name, ssl_mode, target_session_attrs, channel_binding
+# Configure whether SSL is used. Valid values: "disable", "prefer", "require"
+# The certificate presented by the PostgreSQL server is validated against the webpki roots (i.e. you'll need
+# a certificate from Let's Encrypt or similar)
+# If this is not acceptable in your use case, feel free to make a GitHub issue about it, support for custom
+# root certificates could be added in the future.
+#sslmode = "prefer"
+
+# more supported options: application_name, target_session_attrs, channel_binding
 # (usually irrelevant, search them up if you need them)
 # TLS (SSL) is not supported at the moment because there has been no demand. It can be added if needed.
 # Create a GitHub issue if you need TLS in your use case.
 
-[db.pool]
+[main_db.pool]
 # maximum number of connections the DB connection pool will create
 # up this setting in case you run into issues on larger deployments,
 # and increase max_connections_count on the PostgreSQL server config (as needed) as well
@@ -100,3 +114,23 @@ host = [ { path = "/var/run/postgresql" } ]
 #wait_timeout = "5 seconds"
 # Timeout for "recycling", that is checking and putting an object back into the pool
 #recycle_timeout = "5 seconds"
+
+# If you specify [[shard_db]] entries, messages will be partitioned into roughly equal divisions
+# to allow you to spread the load between multiple servers.
+# Note! If you change the number of partitions, you will lose out on messages that are afterwards stored
+# on the wrong partition. You'll simply have to wait until the buffer fills up again.
+#[[shard_db]]
+#name = "secondary_server_hostname"
+#user = "recent_messages"
+#password = "hunter2"
+#dbname = "recent_messages2"
+#host = [ { hostname = "server2.my-domain.com" } ]
+#sslmode = "require" # postgres server will need to present a valid certificate for server2.my-domain.com
+
+#[[shard_db]]
+#name = "a_third_server_hostname"
+#user = "recent_messages"
+#password = "hunter3"
+#dbname = "recent_messages2"
+#host = [ { hostname = "server3.my-domain.com" } ]
+#sslmode = "require" # postgres server will need to present a valid certificate for server3.my-domain.com
