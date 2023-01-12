@@ -15,8 +15,8 @@ default-run = "recent-messages2"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-axum = { version = "0.5", features = ["headers"] }
-axum-extra = { version = "0.3", features = ["spa"] }
+axum = { version = "0.6", features = ["headers"] }
+axum-extra = { version = "0.4", features = ["spa"] }
 chrono = { version = "0.4", features = ["serde"] }
 csv = "1"
 deadpool-postgres = { version = "0.10", features = ["rt_tokio_1"] }
@@ -60,7 +60,7 @@ webpki-roots = "0.22"
 darwin-libproc = { git = "https://github.com/Orycterope/darwin-libproc", rev = "f73ddb1002d51ae74c1b41670fae56bd5896b7a3" }
 
 [target.'cfg(unix)'.dependencies]
-rlimit = "0.7"
+rlimit = "0.9"
 hyperlocal = "0.8"
 
 [profile.release]

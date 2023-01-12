@@ -15,7 +15,7 @@ where
     D: Deserializer<'de>,
 {
     let millis = Deserialize::deserialize(deserializer)?;
-    Ok(Utc.timestamp_millis(millis))
+    Ok(Utc.timestamp_millis_opt(millis).unwrap())
 }
 
 fn main() {

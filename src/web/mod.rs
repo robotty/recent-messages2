@@ -2,7 +2,6 @@ use crate::config::ListenAddr;
 use crate::irc_listener::IrcListener;
 use crate::web::error::ApiError;
 use crate::{Config, DataStorage};
-use axum::handler::Handler;
 use axum::response::IntoResponse;
 use axum::routing::{get, post};
 use axum::{middleware, Extension, Router};
@@ -83,7 +82,7 @@ pub async fn run(
             auth_middleware::with_authorization(req, next, shared_state)
         })
     };
-    let method_fallback = || (|| async { ApiError::MethodNotAllowed }).into_service();
+    let method_fallback = || (|| async { ApiError::MethodNotAllowed });
     let api = Router::new()
         .route(
             "/recent-messages/:channel_login",
@@ -130,24 +129,20 @@ pub async fn run(
 
     let app = Router::new()
         .nest("/api/v2", api)
-        .fallback(
-            (|request: Request<Body>| async move {
-                if request.uri().path().starts_with("/api/v2/") || request.uri().path() == "/api/v2"
-                {
-                    ApiError::NotFound.into_response()
-                } else {
-                    // try for a file
-                    match servedir.call(request).await {
-                        Ok(response) => response.into_response(),
-                        Err(e) => {
-                            tracing::error!("Error trying to serve static file: {}", e);
-                            StatusCode::INTERNAL_SERVER_ERROR.into_response()
-                        }
+        .fallback(|request: Request<Body>| async move {
+            if request.uri().path().starts_with("/api/v2/") || request.uri().path() == "/api/v2" {
+                ApiError::NotFound.into_response()
+            } else {
+                // try for a file
+                match servedir.call(request).await {
+                    Ok(response) => response.into_response(),
+                    Err(e) => {
+                        tracing::error!("Error trying to serve static file: {}", e);
+                        StatusCode::INTERNAL_SERVER_ERROR.into_response()
                     }
                 }
-            })
-            .into_service(),
-        )
+            }
+        })
         .layer(
             ServiceBuilder::new()
                 .layer(Extension(shared_state))
