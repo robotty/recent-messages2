@@ -11,6 +11,7 @@ use std::collections::HashSet;
 use std::ops::DerefMut;
 use std::time::Duration;
 use tokio::time::MissedTickBehavior;
+use tokio_postgres::types::ToSql;
 use tokio_postgres_rustls::MakeRustlsConnect;
 use tokio_util::sync::CancellationToken;
 
@@ -411,16 +412,50 @@ LIMIT $2";
         if messages.len() <= 0 {
             return Ok(());
         }
-        let mut db_conn = self.get_db_conn().await?;
-        let tx = db_conn.0.transaction().await?;
         let num_messages = messages.len();
-        for (channel_login, time_received, message_source) in messages {
-            tx.execute("INSERT INTO message(channel_login, time_received, message_source) VALUES ($1, $2, $3)", &[&channel_login, &time_received, &message_source]).await?;
-        }
-        tx.commit().await?;
+        self.get_db_conn()
+            .await?
+            .0
+            .execute(
+                &DataStorage::batch_message_insert_query(messages.len(), 3),
+                DataStorage::batch_message_insert_values(&messages).as_slice(),
+            )
+            .await?;
         MESSAGES_APPENDED.inc_by(num_messages as u64);
         MESSAGES_STORED.add(num_messages as i64);
         Ok(())
+    }
+
+    fn batch_message_insert_values(
+        rows: &Vec<(String, DateTime<Utc>, String)>,
+    ) -> Vec<&(dyn ToSql + Sync)> {
+        let mut out: Vec<&(dyn ToSql + Sync)> = vec![];
+        for (a, b, c) in rows {
+            out.push(a);
+            out.push(b);
+            out.push(c);
+        }
+        out
+    }
+
+    fn batch_message_insert_query(num_rows: usize, num_columns: usize) -> String {
+        let mut buf = String::from(
+            "INSERT INTO message(channel_login, time_received, message_source) VALUES ",
+        );
+        for i in 0..num_rows {
+            buf.push_str("(");
+            for j in 0..num_columns {
+                buf.push_str(format!("${}", i * num_columns + j + 1).as_str());
+                if j != num_columns - 1 {
+                    buf.push_str(", ");
+                }
+            }
+            buf.push_str(")");
+            if i != num_rows - 1 {
+                buf.push_str(", ");
+            }
+        }
+        buf
     }
 
     pub async fn run_task_vacuum_old_messages(
