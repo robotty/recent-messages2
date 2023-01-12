@@ -37,7 +37,7 @@ pub struct Config {
     pub main_db: DatabaseConfig,
 
     #[serde(default)]
-    pub shard_db: Vec<DatabaseConfig>
+    pub shard_db: Vec<DatabaseConfig>,
 }
 
 #[derive(Debug, Clone, Deserialize)]

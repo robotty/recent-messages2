@@ -4,6 +4,7 @@ use chrono::{DateTime, Utc};
 use deadpool_postgres::{ManagerConfig, PoolConfig, RecyclingMethod};
 use itertools::Itertools;
 use lazy_static::lazy_static;
+use murmur3::murmur3_32;
 use prometheus::{register_histogram_vec, register_int_counter_vec, register_int_gauge_vec};
 use prometheus::{HistogramVec, IntCounterVec, IntGaugeVec};
 use rustls::{OwnedTrustAnchor, RootCertStore};
@@ -15,7 +16,6 @@ use std::time::Duration;
 use tokio::time::MissedTickBehavior;
 use tokio_postgres_rustls::MakeRustlsConnect;
 use tokio_util::sync::CancellationToken;
-use murmur3::murmur3_32;
 
 lazy_static! {
     static ref MESSAGES_APPENDED: IntCounterVec = register_int_counter_vec!(
@@ -83,15 +83,18 @@ lazy_static! {
 #[derive(Clone)]
 pub struct DatabaseAccess {
     db_pool: deadpool_postgres::Pool,
-    cached_name: &'static str
+    cached_name: &'static str,
 }
 
 impl DatabaseAccess {
     /// Warning: this leaks a small amount of memory for the name, but it shouldn't be a problem
     /// since this happens only once during application startup and the "leaked" value
     /// is needed for the entirety of the program runtime
-    pub fn new(custom_name: Option<String>,
-               partition_id: usize,db_pool: deadpool_postgres::Pool) -> Self {
+    pub fn new(
+        custom_name: Option<String>,
+        partition_id: usize,
+        db_pool: deadpool_postgres::Pool,
+    ) -> Self {
         let shard_or_main = if partition_id == 0 { "main" } else { "shard" };
         let cached_name = if let Some(custom_name) = &custom_name {
             format!("db{}({}, {})", partition_id, shard_or_main, custom_name)
@@ -100,7 +103,8 @@ impl DatabaseAccess {
         };
         let cached_name = Box::leak(Box::new(cached_name));
         DatabaseAccess {
-            db_pool, cached_name
+            db_pool,
+            cached_name,
         }
     }
 }
@@ -116,16 +120,19 @@ pub fn connect_to_postgresql(config: &Config) -> DataStorage {
     let main_db = connect_to_single_postgres_server(&config.main_db, &mut partition_id_counter);
     let mut shard_dbs = Vec::new();
     for shard_db_config in config.shard_db.iter() {
-        shard_dbs.push(connect_to_single_postgres_server(shard_db_config, &mut partition_id_counter));
+        shard_dbs.push(connect_to_single_postgres_server(
+            shard_db_config,
+            &mut partition_id_counter,
+        ));
     }
 
-    DataStorage::new(
-        main_db,
-        shard_dbs
-    )
+    DataStorage::new(main_db, shard_dbs)
 }
 
-fn connect_to_single_postgres_server(config: &DatabaseConfig, partition_id_counter: &mut usize) -> DatabaseAccess {
+fn connect_to_single_postgres_server(
+    config: &DatabaseConfig,
+    partition_id_counter: &mut usize,
+) -> DatabaseAccess {
     let partition_id = *partition_id_counter;
     *partition_id_counter += 1;
 
@@ -166,8 +173,12 @@ fn connect_to_single_postgres_server(config: &DatabaseConfig, partition_id_count
 
     let db = DatabaseAccess::new(config.name.clone(), partition_id, db_pool);
 
-    DB_CONNECTIONS_MAX.with_label_values(&[db.cached_name]).set(config.pool.max_size as i64);
-    DB_CONNECTIONS_IN_USE.with_label_values(&[db.cached_name]).set(0);
+    DB_CONNECTIONS_MAX
+        .with_label_values(&[db.cached_name])
+        .set(config.pool.max_size as i64);
+    DB_CONNECTIONS_IN_USE
+        .with_label_values(&[db.cached_name])
+        .set(0);
 
     db
 }
@@ -194,14 +205,16 @@ pub struct StoredMessage {
 #[derive(Clone)]
 pub struct DataStorage {
     main_db: DatabaseAccess,
-    shard_dbs: Vec<DatabaseAccess>
+    shard_dbs: Vec<DatabaseAccess>,
 }
 
 struct WrappedDbConn(deadpool_postgres::Object, &'static str);
 
 impl WrappedDbConn {
     pub fn new(inner: deadpool_postgres::Object, db_partition_name: &'static str) -> WrappedDbConn {
-        DB_CONNECTIONS_IN_USE.with_label_values(&[db_partition_name]).inc();
+        DB_CONNECTIONS_IN_USE
+            .with_label_values(&[db_partition_name])
+            .inc();
         WrappedDbConn(inner, db_partition_name)
     }
 }
@@ -227,10 +240,15 @@ impl DataStorage {
     }
 
     async fn get_db_conn(&self, partition_id: usize) -> Result<WrappedDbConn, StorageError> {
-        let timer = TIME_TAKEN_TO_GET_DB_CONN.with_label_values(&[self.name_partition(partition_id)]).start_timer();
+        let timer = TIME_TAKEN_TO_GET_DB_CONN
+            .with_label_values(&[self.name_partition(partition_id)])
+            .start_timer();
         let db_conn = self.get_partition(partition_id).db_pool.get().await;
         timer.observe_duration();
-        Ok(WrappedDbConn::new(db_conn?, self.name_partition(partition_id)))
+        Ok(WrappedDbConn::new(
+            db_conn?,
+            self.name_partition(partition_id),
+        ))
     }
 
     async fn get_db_conn_main(&self) -> Result<WrappedDbConn, StorageError> {
@@ -261,7 +279,7 @@ impl DataStorage {
     }
 
     pub async fn fetch_initial_metrics_values(&self) -> Result<(), StorageError> {
-        for i in 0..self.shard_dbs.len()+1 {
+        for i in 0..self.shard_dbs.len() + 1 {
             let count: i64 = self
                 .get_db_conn(i)
                 .await?
@@ -510,7 +528,8 @@ LIMIT $2";
 
     pub async fn purge_messages(&self, channel_login: &str) -> Result<(), StorageError> {
         let partition_id = self.channel_to_partition_id(channel_login);
-        let num_messages_deleted = self.get_db_conn(partition_id)
+        let num_messages_deleted = self
+            .get_db_conn(partition_id)
             .await?
             .0
             .execute(
@@ -518,29 +537,40 @@ LIMIT $2";
                 &[&channel_login],
             )
             .await?;
-        MESSAGES_STORED.with_label_values(&[self.name_partition(partition_id)]).sub(num_messages_deleted as i64);
+        MESSAGES_STORED
+            .with_label_values(&[self.name_partition(partition_id)])
+            .sub(num_messages_deleted as i64);
         Ok(())
     }
 
     /// Append a message to the storage.
-    pub fn append_messages(
-        &self,
-        messages: Vec<(String, DateTime<Utc>, String)>,
-    ) {
-        let group_map = messages.into_iter().into_group_map_by(|(channel_login, _, _)| self.channel_to_partition_id(channel_login));
+    pub fn append_messages(&self, messages: Vec<(String, DateTime<Utc>, String)>) {
+        let group_map = messages
+            .into_iter()
+            .into_group_map_by(|(channel_login, _, _)| self.channel_to_partition_id(channel_login));
 
         for (partition_id, messages) in group_map.into_iter() {
             let self_clone = self.clone();
             tokio::spawn(async move {
-                STORE_CHUNK_RUNS.with_label_values(&[self_clone.name_partition(partition_id)]).inc();
+                STORE_CHUNK_RUNS
+                    .with_label_values(&[self_clone.name_partition(partition_id)])
+                    .inc();
                 let timer = STORE_CHUNK_TIME_TAKEN
                     .with_label_values(&[self_clone.name_partition(partition_id)])
                     .start_timer();
 
-                let res = self_clone.append_messages_partition(partition_id, messages).await;
+                let res = self_clone
+                    .append_messages_partition(partition_id, messages)
+                    .await;
                 if let Err(e) = res {
-                    tracing::error!("Failed to append message chunk to {}: {}", self_clone.name_partition(partition_id), e);
-                    STORE_CHUNK_ERRORS.with_label_values(&[self_clone.name_partition(partition_id)]).inc();
+                    tracing::error!(
+                        "Failed to append message chunk to {}: {}",
+                        self_clone.name_partition(partition_id),
+                        e
+                    );
+                    STORE_CHUNK_ERRORS
+                        .with_label_values(&[self_clone.name_partition(partition_id)])
+                        .inc();
                 }
 
                 timer.observe_duration();
@@ -551,9 +581,11 @@ LIMIT $2";
     async fn append_messages_partition(
         &self,
         partition_id: usize,
-        messages: Vec<(String, DateTime<Utc>, String)>
+        messages: Vec<(String, DateTime<Utc>, String)>,
     ) -> Result<(), StorageError> {
-        STORE_CHUNK_RUNS.with_label_values(&[self.name_partition(partition_id)]).inc();
+        STORE_CHUNK_RUNS
+            .with_label_values(&[self.name_partition(partition_id)])
+            .inc();
 
         if messages.len() <= 0 {
             return Ok(());
@@ -565,9 +597,12 @@ LIMIT $2";
             tx.execute("INSERT INTO message(channel_login, time_received, message_source) VALUES ($1, $2, $3)", &[&channel_login, &time_received, &message_source]).await?;
         }
         tx.commit().await?;
-        MESSAGES_APPENDED.with_label_values(&[self.name_partition(partition_id)]).inc_by(num_messages as u64);
-        MESSAGES_STORED.with_label_values(&[self.name_partition(partition_id)]).add(num_messages as i64);
-
+        MESSAGES_APPENDED
+            .with_label_values(&[self.name_partition(partition_id)])
+            .inc_by(num_messages as u64);
+        MESSAGES_STORED
+            .with_label_values(&[self.name_partition(partition_id)])
+            .add(num_messages as i64);
 
         Ok(())
     }
@@ -588,7 +623,7 @@ LIMIT $2";
             loop {
                 check_interval.tick().await;
                 tracing::info!("Running vacuum for old messages");
-                for partition_id in 0..self.shard_dbs.len()+1 {
+                for partition_id in 0..self.shard_dbs.len() + 1 {
                     tokio::spawn(async move {
                         let res = self
                             .run_message_vacuum(
@@ -643,7 +678,9 @@ LIMIT $2";
 
         for channel in channels_with_messages {
             interval.tick().await;
-            VACUUM_RUNS.with_label_values(&[self.name_partition(partition_id)]).inc();
+            VACUUM_RUNS
+                .with_label_values(&[self.name_partition(partition_id)])
+                .inc();
 
             let execute_result = db_conn
                 .0
@@ -675,13 +712,22 @@ AND (
             let messages_deleted = match execute_result {
                 Ok(messages_deleted) => messages_deleted,
                 Err(e) => {
-                    tracing::error!("({}) Failed to vacuum channel {}: {}", self.name_partition(partition_id), channel, e);
+                    tracing::error!(
+                        "({}) Failed to vacuum channel {}: {}",
+                        self.name_partition(partition_id),
+                        channel,
+                        e
+                    );
                     continue;
                 }
             };
 
-            MESSAGES_VACUUMED.with_label_values(&[self.name_partition(partition_id)]).inc_by(messages_deleted);
-            MESSAGES_STORED.with_label_values(&[self.name_partition(partition_id)]).sub(messages_deleted as i64);
+            MESSAGES_VACUUMED
+                .with_label_values(&[self.name_partition(partition_id)])
+                .inc_by(messages_deleted);
+            MESSAGES_STORED
+                .with_label_values(&[self.name_partition(partition_id)])
+                .sub(messages_deleted as i64);
         }
 
         Ok(())
