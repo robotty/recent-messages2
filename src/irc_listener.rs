@@ -2,7 +2,7 @@ use crate::config::Config;
 use crate::db::DataStorage;
 use chrono::Utc;
 use lazy_static::lazy_static;
-use prometheus::{linear_buckets, register_histogram, Histogram};
+use prometheus::{exponential_buckets, register_histogram, Histogram};
 use tokio::sync::mpsc;
 use tokio::task::JoinHandle;
 use tokio_util::sync::CancellationToken;
@@ -62,7 +62,16 @@ impl IrcListener {
         config: &'static Config,
         shutdown_signal: CancellationToken,
     ) -> (JoinHandle<()>, JoinHandle<()>) {
-        let buckets = linear_buckets(10.0, 10.0, 50).unwrap();
+        let max_chunk_size = 10000;
+
+        let smallest_bucket = 1f64;
+        let largest_bucket = max_chunk_size as f64;
+        let num_buckets = 100usize;
+        // math :) this formula is the result of "solve s*x^b = l for x"
+        // where s=smallest_bucket, x=factor, b=num_buckets, l=largest_bucket
+        let factor = (largest_bucket / smallest_bucket).powf(1f64 / (num_buckets as f64));
+
+        let buckets = exponential_buckets(smallest_bucket, factor, num_buckets).unwrap();
 
         let store_chunk_chunk_size = register_histogram!(
             "recentmessages_irc_forwarder_store_chunk_chunk_size",
@@ -87,7 +96,6 @@ impl IrcListener {
         };
 
         let chunk_worker = async move {
-            let max_chunk_size = 10000;
             loop {
                 let mut chunk = Vec::<_>::with_capacity(max_chunk_size);
                 loop {
