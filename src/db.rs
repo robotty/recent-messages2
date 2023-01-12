@@ -600,8 +600,12 @@ LIMIT $2";
                 DataStorage::batch_message_insert_values(&messages).as_slice(),
             )
             .await?;
-        MESSAGES_APPENDED.with_label_values(&[self.name_partition(partition_id)]).inc_by(num_messages as u64);
-        MESSAGES_STORED.with_label_values(&[self.name_partition(partition_id)]).add(num_messages as i64);
+        MESSAGES_APPENDED
+            .with_label_values(&[self.name_partition(partition_id)])
+            .inc_by(num_messages as u64);
+        MESSAGES_STORED
+            .with_label_values(&[self.name_partition(partition_id)])
+            .add(num_messages as i64);
         Ok(())
     }
 
