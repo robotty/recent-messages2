@@ -1,13 +1,10 @@
 use crate::config::Config;
 use crate::db::DataStorage;
 use chrono::Utc;
-use futures::StreamExt;
 use lazy_static::lazy_static;
 use prometheus::{linear_buckets, register_histogram, Histogram};
 use tokio::sync::mpsc;
 use tokio::task::JoinHandle;
-use tokio::time::MissedTickBehavior;
-use tokio_stream::wrappers::UnboundedReceiverStream;
 use tokio_util::sync::CancellationToken;
 use twitch_irc::login::StaticLoginCredentials;
 use twitch_irc::message::{AsRawIRC, ServerMessage};
@@ -74,7 +71,7 @@ impl IrcListener {
         )
         .unwrap();
 
-        let (tx, rx) = mpsc::unbounded_channel();
+        let (tx, mut rx) = mpsc::unbounded_channel();
 
         let forward_worker = async move {
             let tx = tx.clone();
@@ -90,28 +87,26 @@ impl IrcListener {
         };
 
         let chunk_worker = async move {
-            let mut stream = UnboundedReceiverStream::new(rx).ready_chunks(512);
-
-            let mut interval = tokio::time::interval(config.irc.forwarder_run_every);
-            interval.set_missed_tick_behavior(MissedTickBehavior::Burst);
-
+            let max_chunk_size = 10000;
             loop {
-                interval.tick().await;
-                let timeout = tokio::time::sleep(config.irc.forwarder_run_every / 2);
-                let chunk = tokio::select! {
-                    biased;
-                    _ = timeout => {
-                        continue;
+                let mut chunk = Vec::<_>::with_capacity(max_chunk_size);
+                loop {
+                    match rx.try_recv() {
+                        Ok(message) => chunk.push(message),
+                        Err(_) => break,
                     }
-                    next = stream.next() => {
-                        match next {
-                            Some(chunk) => chunk,
-                            None => break,
-                        }
+                    if chunk.len() >= max_chunk_size {
+                        break;
                     }
-                };
-
+                }
+                if chunk.len() < max_chunk_size {
+                    tokio::time::sleep(config.irc.forwarder_run_every).await;
+                }
                 store_chunk_chunk_size.observe(chunk.len() as f64);
+                if chunk.len() == 0 {
+                    continue;
+                }
+
                 data_storage.append_messages(chunk);
             }
         };
