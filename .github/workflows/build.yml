@@ -54,7 +54,7 @@ jobs:
             target/release/recent-messages2.exe
   check-format-prettier:
     runs-on: ubuntu-latest
-    container: node:16-stretch
+    container: node:18-bullseye
     steps:
       - uses: actions/checkout@v2
       - run: cd web && npm ci
@@ -62,7 +62,7 @@ jobs:
       - run: ./web/node_modules/.bin/prettier --check --ignore-path ".gitignore" "**/*.md" "**/*.tsx" "**/*.yml" "**/*.json"
   build-web:
     runs-on: ubuntu-latest
-    container: node:${{ matrix.node }}-stretch
+    container: node:${{ matrix.node }}-bullseye
     strategy:
       matrix:
         node: [14, 16, 18]
