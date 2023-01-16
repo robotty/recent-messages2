@@ -344,6 +344,42 @@ export function API() {
           chat.
         </p>
         <p>
+          Please also note that my implementation may re-order the tags. For
+          this reason, you must not rely on IRCv3 tags in the message to be in
+          any particular order. Please see{" "}
+          <a href="https://ircv3.net/specs/extensions/message-tags">
+            the standard
+          </a>{" "}
+          for further caveats, especially these: "The ordering of tags is not
+          meaningful.", and: "Implementations MUST interpret empty tag values
+          (e.g. <code>foo=</code>) as equivalent to missing tag values (e.g.{" "}
+          <code>foo</code>). Specifications MUST NOT differentiate meaning
+          between tags with empty and missing values."
+        </p>
+        <p>
+          Lastly, please ensure that you are parsing the listed messages with an
+          <a href="https://www.rfc-editor.org/rfc/rfc2812#section-2.3.1">
+            RFC 2812
+          </a>
+          -compliant IRC message parser. You must especially not rely on the
+          last parameter being marked as "trailing", since the "<code>:</code>"
+          character marking the last parameter of the IRC message will be
+          omitted should it not be necessary to form a valid message. (Quoting
+          from the spec: "After extracting the parameter list, all parameters
+          are equal whether matched by &lt;middle&gt; or &lt;trailing&gt;.
+          &lt;trailing&gt; is just a syntactic trick to allow SPACE within the
+          parameter.") For example, this is a message as you might find it in
+          the API response of this service:
+          <pre>
+            <code>
+              @user-id=132532813;badge-info=;badges=turbo/1;tmi-sent-ts=1673907853307;mod=0;historical=1;returning-chatter=0;flags=;color=#EF8A12;subscriber=0;rm-received-ts=1673907853790;user-type=;display-name=icelys;room-id=11148817;emotes=;turbo=1;id=c220d6d3-6a55-403f-9094-94a80ae2cdcd;first-msg=0
+              :icelys!icelys@icelys.tmi.twitch.tv PRIVMSG #pajlada FeelsBadMan
+            </code>
+          </pre>
+          Note the non-deterministic order of the tags as well as the lack of a
+          "<code>:</code>" character before the "<code>FeelsBadMan</code>".
+        </p>
+        <p>
           If you are going to integrate the returned messages into a chat
           application that also connects to real chat at the same time, it's
           advisable to filter duplicate messages (messages that your chat client
