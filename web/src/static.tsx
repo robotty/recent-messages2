@@ -285,12 +285,31 @@ export function API() {
             more than <code>n</code> messages are available for the requested
             channel, the response is limited to the <code>n</code> newest
             messages. Optional, defaults to no limit (up to{" "}
-            {config.max_buffer_size} messages).{" "}
+            {config.max_buffer_size} messages). Can be combined with{" "}
+            <code>?before=</code> and <code>?after=</code>, the three
+            requirements combine using a logical AND.
+            <br />
             <strong>
               It is strongly recommended that you set this to some reasonable
               number based on your application, e.g. 50 or 100 tends to be more
               than enough for general-purpose chat clients.
             </strong>
+          </li>
+          <li>
+            <code>?before=n</code>: Only return messages that were received
+            before (<code>&lgt;</code>) this timestamp (in milliseconds since
+            the unix epoch, this refers to the <code>rm-received-rs</code>{" "}
+            timestamp). Optional, can be combined with <code>?limit=</code> and{" "}
+            <code>?after=</code>, the three requirements combine using a logical
+            AND.
+          </li>
+          <li>
+            <code>?after=n</code>: Only return messages that were received after
+            (<code>&gt;</code>) this timestamp (in milliseconds since the unix
+            epoch, this refers to the <code>rm-received-rs</code> timestamp).
+            Optional, can be combined with <code>?limit=</code> and{" "}
+            <code>?before=</code>, the three requirements combine using a
+            logical AND.
           </li>
         </ul>
         <h6>Response format:</h6>

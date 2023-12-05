@@ -497,6 +497,8 @@ WHERE access_token = $1",
         &self,
         channel_login: &str,
         limit: Option<usize>,
+        before: Option<DateTime<Utc>>,
+        after: Option<DateTime<Utc>>,
         max_buffer_size: usize,
     ) -> Result<Vec<StoredMessage>, StorageError> {
         // limit: If specified, take the newest N messages.
@@ -508,15 +510,20 @@ WHERE access_token = $1",
             None => max_buffer_size,
         };
 
-        let query = "SELECT time_received, message_source
-FROM message
-WHERE channel_login = $1
-ORDER BY time_received DESC
-LIMIT $2";
+        // The cast() below is to allow the PostgreSQL server to unambiguously detect the
+        // type of $2 and $3. See: https://stackoverflow.com/a/64223435
+        let query = "\
+            SELECT time_received, message_source
+            FROM message
+            WHERE channel_login = $1
+            AND   (cast($2 AS TIMESTAMP WITH TIME ZONE) IS NULL OR time_received < $2)
+            AND   (cast($3 AS TIMESTAMP WITH TIME ZONE) IS NULL OR time_received > $3)
+            ORDER BY time_received DESC
+            LIMIT $4";
 
         Ok(db_conn
             .0
-            .query(query, &[&channel_login, &(limit as i64)])
+            .query(query, &[&channel_login, &before, &after, &(limit as i64)])
             .await?
             .into_iter()
             .rev()

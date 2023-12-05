@@ -1,5 +1,6 @@
 use crate::config::Config;
 use crate::db::DataStorage;
+use chrono::prelude::*;
 use chrono::Utc;
 use lazy_static::lazy_static;
 use prometheus::{exponential_buckets, register_histogram, Histogram};
@@ -88,8 +89,26 @@ impl IrcListener {
                 if let Some(channel_login) = message.channel_login() {
                     let message_source = message.source().as_raw_irc();
                     let timer = INTERNAL_FORWARD_TIME_TAKEN.start_timer();
-                    tx.send((channel_login.to_owned(), Utc::now(), message_source))
-                        .ok();
+                    // trunc_subsecs(3): Truncates now() to millisecond precision (=3 digits subsecond precision).
+                    // This prevents problems later when we filter by ?since= and ?before=,
+                    // Where the hidden sub-millisecond precision in the database would cause
+                    // surprising behaviour.
+
+                    // For example: If a message is stored in the database at millisecond-timestamp 1701718211635.613
+                    // (notice the hidden .613 precision, which won't get exported in the @rm-received-ts tag),
+                    // The user could request ?since=1701718211635, where we would expect the message to NOT be returned.
+                    // However, because the value stored in the database is actually larger in the microseconds precision,
+                    // we get unexpected/surprising behaviour.
+
+                    // Doing the truncating here is easier than doing it later during the query/filtering,
+                    // since the database index cannot be used when filtering by the truncated timestamp.
+                    let timestamp_truncated_to_milliseconds = Utc::now().trunc_subsecs(3);
+                    tx.send((
+                        channel_login.to_owned(),
+                        timestamp_truncated_to_milliseconds,
+                        message_source,
+                    ))
+                    .ok();
                     timer.observe_duration();
                 }
             }
