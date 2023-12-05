@@ -7,7 +7,7 @@ use axum::{Extension, Json};
 use chrono::serde::ts_milliseconds_option;
 use chrono::{DateTime, Utc};
 use lazy_static::lazy_static;
-use prometheus::{register_histogram_vec, linear_buckets, HistogramVec};
+use prometheus::{linear_buckets, register_histogram_vec, HistogramVec};
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 
@@ -112,15 +112,19 @@ pub async fn get_recent_messages(
         .await;
     timer.observe_duration();
     let stored_messages = result.map_err(ApiError::GetMessages)?;
-    MESSAGE_COUNT_HISTOGRAM.with_label_values(&["from_database"]).observe(stored_messages.len() as f64);
+    MESSAGE_COUNT_HISTOGRAM
+        .with_label_values(&["from_database"])
+        .observe(stored_messages.len() as f64);
 
     let timer = COMPONENTS_PERFORMANCE_HISTOGRAM
-    .with_label_values(&["export_stored_messages"])
-    .start_timer();
+        .with_label_values(&["export_stored_messages"])
+        .start_timer();
     let exported_messages =
         crate::message_export::export_stored_messages(stored_messages, query_options);
     timer.observe_duration();
-    MESSAGE_COUNT_HISTOGRAM.with_label_values(&["after_export"]).observe(exported_messages.len() as f64);
+    MESSAGE_COUNT_HISTOGRAM
+        .with_label_values(&["after_export"])
+        .observe(exported_messages.len() as f64);
 
     let timer = COMPONENTS_PERFORMANCE_HISTOGRAM
         .with_label_values(&["is_join_confirmed"])
