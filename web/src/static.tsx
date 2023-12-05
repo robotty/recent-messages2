@@ -297,8 +297,8 @@ export function API() {
           </li>
           <li>
             <code>?before=n</code>: Only return messages that were received
-            before (<code>&lgt;</code>) this timestamp (in milliseconds since
-            the unix epoch, this refers to the <code>rm-received-rs</code>{" "}
+            before (<code>&lt;</code>) this timestamp (in milliseconds since the
+            unix epoch, this refers to the <code>rm-received-rs</code>{" "}
             timestamp). Optional, can be combined with <code>?limit=</code> and{" "}
             <code>?after=</code>, the three requirements combine using a logical
             AND.
