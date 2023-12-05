@@ -10,9 +10,9 @@ use serde::{Deserialize, Serialize};
 use std::time::Duration;
 
 lazy_static! {
-    static ref GET_RM2_AWAITS: HistogramVec = register_histogram_vec!(
-        "recentmessages_get_recent_messages_endpoint_async_components_seconds",
-        "Time taken to complete the different async stages of the /api/v2/recent-messages/:channel_login endpoint",
+    static ref COMPONENTS_PERFORMANCE_HISTOGRAM: HistogramVec = register_histogram_vec!(
+        "recentmessages_get_recent_messages_endpoint_components_seconds",
+        "Time taken to complete the different stages/elements of the /api/v2/recent-messages/:channel_login endpoint",
         &["stage"]
     )
     .unwrap();
@@ -67,7 +67,7 @@ pub async fn get_recent_messages(
         return Err(ApiError::InvalidChannelLogin(e));
     }
 
-    let timer = GET_RM2_AWAITS
+    let timer = COMPONENTS_PERFORMANCE_HISTOGRAM
         .with_label_values(&["is_channel_ignored"])
         .start_timer();
     let result = app_data
@@ -79,7 +79,7 @@ pub async fn get_recent_messages(
         return Err(ApiError::ChannelIgnored(channel_login));
     }
 
-    let timer = GET_RM2_AWAITS
+    let timer = COMPONENTS_PERFORMANCE_HISTOGRAM
         .with_label_values(&["get_messages"])
         .start_timer();
     let result = app_data
@@ -93,10 +93,14 @@ pub async fn get_recent_messages(
     timer.observe_duration();
     let stored_messages = result.map_err(ApiError::GetMessages)?;
 
+    let timer = COMPONENTS_PERFORMANCE_HISTOGRAM
+    .with_label_values(&["export_stored_messages"])
+    .start_timer();
     let exported_messages =
         crate::message_export::export_stored_messages(stored_messages, query_options);
+    timer.observe_duration();
 
-    let timer = GET_RM2_AWAITS
+    let timer = COMPONENTS_PERFORMANCE_HISTOGRAM
         .with_label_values(&["is_join_confirmed"])
         .start_timer();
     let mut is_confirmed_joined = app_data
