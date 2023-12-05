@@ -2,7 +2,7 @@
 
 # Unreleased
 
-- Breaking: Removed `recentmessages_get_recent_messages_endpoint_async_components_seconds` metric, 
+- Breaking: Removed `recentmessages_get_recent_messages_endpoint_async_components_seconds` metric,
   has been renamed to the almost identical `recentmessages_get_recent_messages_endpoint_components_seconds`.
   This new metric now also observes the `export_stored_messages` component, which is not async, hence the rename.
   (#287)
