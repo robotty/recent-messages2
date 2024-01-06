@@ -65,7 +65,7 @@ jobs:
     container: node:${{ matrix.node }}-bullseye
     strategy:
       matrix:
-        node: [14, 16, 18]
+        node: [18, 20]
     steps:
       - uses: actions/checkout@v2
       - run: cd web && npm ci

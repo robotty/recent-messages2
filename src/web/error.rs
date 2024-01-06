@@ -5,6 +5,7 @@ use http::header::HeaderName;
 use http::StatusCode;
 use serde::Serialize;
 use thiserror::Error;
+use tracing::error;
 
 #[derive(Error, Debug)]
 pub enum ApiError {
@@ -145,9 +146,13 @@ struct ApiErrorResponse {
     error_code: &'static str,
 }
 
-// TODO: currently errors from API handlers arent logged, log them here?
 impl IntoResponse for ApiError {
     fn into_response(self) -> Response {
+        // If error is in the 5xx range, log it.
+        if self.status_code().is_server_error() {
+            error!("Returning Internal Server Error to a user: {}", self);
+        }
+
         (
             self.status_code(),
             Json(ApiErrorResponse {
