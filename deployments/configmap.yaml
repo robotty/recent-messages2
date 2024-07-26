@@ -5,8 +5,6 @@ metadata:
 data:
   config.toml: | 
     # Paste the contents of your config.toml file here
-    # Make sure to replace any sensitive values with placeholders
-    # You can use these placeholders in your application to read from environment variables
     [app]
     channels_expire_after = "2400 hours"
     messages_expire_after = "2400 hours"
