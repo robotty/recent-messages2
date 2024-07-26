@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:13-alpine
+        env:
+        # use these carefully if you expose database to outside world
+        - name: POSTGRES_USER
+          value: "db_username"
+        - name: POSTGRES_DB
+          value: "recent_messages2"
+        - name: POSTGRES_HOST_AUTH_METHOD
+          value: "trust"
+        - name: POSTGRES_PASSWORD
+          value: "password"
+        ports:
+        - containerPort: 5432
+---
+# postgres-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+spec:
+  selector:
+    app: postgres
+  ports:
+    - protocol: TCP
+      port: 5432
+      targetPort: 5432

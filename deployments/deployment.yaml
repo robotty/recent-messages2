@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: recent-messages2
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: recent-messages2
+  template:
+    metadata:
+      labels:
+        app: recent-messages2
+    spec:
+      containers:
+      - name: recent-messages2
+        image: civon/recent-messages2:v0.1
+        ports:
+        - containerPort: 8080
+        volumeMounts:
+        - name: config-volume
+          mountPath: /app/config.toml
+          subPath: config.toml
+      volumes: 
+      - name: config-volume
+        configMap:
+          name: recent-messages2-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: recent-messages2
+spec:
+  selector:
+    app: recent-messages2
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
