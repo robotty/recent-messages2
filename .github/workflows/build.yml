@@ -2,33 +2,34 @@ name: Build
 
 on: [push, pull_request]
 
+permissions:
+  checks: write
+
 jobs:
   check-format-rustfmt:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
       - name: cargo fmt -- --check
-        uses: actions-rs/cargo@v1
+        uses: qRoC/cargo-actions@v1
         with:
           command: fmt
           args: -- --check
+          token: ${{ secrets.GITHUB_TOKEN }}
   check-rust:
     runs-on: ${{ matrix.os }}-latest
     strategy:
       matrix:
         os: [ubuntu, windows, macOS]
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
       - name: cargo check
-        uses: actions-rs/cargo@v1
+        uses: qRoC/cargo-actions@v1
         with:
           command: check
+          token: ${{ secrets.GITHUB_TOKEN }}
   build-rust-artifacts:
     # only master branch
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
@@ -37,16 +38,15 @@ jobs:
       matrix:
         os: [ubuntu, windows, macOS]
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
       - name: cargo build --release
-        uses: actions-rs/cargo@v1
+        uses: qRoC/cargo-actions@v1
         with:
           command: build
           args: --release
-      - uses: actions/upload-artifact@v2
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/upload-artifact@v4
         with:
           name: app-${{ matrix.os }}
           path: |
@@ -54,9 +54,9 @@ jobs:
             target/release/recent-messages2.exe
   check-format-prettier:
     runs-on: ubuntu-latest
-    container: node:18-bullseye
+    container: node:22-bookworm
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - run: cd web && npm ci
       # If updating this command, make sure to update the same command in /scripts/reformat.sh too
       - run: ./web/node_modules/.bin/prettier --check --ignore-path ".gitignore" "**/*.md" "**/*.tsx" "**/*.yml" "**/*.json"
@@ -65,12 +65,12 @@ jobs:
     container: node:${{ matrix.node }}-bullseye
     strategy:
       matrix:
-        node: [18, 20]
+        node: [20, 22]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - run: cd web && npm ci
       - run: cd web && npm run build
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         # only master branch
         if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
         with:
