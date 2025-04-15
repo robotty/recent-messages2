@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: recent-messages2-config
+data:
+  config.toml: | 
+    # Paste the contents of your config.toml file here
+    [app]
+    channels_expire_after = "2400 hours"
+    messages_expire_after = "2400 hours"
+    max_buffer_size = 5000
+    
+    [web]
+    # Twitch API access credentials, register an application at https://dev.twitch.tv/
+    client_id = "abc"
+    client_secret = "def"
+    redirect_uri = "http://localhost"
+
+    [main_db]
+    user = "db_username"
+    dbname = "recent_messages2"
+    host = [  { hostname = "postgres", port = 5432 } ]
