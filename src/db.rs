@@ -3,83 +3,101 @@ use crate::web::auth::{TwitchUserAccessToken, UserAuthorization};
 use chrono::{DateTime, Utc};
 use deadpool_postgres::{ManagerConfig, PoolConfig, RecyclingMethod};
 use itertools::Itertools;
-use lazy_static::lazy_static;
 use murmur3::murmur3_32;
-use prometheus::{register_histogram_vec, register_int_counter_vec, register_int_gauge_vec};
 use prometheus::{HistogramVec, IntCounterVec, IntGaugeVec};
+use prometheus::{register_histogram_vec, register_int_counter_vec, register_int_gauge_vec};
 use rustls::{OwnedTrustAnchor, RootCertStore};
-use std::collections::HashSet;
 use std::fmt::{Display, Formatter};
 use std::io::Cursor;
 use std::ops::DerefMut;
 use std::time::Duration;
+use std::{collections::HashSet, sync::LazyLock};
 use tokio::time::MissedTickBehavior;
 use tokio_postgres::types::ToSql;
 use tokio_postgres_rustls::MakeRustlsConnect;
 use tokio_util::sync::CancellationToken;
 
-lazy_static! {
-    static ref MESSAGES_APPENDED: IntCounterVec = register_int_counter_vec!(
+static MESSAGES_APPENDED: LazyLock<IntCounterVec> = LazyLock::new(|| {
+    register_int_counter_vec!(
         "recentmessages_messages_appended",
         "Total number of messages appended to storage",
         &["db"]
     )
-    .unwrap();
-    static ref MESSAGES_STORED: IntGaugeVec = register_int_gauge_vec!(
+    .unwrap()
+});
+
+static MESSAGES_STORED: LazyLock<IntGaugeVec> = LazyLock::new(|| {
+    register_int_gauge_vec!(
         "recentmessages_messages_stored",
         "Number of messages currently stored in storage",
         &["db"]
     )
-    .unwrap();
-    static ref STORE_CHUNK_RUNS: IntCounterVec = register_int_counter_vec!(
+    .unwrap()
+});
+static STORE_CHUNK_RUNS: LazyLock<IntCounterVec> = LazyLock::new(|| {
+    register_int_counter_vec!(
         "recentmessages_irc_forwarder_store_chunk_runs",
         "Number of runs the IRC forwarder has completed",
         &["db"]
     )
-    .unwrap();
-    static ref STORE_CHUNK_ERRORS: IntCounterVec = register_int_counter_vec!(
+    .unwrap()
+});
+static STORE_CHUNK_ERRORS: LazyLock<IntCounterVec> = LazyLock::new(|| {
+    register_int_counter_vec!(
         "recentmessages_irc_forwarder_store_chunk_errors",
         "Number of times a chunk could not be appended to the database successfully",
         &["db"]
     )
-    .unwrap();
-    static ref STORE_CHUNK_TIME_TAKEN: HistogramVec = register_histogram_vec!(
+    .unwrap()
+});
+static STORE_CHUNK_TIME_TAKEN: LazyLock<HistogramVec> = LazyLock::new(|| {
+    register_histogram_vec!(
         "recentmessages_irc_forwarder_store_chunk_time_taken_seconds",
         "Time taken to forward individual chunks of messages to the database",
         &["db"]
     )
-    .unwrap();
-    static ref MESSAGES_VACUUMED: IntCounterVec = register_int_counter_vec!(
+    .unwrap()
+});
+static MESSAGES_VACUUMED: LazyLock<IntCounterVec> = LazyLock::new(|| {
+    register_int_counter_vec!(
         "recentmessages_messages_vacuumed",
         "Total number of messages that were removed by the automatic vacuum runner",
         &["db"]
     )
-    .unwrap();
-    static ref VACUUM_RUNS: IntCounterVec = register_int_counter_vec!(
+    .unwrap()
+});
+static VACUUM_RUNS: LazyLock<IntCounterVec> = LazyLock::new(|| {
+    register_int_counter_vec!(
         "recentmessages_message_vacuum_runs",
         "Total number of times the automatic vacuum runner has been started for a certain channel",
         &["db"]
     )
-    .unwrap();
-    static ref DB_CONNECTIONS_IN_USE: IntGaugeVec = register_int_gauge_vec!(
+    .unwrap()
+});
+static DB_CONNECTIONS_IN_USE: LazyLock<IntGaugeVec> = LazyLock::new(|| {
+    register_int_gauge_vec!(
         "recentmessages_db_pool_connections_in_use",
         "Number of database connections currently in use",
         &["db"]
     )
-    .unwrap();
-    static ref DB_CONNECTIONS_MAX: IntGaugeVec = register_int_gauge_vec!(
+    .unwrap()
+});
+static DB_CONNECTIONS_MAX: LazyLock<IntGaugeVec> = LazyLock::new(|| {
+    register_int_gauge_vec!(
         "recentmessages_db_pool_connections_max",
         "Configured maximum size of the database connection pool",
         &["db"]
     )
-    .unwrap();
-    static ref TIME_TAKEN_TO_GET_DB_CONN: HistogramVec = register_histogram_vec!(
+    .unwrap()
+});
+static TIME_TAKEN_TO_GET_DB_CONN: LazyLock<HistogramVec> = LazyLock::new(|| {
+    register_histogram_vec!(
         "recentmessages_db_pool_retrieval_time_seconds",
         "Time taken to retrieve a DB connection from the database pool",
         &["db"]
     )
-    .unwrap();
-}
+    .unwrap()
+});
 
 #[derive(Clone)]
 pub struct DatabaseAccess {
@@ -92,15 +110,15 @@ impl DatabaseAccess {
     /// since this happens only once during application startup and the "leaked" value
     /// is needed for the entirety of the program runtime
     pub fn new(
-        custom_name: Option<String>,
+        custom_name: Option<&str>,
         partition_id: usize,
         db_pool: deadpool_postgres::Pool,
     ) -> Self {
         let shard_or_main = if partition_id == 0 { "main" } else { "shard" };
         let cached_name = if let Some(custom_name) = &custom_name {
-            format!("db{}({}, {})", partition_id, shard_or_main, custom_name)
+            format!("db{partition_id}({shard_or_main}, {custom_name})")
         } else {
-            format!("db{}({})", partition_id, shard_or_main)
+            format!("db{partition_id}({shard_or_main})")
         };
         let cached_name = Box::leak(Box::new(cached_name));
         DatabaseAccess {
@@ -120,7 +138,7 @@ pub fn connect_to_postgresql(config: &Config) -> DataStorage {
     let mut partition_id_counter = 0usize;
     let main_db = connect_to_single_postgres_server(&config.main_db, &mut partition_id_counter);
     let mut shard_dbs = Vec::new();
-    for shard_db_config in config.shard_db.iter() {
+    for shard_db_config in &config.shard_db {
         shard_dbs.push(connect_to_single_postgres_server(
             shard_db_config,
             &mut partition_id_counter,
@@ -172,7 +190,7 @@ fn connect_to_single_postgres_server(
         .build()
         .unwrap();
 
-    let db = DatabaseAccess::new(config.name.clone(), partition_id, db_pool);
+    let db = DatabaseAccess::new(config.name.as_deref(), partition_id, db_pool);
 
     DB_CONNECTIONS_MAX
         .with_label_values(&[db.cached_name])
@@ -280,7 +298,7 @@ impl DataStorage {
     }
 
     pub async fn fetch_initial_metrics_values(&self) -> Result<(), StorageError> {
-        for i in 0..self.shard_dbs.len() + 1 {
+        for i in 0..=self.shard_dbs.len() {
             let count: i64 = self
                 .get_db_conn(i)
                 .await?
@@ -348,7 +366,7 @@ WHERE channel_login = $1",
             .await?;
         // if found, get the value from the returned row, otherwise, the channel is not known
         // and therefore not ignored
-        Ok(rows.get(0).map(|row| row.get(0)).unwrap_or(false))
+        Ok(rows.first().is_some_and(|row| row.get(0)))
     }
 
     pub async fn set_channel_ignored(
@@ -419,7 +437,7 @@ AND valid_until >= now()",
             )
             .await?;
 
-        if let Some(row) = rows.get(0) {
+        if let Some(row) = rows.first() {
             // token found in DB and not expired
             Ok(Some(UserAuthorization {
                 access_token: row.get("access_token"),
@@ -557,7 +575,7 @@ WHERE access_token = $1",
             .into_iter()
             .into_group_map_by(|(channel_login, _, _)| self.channel_to_partition_id(channel_login));
 
-        for (partition_id, messages) in group_map.into_iter() {
+        for (partition_id, messages) in group_map {
             let self_clone = self.clone();
             tokio::spawn(async move {
                 STORE_CHUNK_RUNS
@@ -595,7 +613,7 @@ WHERE access_token = $1",
             .with_label_values(&[self.name_partition(partition_id)])
             .inc();
 
-        if messages.len() <= 0 {
+        if messages.is_empty() {
             return Ok(());
         }
         let num_messages = messages.len();
@@ -633,14 +651,14 @@ WHERE access_token = $1",
             "INSERT INTO message(channel_login, time_received, message_source) VALUES ",
         );
         for i in 0..num_rows {
-            buf.push_str("(");
+            buf.push('(');
             for j in 0..num_columns {
                 buf.push_str(format!("${}", i * num_columns + j + 1).as_str());
                 if j != num_columns - 1 {
                     buf.push_str(", ");
                 }
             }
-            buf.push_str(")");
+            buf.push(')');
             if i != num_rows - 1 {
                 buf.push_str(", ");
             }
@@ -664,7 +682,7 @@ WHERE access_token = $1",
             loop {
                 check_interval.tick().await;
                 tracing::info!("Running vacuum for old messages");
-                for partition_id in 0..self.shard_dbs.len() + 1 {
+                for partition_id in 0..=self.shard_dbs.len() {
                     tokio::spawn(async move {
                         let res = self
                             .run_message_vacuum(
@@ -677,9 +695,11 @@ WHERE access_token = $1",
 
                         if let Err(e) = res {
                             tracing::error!(
-                        "Failed to start message vacuum batch ({}), skipping entire batch: {}",
-                        self.name_partition(partition_id),e);
-                        };
+                                "Failed to start message vacuum batch ({}), skipping entire batch: {}",
+                                self.name_partition(partition_id),
+                                e
+                            );
+                        }
                     });
                 }
             }
@@ -687,7 +707,7 @@ WHERE access_token = $1",
 
         tokio::select! {
             _ = worker => {},
-            _ = shutdown_signal.cancelled() => {}
+            () = shutdown_signal.cancelled() => {}
         }
     }
 

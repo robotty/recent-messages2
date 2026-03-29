@@ -288,7 +288,7 @@ impl From<postgres::Config> for DatabaseConfig {
                 _ => panic!("unhandled variant"),
             },
             host: hosts,
-            connect_timeout: config.get_connect_timeout().cloned(),
+            connect_timeout: config.get_connect_timeout().copied(),
             keepalives: config.get_keepalives(),
             keepalives_idle: config.get_keepalives_idle(),
             target_session_attrs: match config.get_target_session_attrs() {

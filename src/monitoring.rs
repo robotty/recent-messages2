@@ -32,7 +32,7 @@ pub async fn run_process_monitoring(shutdown_signal: CancellationToken) {
     loop {
         tokio::select! {
             _ = interval.tick() => {},
-            _ = shutdown_signal.cancelled() => {
+            () = shutdown_signal.cancelled() => {
                 break;
             }
         }

@@ -1,8 +1,8 @@
 use crate::db::StorageError;
-use axum::response::{IntoResponse, Response};
 use axum::Json;
-use http::header::HeaderName;
+use axum::response::{IntoResponse, Response};
 use http::StatusCode;
+use http::header::HeaderName;
 use serde::Serialize;
 use thiserror::Error;
 use tracing::error;
@@ -76,15 +76,15 @@ impl ApiError {
             ApiError::NotFound => StatusCode::NOT_FOUND,
             ApiError::RequestTimeout => StatusCode::REQUEST_TIMEOUT,
             ApiError::MethodNotAllowed => StatusCode::METHOD_NOT_ALLOWED,
-            ApiError::InvalidPath => StatusCode::BAD_REQUEST,
-            ApiError::InvalidQuery => StatusCode::BAD_REQUEST,
-            ApiError::InvalidPayload => StatusCode::BAD_REQUEST,
-            ApiError::HeaderValueNotUtf8(_) => StatusCode::BAD_REQUEST,
-            ApiError::MissingHeader(_) => StatusCode::BAD_REQUEST,
-            ApiError::InvalidChannelLogin(_) => StatusCode::BAD_REQUEST,
+            ApiError::InvalidPath
+            | ApiError::InvalidQuery
+            | ApiError::InvalidPayload
+            | ApiError::HeaderValueNotUtf8(_)
+            | ApiError::MissingHeader(_)
+            | ApiError::InvalidChannelLogin(_)
+            | ApiError::InvalidAuthorizationCode
+            | ApiError::MalformedAuthorizationHeader => StatusCode::BAD_REQUEST,
             ApiError::ChannelIgnored(_) => StatusCode::FORBIDDEN,
-            ApiError::InvalidAuthorizationCode => StatusCode::BAD_REQUEST,
-            ApiError::MalformedAuthorizationHeader => StatusCode::BAD_REQUEST,
             ApiError::Unauthorized => StatusCode::UNAUTHORIZED,
         }
     }
@@ -104,7 +104,7 @@ impl ApiError {
             | ApiError::SetChannelIgnored(_)
             | ApiError::GetMessages(_)
             | ApiError::PurgeMessages(_) => "Internal Server Error".to_owned(),
-            rest => format!("{}", rest),
+            rest => format!("{rest}"),
         }
     }
 

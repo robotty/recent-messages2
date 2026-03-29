@@ -3,9 +3,8 @@ use crate::web::get_recent_messages::GetRecentMessagesQueryOptions;
 use chrono::{DateTime, Utc};
 use humantime::format_duration;
 use itertools::Itertools;
-use lazy_static::lazy_static;
-use std::collections::HashSet;
 use std::convert::TryFrom;
+use std::{collections::HashSet, sync::LazyLock};
 use twitch_irc::message::{
     AsRawIRC, ClearChatAction, ClearMsgMessage, IRCMessage, IRCPrefix, IRCTags, NoticeMessage,
     ServerMessage,
@@ -60,7 +59,7 @@ impl ContainerFrame {
                         "rm-timeout".to_owned(),
                     ),
                     ClearChatAction::UserBanned { user_login, .. } => (
-                        format!("{} has been permanently banned.", user_login),
+                        format!("{user_login} has been permanently banned."),
                         "rm-permaban".to_owned(),
                     ),
                 };
@@ -114,18 +113,17 @@ struct MessageContainer {
     frames: Vec<ContainerFrame>,
 }
 
-lazy_static! {
-    static ref IGNORED_NOTICE_IDS: HashSet<&'static str> = [
+static IGNORED_NOTICE_IDS: LazyLock<HashSet<&'static str>> = LazyLock::new(|| {
+    [
         "no_permission",
         "host_on",
         "host_off",
         "host_target_went_offline",
-        "msg_channel_suspended"
+        "msg_channel_suspended",
     ]
-    .iter()
-    .cloned()
-    .collect();
-}
+    .into_iter()
+    .collect()
+});
 
 impl MessageContainer {
     pub fn append_stored_msg(&mut self, message: &StoredMessage) {

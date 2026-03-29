@@ -1,19 +1,20 @@
-use crate::web::error::ApiError;
+use std::sync::LazyLock;
+
 use crate::web::WebAppData;
+use crate::web::error::ApiError;
 use axum::middleware::Next;
 use axum::response::IntoResponse;
 use http::Request;
-use lazy_static::lazy_static;
-use prometheus::register_int_counter;
 use prometheus::IntCounter;
+use prometheus::register_int_counter;
 
-lazy_static! {
-    static ref HTTP_REQUEST_TIMEOUTS: IntCounter = register_int_counter!(
+static HTTP_REQUEST_TIMEOUTS: LazyLock<IntCounter> = LazyLock::new(|| {
+    register_int_counter!(
         "http_request_timeouts",
         "Total number of HTTP requests that timed out"
     )
-    .unwrap();
-}
+    .unwrap()
+});
 
 pub async fn timeout<B>(req: Request<B>, next: Next<B>) -> impl IntoResponse {
     let request_timeout = req
@@ -27,7 +28,7 @@ pub async fn timeout<B>(req: Request<B>, next: Next<B>) -> impl IntoResponse {
     let response_fut = next.run(req);
 
     tokio::select! {
-        _ = timer => {
+        () = timer => {
             HTTP_REQUEST_TIMEOUTS.inc();
             ApiError::RequestTimeout.into_response()
         },

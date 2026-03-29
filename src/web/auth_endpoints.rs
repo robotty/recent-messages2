@@ -106,7 +106,7 @@ pub async fn create_token(
         String::with_capacity(512 / 4),
         |mut s, x: u8| {
             // format as hex, padded with a leading 0 if needed (e.g. 0x0 -> "00", 0xFF -> "ff")
-            write!(&mut s, "{:02x}", x).unwrap();
+            write!(&mut s, "{x:02x}").unwrap();
             s
         },
     );

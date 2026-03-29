@@ -1,9 +1,10 @@
+use std::sync::LazyLock;
+
 use crate::config::Config;
 use crate::db::DataStorage;
-use chrono::prelude::*;
 use chrono::Utc;
-use lazy_static::lazy_static;
-use prometheus::{exponential_buckets, register_histogram, Histogram};
+use chrono::prelude::*;
+use prometheus::{Histogram, exponential_buckets, register_histogram};
 use tokio::sync::mpsc;
 use tokio::task::JoinHandle;
 use tokio_util::sync::CancellationToken;
@@ -11,13 +12,13 @@ use twitch_irc::login::StaticLoginCredentials;
 use twitch_irc::message::{AsRawIRC, ServerMessage};
 use twitch_irc::{ClientConfig, SecureTCPTransport, TwitchIRCClient};
 
-lazy_static! {
-    static ref INTERNAL_FORWARD_TIME_TAKEN: Histogram = register_histogram!(
+static INTERNAL_FORWARD_TIME_TAKEN: LazyLock<Histogram> = LazyLock::new(|| {
+    register_histogram!(
         "recentmessages_irc_forwarder_internal_forward_message_time_taken_seconds",
         "Time taken to add a message to the internal channel, this amount will climb if the system is overloaded"
     )
-    .unwrap();
-}
+    .unwrap()
+});
 
 #[derive(Debug, Clone)]
 pub struct IrcListener {
@@ -117,11 +118,8 @@ impl IrcListener {
         let chunk_worker = async move {
             loop {
                 let mut chunk = Vec::<_>::with_capacity(max_chunk_size);
-                loop {
-                    match rx.try_recv() {
-                        Ok(message) => chunk.push(message),
-                        Err(_) => break,
-                    }
+                while let Ok(message) = rx.try_recv() {
+                    chunk.push(message);
                     if chunk.len() >= max_chunk_size {
                         break;
                     }
@@ -130,7 +128,7 @@ impl IrcListener {
                     tokio::time::sleep(config.irc.forwarder_run_every).await;
                 }
                 store_chunk_chunk_size.observe(chunk.len() as f64);
-                if chunk.len() == 0 {
+                if chunk.is_empty() {
                     continue;
                 }
 
@@ -141,23 +139,19 @@ impl IrcListener {
         let shutdown_signal_1 = shutdown_signal.clone();
         let forward_worker_join_handle = tokio::spawn(async move {
             tokio::select! {
-                _ = forward_worker => {
-                    if !shutdown_signal_1.is_cancelled() {
-                        panic!("forward worker should never end")
-                    }
+                () = forward_worker => {
+                    assert!(shutdown_signal_1.is_cancelled(), "forward worker should never end");
                 },
-                _ = shutdown_signal_1.cancelled() => {}
+                () = shutdown_signal_1.cancelled() => {}
             }
         });
 
         let chunk_worker_join_handle = tokio::spawn(async move {
             tokio::select! {
-                _ = chunk_worker => {
-                    if !shutdown_signal.is_cancelled() {
-                        panic!("chunk worker should never end")
-                    }
+                () = chunk_worker => {
+                    assert!(shutdown_signal.is_cancelled(), "chunk worker should never end");
                 },
-                _ = shutdown_signal.cancelled() => {}
+                () = shutdown_signal.cancelled() => {}
             }
         });
 
@@ -183,7 +177,10 @@ impl IrcListener {
                 let channels = match res {
                     Ok(channels_to_part) => channels_to_part,
                     Err(e) => {
-                        tracing::error!("Failed to query the DB for a list of channels that should be joined. This iteration will be skipped. Cause: {}", e);
+                        tracing::error!(
+                            "Failed to query the DB for a list of channels that should be joined. This iteration will be skipped. Cause: {}",
+                            e
+                        );
                         continue;
                     }
                 };
@@ -198,7 +195,7 @@ impl IrcListener {
 
         tokio::select! {
             _ = worker => {},
-            _ = shutdown_signal.cancelled() => {}
+            () = shutdown_signal.cancelled() => {}
         }
     }
 

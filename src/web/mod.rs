@@ -4,12 +4,11 @@ use crate::web::error::ApiError;
 use crate::{Config, DataStorage};
 use axum::response::IntoResponse;
 use axum::routing::{get, post};
-use axum::{middleware, Extension, Router};
+use axum::{Extension, Router, middleware};
 use futures::future::BoxFuture;
-use http::{header, Method, Request, StatusCode};
+use http::{Method, Request, StatusCode, header};
 use hyper::Body;
-use lazy_static::lazy_static;
-use std::net::SocketAddr;
+use std::{net::SocketAddr, sync::LazyLock};
 use thiserror::Error;
 use tokio_util::sync::CancellationToken;
 use tower::Service;
@@ -40,9 +39,7 @@ pub struct WebAppData {
     config: &'static Config,
 }
 
-lazy_static! {
-    static ref HTTP_CLIENT: reqwest::Client = reqwest::Client::new();
-}
+static HTTP_CLIENT: LazyLock<reqwest::Client> = LazyLock::new(reqwest::Client::new);
 
 #[derive(Error, Debug)]
 pub enum BindError {
@@ -56,7 +53,7 @@ pub enum BindError {
     SetPermissions(&'static Path, Permissions, std::io::Error),
 }
 
-pub async fn run(
+pub fn run(
     data_storage: &'static DataStorage,
     irc_listener: &'static IrcListener,
     config: &'static Config,
@@ -82,7 +79,7 @@ pub async fn run(
             auth_middleware::with_authorization(req, next, shared_state)
         })
     };
-    let method_fallback = || (|| async { ApiError::MethodNotAllowed });
+    let method_fallback = || || async { ApiError::MethodNotAllowed };
     let api = Router::new()
         .route(
             "/recent-messages/:channel_login",

@@ -1,14 +1,14 @@
-use crate::web::error::ApiError;
+use std::sync::LazyLock;
+
 use crate::web::WebAppData;
+use crate::web::error::ApiError;
 use axum::middleware::Next;
 use axum::response::IntoResponse;
 use http::Request;
-use lazy_static::lazy_static;
 use regex::Regex;
 
-lazy_static! {
-    static ref RE_AUTHORIZATION_HEADER: Regex = Regex::new("^Bearer ([0-9a-f]{128})$").unwrap();
-}
+static RE_AUTHORIZATION_HEADER: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new("^Bearer ([0-9a-f]{128})$").unwrap());
 
 pub async fn with_authorization<B>(
     mut req: Request<B>,
@@ -26,7 +26,7 @@ pub async fn with_authorization<B>(
     };
 
     let access_token = RE_AUTHORIZATION_HEADER
-        .captures(&auth_header)
+        .captures(auth_header)
         .ok_or(ApiError::MalformedAuthorizationHeader)?
         .get(1)
         .unwrap()

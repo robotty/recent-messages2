@@ -3,25 +3,27 @@ use axum::middleware::Next;
 use axum::response::IntoResponse;
 use http::Request;
 use humantime::format_duration;
-use lazy_static::lazy_static;
 use prometheus::{register_histogram_vec, register_int_counter_vec};
 use prometheus::{HistogramVec, IntCounterVec};
+use std::sync::LazyLock;
 use std::time::Instant;
 
-lazy_static! {
-    static ref HTTP_REQUESTS_TOTAL: IntCounterVec = register_int_counter_vec!(
+static HTTP_REQUESTS_TOTAL: LazyLock<IntCounterVec> = LazyLock::new(|| {
+    register_int_counter_vec!(
         "http_requests_total",
         "Total number of HTTP requests",
         &["endpoint", "method", "status_code"]
     )
-    .unwrap();
-    static ref HTTP_REQUESTS_DURATION_SECONDS: HistogramVec = register_histogram_vec!(
+    .unwrap()
+});
+static HTTP_REQUESTS_DURATION_SECONDS: LazyLock<HistogramVec> = LazyLock::new(|| {
+    register_histogram_vec!(
         "http_request_duration_seconds",
         "Histogram of time taken to fulfill HTTP requests",
         &["endpoint", "method", "status_code"]
     )
-    .unwrap();
-}
+    .unwrap()
+});
 
 pub async fn record_metrics<B>(req: Request<B>, next: Next<B>) -> impl IntoResponse {
     let start = Instant::now();

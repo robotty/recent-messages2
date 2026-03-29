@@ -9,7 +9,8 @@ categories = ["web-programming"]
 readme = "README.md"
 version = "0.1.0"
 authors = ["Ruben Anders <ruben.anders@robotty.de>"]
-edition = "2021"
+edition = "2024"
+rust-version = "1.94"
 default-run = "recent-messages2"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -27,7 +28,6 @@ humantime = "2"
 humantime-serde = "1"
 hyper = { version = "0.14", features = ["full"] }
 itertools = "0.10"
-lazy_static = "1"
 murmur3 = "0.5"
 num_cpus = "1"
 prometheus = { version = "0.13", default-features = false }
@@ -74,3 +74,12 @@ path = "src/main.rs"
 [[bin]]
 name = "recent-messages2-migrate-messages"
 path = "src/migrate_messages.rs"
+
+[lints.clippy]
+all = { level = "deny", priority = -1 }
+cargo = { level = "deny", priority = -1 }
+pedantic = { level = "warn", priority = -2 }
+cast_precision_loss = "allow"
+cast_possible_wrap = "allow"
+cast_possible_truncation = "allow"
+multiple_crate_versions = "allow"
