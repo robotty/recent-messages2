@@ -1,12 +1,12 @@
-use crate::web::error::ApiError;
 use crate::web::WebAppData;
+use crate::web::error::ApiError;
 use axum::extract::rejection::{PathRejection, QueryRejection};
 use axum::extract::{Path, Query};
 use axum::response::IntoResponse;
 use axum::{Extension, Json};
 use chrono::serde::ts_milliseconds_option;
 use chrono::{DateTime, Utc};
-use prometheus::{linear_buckets, register_histogram_vec, HistogramVec};
+use prometheus::{HistogramVec, linear_buckets, register_histogram_vec};
 use serde::{Deserialize, Serialize};
 use std::sync::LazyLock;
 use std::time::Duration;
@@ -166,7 +166,12 @@ pub async fn get_recent_messages(
     let (error, error_code) = if is_confirmed_joined {
         (None, None)
     } else {
-        (Some("The bot is currently not joined to this channel (in progress or failed previously)"), Some("channel_not_joined"))
+        (
+            Some(
+                "The bot is currently not joined to this channel (in progress or failed previously)",
+            ),
+            Some("channel_not_joined"),
+        )
     };
 
     Ok(Json(GetRecentMessagesResponse {

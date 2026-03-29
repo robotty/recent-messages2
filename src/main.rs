@@ -78,14 +78,13 @@ async fn main() {
     let old_msg_vacuum_join_handle =
         tokio::spawn(data_storage.run_task_vacuum_old_messages(config, shutdown_signal.clone()));
 
-    let webserver =
-        match web::run(data_storage, irc_listener, config, shutdown_signal.clone()) {
-            Ok(webserver) => webserver,
-            Err(bind_error) => {
-                tracing::error!("{}", bind_error);
-                std::process::exit(1);
-            }
-        };
+    let webserver = match web::run(data_storage, irc_listener, config, shutdown_signal.clone()) {
+        Ok(webserver) => webserver,
+        Err(bind_error) => {
+            tracing::error!("{}", bind_error);
+            std::process::exit(1);
+        }
+    };
     let webserver_join_handle = tokio::spawn(webserver);
 
     // await termination.

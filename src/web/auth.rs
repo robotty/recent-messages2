@@ -4,9 +4,9 @@ use chrono::{DateTime, Utc};
 use futures::prelude::*;
 use http::StatusCode;
 use serde::{Deserialize, Serialize};
-use std::{future::Future, sync::LazyLock};
 use std::pin::Pin;
 use std::time::Duration;
+use std::{future::Future, sync::LazyLock};
 
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 pub struct TwitchUserAccessToken {

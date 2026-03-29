@@ -3,8 +3,8 @@ use axum::middleware::Next;
 use axum::response::IntoResponse;
 use http::Request;
 use humantime::format_duration;
-use prometheus::{register_histogram_vec, register_int_counter_vec};
 use prometheus::{HistogramVec, IntCounterVec};
+use prometheus::{register_histogram_vec, register_int_counter_vec};
 use std::sync::LazyLock;
 use std::time::Instant;
 

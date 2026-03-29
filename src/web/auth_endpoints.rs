@@ -1,15 +1,15 @@
+use crate::web::WebAppData;
 use crate::web::auth::{
     HelixGetUserResponse, TwitchUserAccessToken, UserAuthorization, UserAuthorizationResponse,
 };
 use crate::web::error::ApiError;
-use crate::web::WebAppData;
-use axum::extract::rejection::QueryRejection;
 use axum::extract::Query;
+use axum::extract::rejection::QueryRejection;
 use axum::{Extension, Json};
 use chrono::Utc;
 use http::StatusCode;
-use rand::distributions::Standard;
 use rand::Rng;
+use rand::distributions::Standard;
 use serde::Deserialize;
 use std::fmt::Write;
 
