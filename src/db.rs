@@ -6,7 +6,6 @@ use itertools::Itertools;
 use murmur3::murmur3_32;
 use prometheus::{HistogramVec, IntCounterVec, IntGaugeVec};
 use prometheus::{register_histogram_vec, register_int_counter_vec, register_int_gauge_vec};
-use rustls::{OwnedTrustAnchor, RootCertStore};
 use std::fmt::{Display, Formatter};
 use std::io::Cursor;
 use std::ops::DerefMut;
@@ -164,21 +163,15 @@ fn connect_to_single_postgres_server(
     let pool_config = PoolConfig {
         max_size: config.pool.max_size,
         timeouts: deadpool_postgres::Timeouts::from(config.pool),
+        ..Default::default()
     };
 
-    let mut root_certificates = RootCertStore::empty();
-    let trust_anchors = webpki_roots::TLS_SERVER_ROOTS.0.iter().map(|trust_anchor| {
-        OwnedTrustAnchor::from_subject_spki_name_constraints(
-            trust_anchor.subject,
-            trust_anchor.spki,
-            trust_anchor.name_constraints,
-        )
-    });
-    root_certificates.add_server_trust_anchors(trust_anchors);
+    let root_store = rustls::RootCertStore {
+        roots: webpki_roots::TLS_SERVER_ROOTS.to_vec(),
+    };
 
     let tls_config = rustls::ClientConfig::builder()
-        .with_safe_defaults()
-        .with_root_certificates(root_certificates) // TODO support custom root certificates as well
+        .with_root_certificates(root_store) // TODO support custom root certificates as well
         .with_no_client_auth(); // TODO support client auth if needed
 
     let tls = MakeRustlsConnect::new(tls_config);
