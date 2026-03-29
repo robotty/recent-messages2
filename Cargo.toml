@@ -32,7 +32,7 @@ murmur3 = "0.5"
 num_cpus = "1"
 prometheus = { version = "0.13", default-features = false }
 rand = "0.8"
-refinery = { version = "0.8", features = ["tokio-postgres"] }
+refinery = { version = "0.9", features = ["tokio-postgres"] }
 regex = "1"
 reqwest = { version = "0.11", features = ["rustls-tls-webpki-roots", "json"], default-features = false }
 rmp-serde = "1"
@@ -47,7 +47,7 @@ tokio-postgres = { version = "0.7", features = ["with-chrono-0_4"] }
 tokio-postgres-rustls = "0.13"
 tokio-stream = { version = "0.1", features = ["net"], default-features = false }
 tokio-util = "0.7"
-toml = "0.5"
+toml = "1"
 tower = "0.4"
 tower-http = { version = "0.3", features = ["cors", "fs"] }
 tracing = "0.1"
