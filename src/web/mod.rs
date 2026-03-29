@@ -53,7 +53,8 @@ pub enum BindError {
     SetPermissions(&'static Path, Permissions, std::io::Error),
 }
 
-pub fn run(
+#[cfg_attr(not(unix), allow(clippy::unused_async))]
+pub async fn run(
     data_storage: &'static DataStorage,
     irc_listener: &'static IrcListener,
     config: &'static Config,
