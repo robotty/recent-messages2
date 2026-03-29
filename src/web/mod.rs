@@ -46,10 +46,19 @@ pub enum BindError {
     #[error("Failed to bind to address `{0}`: {1}")]
     BindTcp(&'static SocketAddr, hyper::Error),
     #[cfg(unix)]
-    #[error("Failed to bind to unix socket `{}`: {1}", .0.display())]
+    #[error(
+        "Failed to bind to unix socket `{path}`: {err}",
+        path = .0.display(),
+        err = .1
+    )]
     BindUnix(&'static Path, std::io::Error),
     #[cfg(unix)]
-    #[error("Failed to alter permissions on unix socket `{}` to `{1:?}`: {2}", .0.display())]
+    #[error(
+        "Failed to alter permissions on unix socket `{path}` to `{permissions:?}`: {err}",
+        path = .0.display(),
+        permissions = .1,
+        err = .2
+    )]
     SetPermissions(&'static Path, Permissions, std::io::Error),
 }
 
