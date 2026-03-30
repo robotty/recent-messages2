@@ -8,8 +8,7 @@ use axum::extract::rejection::QueryRejection;
 use axum::{Extension, Json};
 use chrono::Utc;
 use http::StatusCode;
-use rand::Rng;
-use rand::distributions::Standard;
+use rand::{RngExt, rngs::StdRng};
 use serde::Deserialize;
 use std::fmt::Write;
 
@@ -101,8 +100,8 @@ pub async fn create_token(
         .0;
 
     // 512 bit random hex string
-    // thread_rng() is cryptographically safe
-    let access_token = rand::thread_rng().sample_iter(Standard).take(512 / 8).fold(
+    // StdRng is cryptographically safe (https://rust-random.github.io/book/guide-rngs.html)
+    let access_token = rand::make_rng::<StdRng>().random_iter().take(512 / 8).fold(
         String::with_capacity(512 / 4),
         |mut s, x: u8| {
             // format as hex, padded with a leading 0 if needed (e.g. 0x0 -> "00", 0xFF -> "ff")

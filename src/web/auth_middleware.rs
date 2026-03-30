@@ -2,7 +2,7 @@ use std::sync::LazyLock;
 
 use crate::web::WebAppData;
 use crate::web::error::ApiError;
-use axum::middleware::Next;
+use axum::{body::Body, middleware::Next};
 use axum::response::IntoResponse;
 use http::Request;
 use regex::Regex;
@@ -10,9 +10,9 @@ use regex::Regex;
 static RE_AUTHORIZATION_HEADER: LazyLock<Regex> =
     LazyLock::new(|| Regex::new("^Bearer ([0-9a-f]{128})$").unwrap());
 
-pub async fn with_authorization<B>(
-    mut req: Request<B>,
-    next: Next<B>,
+pub async fn with_authorization(
+    mut req: Request<Body>,
+    next: Next,
     app_data: WebAppData,
 ) -> impl IntoResponse {
     let auth_header = req

@@ -1,6 +1,6 @@
-use axum::extract::MatchedPath;
 use axum::middleware::Next;
 use axum::response::IntoResponse;
+use axum::{body::Body, extract::MatchedPath};
 use http::Request;
 use humantime::format_duration;
 use prometheus::{HistogramVec, IntCounterVec};
@@ -25,12 +25,11 @@ static HTTP_REQUESTS_DURATION_SECONDS: LazyLock<HistogramVec> = LazyLock::new(||
     .unwrap()
 });
 
-pub async fn record_metrics<B>(req: Request<B>, next: Next<B>) -> impl IntoResponse {
+pub async fn record_metrics(req: Request<Body>, next: Next) -> impl IntoResponse {
     let start = Instant::now();
     let path = if let Some(matched_path) = req.extensions().get::<MatchedPath>() {
         matched_path.as_str().to_owned()
     } else {
-        // req.uri().path().to_owned()
         "other".to_owned()
     };
     let method = req.method().clone();
@@ -49,10 +48,10 @@ pub async fn record_metrics<B>(req: Request<B>, next: Next<B>) -> impl IntoRespo
     );
 
     HTTP_REQUESTS_TOTAL
-        .with_label_values(&[&path, method.as_str(), &status])
+        .with_label_values(&[path.as_str(), method.as_str(), status.as_str()])
         .inc();
     HTTP_REQUESTS_DURATION_SECONDS
-        .with_label_values(&[&path, method.as_str(), &status])
+        .with_label_values(&[path.as_str(), method.as_str(), status.as_str()])
         .observe(latency.as_secs_f64());
 
     response

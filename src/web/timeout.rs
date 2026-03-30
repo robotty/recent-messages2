@@ -2,7 +2,7 @@ use std::sync::LazyLock;
 
 use crate::web::WebAppData;
 use crate::web::error::ApiError;
-use axum::middleware::Next;
+use axum::{body::Body, middleware::Next};
 use axum::response::IntoResponse;
 use http::Request;
 use prometheus::IntCounter;
@@ -16,7 +16,7 @@ static HTTP_REQUEST_TIMEOUTS: LazyLock<IntCounter> = LazyLock::new(|| {
     .unwrap()
 });
 
-pub async fn timeout<B>(req: Request<B>, next: Next<B>) -> impl IntoResponse {
+pub async fn timeout(req: Request<Body>, next: Next) -> impl IntoResponse {
     let request_timeout = req
         .extensions()
         .get::<WebAppData>()

@@ -16,22 +16,21 @@ default-run = "recent-messages2"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-axum = { version = "0.6", features = ["headers"] }
-axum-extra = { version = "0.4", features = ["spa"] }
+axum = { version = "0.8" }
 chrono = { version = "0.4", features = ["serde"] }
 csv = "1"
 deadpool-postgres = { version = "0.14", features = ["rt_tokio_1"] }
 derivative = "2"
 futures = "0.3"
-http = "0.2"
+http = "1"
 humantime = "2"
 humantime-serde = "1"
-hyper = { version = "0.14", features = ["full"] }
+hyper = { version = "1", features = ["full"] }
 itertools = "0.14"
 murmur3 = "0.5"
 num_cpus = "1"
-prometheus = { version = "0.13", default-features = false }
-rand = "0.8"
+prometheus = { version = "0.14", default-features = false }
+rand = "0.10"
 refinery = { version = "0.9", features = ["tokio-postgres"] }
 regex = "1"
 reqwest = { version = "0.13", features = ["rustls", "json", "query"], default-features = false }
@@ -48,8 +47,8 @@ tokio-postgres-rustls = "0.13"
 tokio-stream = { version = "0.1", features = ["net"], default-features = false }
 tokio-util = "0.7"
 toml = "1"
-tower = "0.4"
-tower-http = { version = "0.3", features = ["cors", "fs"] }
+tower = "0.5"
+tower-http = { version = "0.6", features = ["cors", "fs"] }
 tracing = "0.1"
 tracing-subscriber = "0.3"
 twitch-irc = { version = "6" , features = ["transport-tcp", "transport-tcp-rustls-native-roots", "metrics-collection"], default-features = false }
@@ -60,8 +59,7 @@ webpki-roots = "1"
 darwin-libproc = { git = "https://github.com/Orycterope/darwin-libproc", rev = "f73ddb1002d51ae74c1b41670fae56bd5896b7a3" }
 
 [target.'cfg(unix)'.dependencies]
-rlimit = "0.9"
-hyperlocal = "0.8"
+rlimit = "0.11"
 
 [profile.release]
 lto = "fat"

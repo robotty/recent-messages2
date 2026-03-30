@@ -2,14 +2,14 @@ use crate::config::ListenAddr;
 use crate::irc_listener::IrcListener;
 use crate::web::error::ApiError;
 use crate::{Config, DataStorage};
-use axum::response::IntoResponse;
 use axum::routing::{get, post};
 use axum::{Extension, Router, middleware};
+use axum::{body::Body, response::IntoResponse};
 use futures::future::BoxFuture;
 use http::{Method, Request, StatusCode, header};
-use hyper::Body;
 use std::{net::SocketAddr, sync::LazyLock};
 use thiserror::Error;
+use tokio::net::TcpListener;
 use tokio_util::sync::CancellationToken;
 use tower::Service;
 use tower::ServiceBuilder;
@@ -17,8 +17,8 @@ use tower_http::cors::{self, CorsLayer};
 use tower_http::services::{ServeDir, ServeFile};
 #[cfg(unix)]
 use {
-    hyperlocal::UnixServerExt, std::fs::Permissions, std::os::unix::fs::PermissionsExt,
-    std::path::Path,
+    std::fs::Permissions, std::io::ErrorKind,
+    std::os::unix::fs::PermissionsExt, std::path::Path, tokio::net::UnixListener,
 };
 
 pub mod auth;
@@ -44,7 +44,21 @@ static HTTP_CLIENT: LazyLock<reqwest::Client> = LazyLock::new(reqwest::Client::n
 #[derive(Error, Debug)]
 pub enum BindError {
     #[error("Failed to bind to address `{0}`: {1}")]
-    BindTcp(&'static SocketAddr, hyper::Error),
+    BindTcp(&'static SocketAddr, std::io::Error),
+    #[cfg(unix)]
+    #[error(
+        "Failed to delete old unix socket at `{path}`: {err}",
+        path = .0.display(),
+        err = .1
+    )]
+    DeleteOldSocketFile(&'static Path, std::io::Error),
+    #[cfg(unix)]
+    #[error(
+        "Failed to create parent directory for unix socket `{path}`: {err}",
+        path = .0.display(),
+        err = .1
+    )]
+    CreateParentDir(&'static Path, std::io::Error),
     #[cfg(unix)]
     #[error(
         "Failed to bind to unix socket `{path}`: {err}",
@@ -68,7 +82,7 @@ pub async fn run(
     irc_listener: &'static IrcListener,
     config: &'static Config,
     shutdown_signal: CancellationToken,
-) -> Result<BoxFuture<'static, hyper::Result<()>>, BindError> {
+) -> Result<BoxFuture<'static, std::io::Result<()>>, BindError> {
     let shared_state = WebAppData {
         data_storage,
         irc_listener,
@@ -158,28 +172,43 @@ pub async fn run(
         );
 
     Ok(match &config.web.listen_address {
-        ListenAddr::Tcp { address } => Box::pin(
-            axum::Server::try_bind(address)
-                .map_err(|e| BindError::BindTcp(address, e))?
-                .serve(app.into_make_service())
-                .with_graceful_shutdown(async move {
-                    shutdown_signal.cancelled().await;
-                }),
-        ),
+        ListenAddr::Tcp { address } => {
+            let listener = TcpListener::bind(address)
+                .await
+                .map_err(|e| BindError::BindTcp(address, e))?;
+
+            Box::pin(
+                axum::serve(listener, app)
+                    .with_graceful_shutdown(async move {
+                        shutdown_signal.cancelled().await;
+                    })
+                    .into_future(),
+            )
+        }
         #[cfg(unix)]
         ListenAddr::Unix { path } => {
-            let builder =
-                axum::Server::bind_unix(path).map_err(|e| BindError::BindUnix(path, e))?;
+            if let Err(e) = tokio::fs::remove_file(&path).await
+                && e.kind() != ErrorKind::NotFound
+            {
+                return Err(BindError::DeleteOldSocketFile(path, e));
+            };
+            tokio::fs::create_dir_all(path.parent().unwrap())
+                .await
+                .map_err(|e| BindError::CreateParentDir(path, e))?;
+
+            let listener = UnixListener::bind(path.clone()).map_err(|e| BindError::BindUnix(path, e))?;
+
             let permissions = Permissions::from_mode(0o777);
             tokio::fs::set_permissions(path, permissions.clone())
                 .await
                 .map_err(|e| BindError::SetPermissions(path, permissions, e))?;
+
             Box::pin(
-                builder
-                    .serve(app.into_make_service())
+                axum::serve(listener, app)
                     .with_graceful_shutdown(async move {
                         shutdown_signal.cancelled().await;
-                    }),
+                    })
+                    .into_future(),
             )
         }
     })
