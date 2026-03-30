@@ -100,7 +100,7 @@ impl UserAuthorization {
             .map_err(ApiError::FailedTwitchAccessTokenRefresh)?
             .error_for_status()
             .map_err(|e| {
-                if e.status().unwrap() == StatusCode::BAD_REQUEST {
+                if e.status().unwrap() == reqwest::StatusCode::BAD_REQUEST {
                     // user has definitely revoked the connection
                     ApiError::Unauthorized
                 } else {

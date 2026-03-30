@@ -66,7 +66,7 @@ impl ContainerFrame {
 
                 let mut tags = IRCTags::new();
                 // @msg-id=rm-clearchat/rm-timeout/rm-permaban
-                tags.0.insert("msg-id".to_owned(), Some(extra_tag));
+                tags.0.insert("msg-id".to_owned(), extra_tag);
 
                 // @msg-id=rm-timeout :tmi.twitch.tv NOTICE #channel :a_bad_user has been timed out for 5m 2s.
                 IRCMessage::new(
@@ -88,11 +88,11 @@ impl ContainerFrame {
         message_to_export
             .tags
             .0
-            .insert("historical".to_owned(), Some("1".to_owned()));
+            .insert("historical".to_owned(), "1".to_owned());
         // Add rm-received-ts=<timestamp>
         message_to_export.tags.0.insert(
             "rm-received-ts".to_owned(),
-            Some(self.time_received.timestamp_millis().to_string()),
+            self.time_received.timestamp_millis().to_string(),
         );
 
         // Add rm-deleted=1 if needed
@@ -100,7 +100,7 @@ impl ContainerFrame {
             message_to_export
                 .tags
                 .0
-                .insert("rm-deleted".to_owned(), Some("1".to_owned()));
+                .insert("rm-deleted".to_owned(), "1".to_owned());
         }
 
         Some(message_to_export.as_raw_irc())
