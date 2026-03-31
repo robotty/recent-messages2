@@ -3,11 +3,10 @@ use crate::web::ApiError;
 use chrono::{DateTime, Utc};
 use futures::prelude::*;
 use http::StatusCode;
-use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
-use std::future::Future;
 use std::pin::Pin;
 use std::time::Duration;
+use std::{future::Future, sync::LazyLock};
 
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 pub struct TwitchUserAccessToken {
@@ -28,7 +27,7 @@ pub struct UserAuthorization {
     /// forever.
     ///
     /// The authorization typically can live for a long time after the twitch validation expires
-    /// (the twitch authorization validation expires 1 hour after twitch_authorization_last_validated)
+    /// (the twitch authorization validation expires 1 hour after `twitch_authorization_last_validated`)
     pub valid_until: DateTime<Utc>,
     pub user_id: String,
     pub user_login: String,
@@ -79,14 +78,7 @@ pub struct HelixUser {
     pub profile_image_url: String,
 }
 
-lazy_static! {
-    static ref HTTP_CLIENT: reqwest::Client = reqwest::Client::new();
-}
-
-#[derive(Deserialize)]
-pub struct GetAuthorizationQueryOptions {
-    pub code: String,
-}
+static HTTP_CLIENT: LazyLock<reqwest::Client> = LazyLock::new(reqwest::Client::new);
 
 impl UserAuthorization {
     /// Try to refresh the access token
@@ -108,7 +100,7 @@ impl UserAuthorization {
             .map_err(ApiError::FailedTwitchAccessTokenRefresh)?
             .error_for_status()
             .map_err(|e| {
-                if e.status().unwrap() == StatusCode::BAD_REQUEST {
+                if e.status().unwrap() == reqwest::StatusCode::BAD_REQUEST {
                     // user has definitely revoked the connection
                     ApiError::Unauthorized
                 } else {
@@ -134,7 +126,6 @@ impl UserAuthorization {
     fn validate_still_valid_inner<'a>(
         &'a mut self,
         credentials: &'a TwitchApiClientCredentials,
-        recheck_twitch_auth_after: Duration,
         try_refresh_if_invalid: bool,
     ) -> Pin<Box<dyn Future<Output = Result<(), ApiError>> + Send + 'a>> {
         // the boxed future is necessary because of the recursive call
@@ -183,7 +174,7 @@ impl UserAuthorization {
                     tracing::debug!("Executing auth validation for user {}: Failure! Unauthorized. Trying refresh", self.user_login);
                     self.refresh_token(credentials).boxed().await?;
                     // recurse: try the above again, now that the token is successfully refreshed.
-                    self.validate_still_valid_inner(credentials, recheck_twitch_auth_after, false)
+                    self.validate_still_valid_inner(credentials, false)
                         .await
                 }
                 Err(e) => {
@@ -213,7 +204,6 @@ impl UserAuthorization {
             return Ok(());
         }
 
-        self.validate_still_valid_inner(credentials, recheck_twitch_auth_after, true)
-            .await
+        self.validate_still_valid_inner(credentials, true).await
     }
 }

@@ -2,24 +2,24 @@ use crate::config::ListenAddr;
 use crate::irc_listener::IrcListener;
 use crate::web::error::ApiError;
 use crate::{Config, DataStorage};
-use axum::response::IntoResponse;
 use axum::routing::{get, post};
-use axum::{middleware, Extension, Router};
+use axum::{Extension, Router, middleware};
 use futures::future::BoxFuture;
-use http::{header, Method, Request, StatusCode};
-use hyper::Body;
-use lazy_static::lazy_static;
-use std::net::SocketAddr;
+use http::{Method, header};
+use std::{net::SocketAddr, sync::LazyLock};
 use thiserror::Error;
+use tokio::net::TcpListener;
 use tokio_util::sync::CancellationToken;
-use tower::Service;
 use tower::ServiceBuilder;
-use tower_http::cors::{self, CorsLayer};
 use tower_http::services::{ServeDir, ServeFile};
+use tower_http::{
+    cors::{self, CorsLayer},
+    trace::TraceLayer,
+};
 #[cfg(unix)]
 use {
-    hyperlocal::UnixServerExt, std::fs::Permissions, std::os::unix::fs::PermissionsExt,
-    std::path::Path,
+    std::fs::Permissions, std::io::ErrorKind, std::os::unix::fs::PermissionsExt, std::path::Path,
+    tokio::net::UnixListener,
 };
 
 pub mod auth;
@@ -40,28 +40,50 @@ pub struct WebAppData {
     config: &'static Config,
 }
 
-lazy_static! {
-    static ref HTTP_CLIENT: reqwest::Client = reqwest::Client::new();
-}
+static HTTP_CLIENT: LazyLock<reqwest::Client> = LazyLock::new(reqwest::Client::new);
 
 #[derive(Error, Debug)]
 pub enum BindError {
     #[error("Failed to bind to address `{0}`: {1}")]
-    BindTcp(&'static SocketAddr, hyper::Error),
+    BindTcp(&'static SocketAddr, std::io::Error),
     #[cfg(unix)]
-    #[error("Failed to bind to unix socket `{}`: {1}", .0.display())]
+    #[error(
+        "Failed to delete old unix socket at `{path}`: {err}",
+        path = .0.display(),
+        err = .1
+    )]
+    DeleteOldSocketFile(&'static Path, std::io::Error),
+    #[cfg(unix)]
+    #[error(
+        "Failed to create parent directory for unix socket `{path}`: {err}",
+        path = .0.display(),
+        err = .1
+    )]
+    CreateParentDir(&'static Path, std::io::Error),
+    #[cfg(unix)]
+    #[error(
+        "Failed to bind to unix socket `{path}`: {err}",
+        path = .0.display(),
+        err = .1
+    )]
     BindUnix(&'static Path, std::io::Error),
     #[cfg(unix)]
-    #[error("Failed to alter permissions on unix socket `{}` to `{1:?}`: {2}", .0.display())]
+    #[error(
+        "Failed to alter permissions on unix socket `{path}` to `{permissions:?}`: {err}",
+        path = .0.display(),
+        permissions = .1,
+        err = .2
+    )]
     SetPermissions(&'static Path, Permissions, std::io::Error),
 }
 
+#[cfg_attr(not(unix), allow(clippy::unused_async))]
 pub async fn run(
     data_storage: &'static DataStorage,
     irc_listener: &'static IrcListener,
     config: &'static Config,
     shutdown_signal: CancellationToken,
-) -> Result<BoxFuture<'static, hyper::Result<()>>, BindError> {
+) -> Result<BoxFuture<'static, std::io::Result<()>>, BindError> {
     let shared_state = WebAppData {
         data_storage,
         irc_listener,
@@ -82,97 +104,89 @@ pub async fn run(
             auth_middleware::with_authorization(req, next, shared_state)
         })
     };
-    let method_fallback = || (|| async { ApiError::MethodNotAllowed });
     let api = Router::new()
         .route(
-            "/recent-messages/:channel_login",
-            get(get_recent_messages::get_recent_messages).fallback(method_fallback()),
+            "/recent-messages/{channel_login}",
+            get(get_recent_messages::get_recent_messages),
         )
         .route(
             "/ignored",
             get(ignored::get_ignored)
                 .post(ignored::set_ignored)
-                .route_layer(auth_middleware())
-                .fallback(method_fallback()),
+                .route_layer(auth_middleware()),
         )
         .route(
             "/purge",
-            post(purge::purge_messages)
-                .route_layer(auth_middleware())
-                .fallback(method_fallback()),
+            post(purge::purge_messages).route_layer(auth_middleware()),
         )
-        .route(
-            "/auth/create",
-            post(auth_endpoints::create_token).fallback(method_fallback()),
-        )
+        .route("/auth/create", post(auth_endpoints::create_token))
         .route(
             "/auth/extend",
-            post(auth_endpoints::extend_token)
-                .route_layer(auth_middleware())
-                .fallback(method_fallback()),
+            post(auth_endpoints::extend_token).route_layer(auth_middleware()),
         )
         .route(
             "/auth/revoke",
-            post(auth_endpoints::revoke_token)
-                .route_layer(auth_middleware())
-                .fallback(method_fallback()),
+            post(auth_endpoints::revoke_token).route_layer(auth_middleware()),
         )
-        .route(
-            "/metrics",
-            get(get_metrics::get_metrics).fallback(method_fallback()),
-        )
+        .route("/metrics", get(get_metrics::get_metrics))
+        .method_not_allowed_fallback(|| async { ApiError::MethodNotAllowed })
+        .fallback(|| async { ApiError::NotFound })
         .layer(cors);
 
-    let mut servedir = ServeDir::new("web/dist")
+    let servedir = ServeDir::new("web/dist")
         .append_index_html_on_directories(true)
         .fallback(ServeFile::new("web/dist/index.html"));
 
     let app = Router::new()
         .nest("/api/v2", api)
-        .fallback(|request: Request<Body>| async move {
-            if request.uri().path().starts_with("/api/v2/") || request.uri().path() == "/api/v2" {
-                ApiError::NotFound.into_response()
-            } else {
-                // try for a file
-                match servedir.call(request).await {
-                    Ok(response) => response.into_response(),
-                    Err(e) => {
-                        tracing::error!("Error trying to serve static file: {}", e);
-                        StatusCode::INTERNAL_SERVER_ERROR.into_response()
-                    }
-                }
-            }
-        })
+        .fallback_service(servedir)
         .layer(
             ServiceBuilder::new()
                 .layer(Extension(shared_state))
                 .layer(middleware::from_fn(record_metrics::record_metrics))
-                .layer(middleware::from_fn(timeout::timeout)),
+                .layer(middleware::from_fn(timeout::timeout))
+                .layer(TraceLayer::new_for_http()),
         );
 
     Ok(match &config.web.listen_address {
-        ListenAddr::Tcp { address } => Box::pin(
-            axum::Server::try_bind(address)
-                .map_err(|e| BindError::BindTcp(address, e))?
-                .serve(app.into_make_service())
-                .with_graceful_shutdown(async move {
-                    shutdown_signal.cancelled().await;
-                }),
-        ),
+        ListenAddr::Tcp { address } => {
+            let listener = TcpListener::bind(address)
+                .await
+                .map_err(|e| BindError::BindTcp(address, e))?;
+
+            Box::pin(
+                axum::serve(listener, app)
+                    .with_graceful_shutdown(async move {
+                        shutdown_signal.cancelled().await;
+                    })
+                    .into_future(),
+            )
+        }
         #[cfg(unix)]
         ListenAddr::Unix { path } => {
-            let builder =
-                axum::Server::bind_unix(path).map_err(|e| BindError::BindUnix(path, e))?;
+            if let Err(e) = tokio::fs::remove_file(&path).await
+                && e.kind() != ErrorKind::NotFound
+            {
+                return Err(BindError::DeleteOldSocketFile(path, e));
+            }
+            tokio::fs::create_dir_all(path.parent().unwrap())
+                .await
+                .map_err(|e| BindError::CreateParentDir(path, e))?;
+
+            let listener =
+                UnixListener::bind(path.clone()).map_err(|e| BindError::BindUnix(path, e))?;
+
             let permissions = Permissions::from_mode(0o777);
             tokio::fs::set_permissions(path, permissions.clone())
                 .await
                 .map_err(|e| BindError::SetPermissions(path, permissions, e))?;
+
             Box::pin(
-                builder
-                    .serve(app.into_make_service())
+                axum::serve(listener, app)
                     .with_graceful_shutdown(async move {
                         shutdown_signal.cancelled().await;
-                    }),
+                    })
+                    .into_future(),
             )
         }
     })

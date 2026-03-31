@@ -1,0 +1,4 @@
+# https://rust-lang.github.io/rust-clippy/rust-1.94.0/index.html#too_many_lines
+too-many-lines-threshold = 200
+# https://doc.rust-lang.org/clippy/configuration.html#specifying-the-minimum-supported-rust-version
+msrv = "1.94"

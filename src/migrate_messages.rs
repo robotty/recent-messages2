@@ -33,15 +33,11 @@ fn main() {
 
     let mut idx: usize = 0;
     let total = dir_contents.len();
-    print!("Processing... 0/{}", total);
+    print!("Processing... 0/{total}");
 
     for dir_entry in dir_contents {
         let file_path = dir_entry.unwrap().path();
-        if file_path
-            .extension()
-            .map(|ext| ext != "dat")
-            .unwrap_or(true)
-        {
+        if file_path.extension().is_none_or(|ext| ext != "dat") {
             // either has an extension that is not `dat` or has no extension
             tracing::debug!(
                 "Ignoring file {} from messages directory, extension is not `dat`",
@@ -57,7 +53,7 @@ fn main() {
 
         for message in channel_messages {
             csv_writer
-                .write_record(&[
+                .write_record([
                     &channel_login,
                     &message.time_received.to_rfc3339(),
                     &message.message_source,
@@ -66,7 +62,7 @@ fn main() {
         }
 
         idx += 1;
-        print!("\rProcessing... {}/{}", idx, total);
+        print!("\rProcessing... {idx}/{total}");
     }
 
     println!(" Done");
