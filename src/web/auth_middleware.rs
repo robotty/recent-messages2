@@ -2,8 +2,8 @@ use std::sync::LazyLock;
 
 use crate::web::WebAppData;
 use crate::web::error::ApiError;
-use axum::{body::Body, middleware::Next};
 use axum::response::IntoResponse;
+use axum::{body::Body, middleware::Next};
 use http::Request;
 use regex::Regex;
 

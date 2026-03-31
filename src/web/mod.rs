@@ -17,8 +17,8 @@ use tower_http::cors::{self, CorsLayer};
 use tower_http::services::{ServeDir, ServeFile};
 #[cfg(unix)]
 use {
-    std::fs::Permissions, std::io::ErrorKind,
-    std::os::unix::fs::PermissionsExt, std::path::Path, tokio::net::UnixListener,
+    std::fs::Permissions, std::io::ErrorKind, std::os::unix::fs::PermissionsExt, std::path::Path,
+    tokio::net::UnixListener,
 };
 
 pub mod auth;
@@ -196,7 +196,8 @@ pub async fn run(
                 .await
                 .map_err(|e| BindError::CreateParentDir(path, e))?;
 
-            let listener = UnixListener::bind(path.clone()).map_err(|e| BindError::BindUnix(path, e))?;
+            let listener =
+                UnixListener::bind(path.clone()).map_err(|e| BindError::BindUnix(path, e))?;
 
             let permissions = Permissions::from_mode(0o777);
             tokio::fs::set_permissions(path, permissions.clone())
