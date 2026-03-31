@@ -20,7 +20,7 @@
     "parcel": "2",
     "prettier": "2",
     "sass": "1",
-    "typescript": "4"
+    "typescript": "6"
   },
   "dependencies": {
     "@forevolve/bootstrap-dark": "2",
