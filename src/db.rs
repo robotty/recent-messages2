@@ -6,6 +6,8 @@ use itertools::Itertools;
 use murmur3::murmur3_32;
 use prometheus::{HistogramVec, IntCounterVec, IntGaugeVec};
 use prometheus::{register_histogram_vec, register_int_counter_vec, register_int_gauge_vec};
+use rustls::ClientConfig;
+use rustls_platform_verifier::ConfigVerifierExt;
 use std::fmt::{Display, Formatter};
 use std::io::Cursor;
 use std::ops::DerefMut;
@@ -166,14 +168,7 @@ fn connect_to_single_postgres_server(
         ..Default::default()
     };
 
-    let root_store = rustls::RootCertStore {
-        roots: webpki_roots::TLS_SERVER_ROOTS.to_vec(),
-    };
-
-    let tls_config = rustls::ClientConfig::builder()
-        .with_root_certificates(root_store) // TODO support custom root certificates as well
-        .with_no_client_auth(); // TODO support client auth if needed
-
+    let tls_config = ClientConfig::with_platform_verifier().unwrap();
     let tls = MakeRustlsConnect::new(tls_config);
 
     let manager = deadpool_postgres::Manager::from_config(pg_config, tls, mgr_config);
