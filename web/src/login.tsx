@@ -30,15 +30,15 @@ class Login extends React.Component<
         token: csrfToken,
         expires: Date.now() + 10 * 60 * 1000, // 10 minutes
         returnTo,
-      })
+      }),
     );
 
     this.props.updateAuthState({ type: "loading" });
 
     let authorizeUrl = `https://id.twitch.tv/oauth2/authorize?client_id=${encodeURIComponent(
-      config.client_id
+      config.client_id,
     )}&redirect_uri=${encodeURIComponent(
-      config.redirect_uri
+      config.redirect_uri,
     )}&response_type=code&scope=&state=${encodeURIComponent(csrfToken)}`;
     window.location.replace(authorizeUrl);
   }
@@ -190,7 +190,7 @@ class Authorized extends React.Component<
             headers: {
               Accept: "application/json",
             },
-          }
+          },
         );
         if (!response.ok) {
           throw Error(response.statusText);
@@ -318,7 +318,7 @@ export function Logout(props: {
 
 export function revalidateLogin(
   authState: AuthPresent,
-  updateAuthState: (newAuthState: AuthState) => void
+  updateAuthState: (newAuthState: AuthState) => void,
 ) {
   // this is called when "userDetailsValidUntil" runs out on the token. the backend then checks whether
   // the Twitch auth connection is still active, and possibly also updates user details like name/profile image.
@@ -354,7 +354,7 @@ export function revalidateLogin(
     } catch (err) {
       console.error(
         "API Request to extend/revalidate authorization failed",
-        err
+        err,
       );
       updateAuthState({ type: "missing" });
     }
