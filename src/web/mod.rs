@@ -106,7 +106,7 @@ pub async fn run(
     let method_fallback = || || async { ApiError::MethodNotAllowed };
     let api = Router::new()
         .route(
-            "/recent-messages/:channel_login",
+            "/recent-messages/{channel_login}",
             get(get_recent_messages::get_recent_messages).fallback(method_fallback()),
         )
         .route(
