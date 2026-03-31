@@ -214,6 +214,6 @@ fn increase_nofile_rlimit() {
             Err(e) => tracing::error!("Failed to increase NOFILE rlimit to {}: {}", hard, e),
         }
     } else {
-        tracing::debug!("NOFILE rlimit: no need to increase (soft limit is not below hard limit)")
+        tracing::debug!("NOFILE rlimit: no need to increase (soft limit is not below hard limit)");
     }
 }

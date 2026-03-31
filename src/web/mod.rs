@@ -4,17 +4,18 @@ use crate::web::error::ApiError;
 use crate::{Config, DataStorage};
 use axum::routing::{get, post};
 use axum::{Extension, Router, middleware};
-use axum::{body::Body, response::IntoResponse};
 use futures::future::BoxFuture;
-use http::{Method, Request, StatusCode, header};
+use http::{Method, header};
 use std::{net::SocketAddr, sync::LazyLock};
 use thiserror::Error;
 use tokio::net::TcpListener;
 use tokio_util::sync::CancellationToken;
-use tower::Service;
 use tower::ServiceBuilder;
-use tower_http::cors::{self, CorsLayer};
 use tower_http::services::{ServeDir, ServeFile};
+use tower_http::{
+    cors::{self, CorsLayer},
+    trace::TraceLayer,
+};
 #[cfg(unix)]
 use {
     std::fs::Permissions, std::io::ErrorKind, std::os::unix::fs::PermissionsExt, std::path::Path,
@@ -103,72 +104,48 @@ pub async fn run(
             auth_middleware::with_authorization(req, next, shared_state)
         })
     };
-    let method_fallback = || || async { ApiError::MethodNotAllowed };
     let api = Router::new()
         .route(
             "/recent-messages/{channel_login}",
-            get(get_recent_messages::get_recent_messages).fallback(method_fallback()),
+            get(get_recent_messages::get_recent_messages),
         )
         .route(
             "/ignored",
             get(ignored::get_ignored)
                 .post(ignored::set_ignored)
-                .route_layer(auth_middleware())
-                .fallback(method_fallback()),
+                .route_layer(auth_middleware()),
         )
         .route(
             "/purge",
-            post(purge::purge_messages)
-                .route_layer(auth_middleware())
-                .fallback(method_fallback()),
+            post(purge::purge_messages).route_layer(auth_middleware()),
         )
-        .route(
-            "/auth/create",
-            post(auth_endpoints::create_token).fallback(method_fallback()),
-        )
+        .route("/auth/create", post(auth_endpoints::create_token))
         .route(
             "/auth/extend",
-            post(auth_endpoints::extend_token)
-                .route_layer(auth_middleware())
-                .fallback(method_fallback()),
+            post(auth_endpoints::extend_token).route_layer(auth_middleware()),
         )
         .route(
             "/auth/revoke",
-            post(auth_endpoints::revoke_token)
-                .route_layer(auth_middleware())
-                .fallback(method_fallback()),
+            post(auth_endpoints::revoke_token).route_layer(auth_middleware()),
         )
-        .route(
-            "/metrics",
-            get(get_metrics::get_metrics).fallback(method_fallback()),
-        )
+        .route("/metrics", get(get_metrics::get_metrics))
+        .method_not_allowed_fallback(|| async { ApiError::MethodNotAllowed })
+        .fallback(|| async { ApiError::NotFound })
         .layer(cors);
 
-    let mut servedir = ServeDir::new("web/dist")
+    let servedir = ServeDir::new("web/dist")
         .append_index_html_on_directories(true)
         .fallback(ServeFile::new("web/dist/index.html"));
 
     let app = Router::new()
         .nest("/api/v2", api)
-        .fallback(|request: Request<Body>| async move {
-            if request.uri().path().starts_with("/api/v2/") || request.uri().path() == "/api/v2" {
-                ApiError::NotFound.into_response()
-            } else {
-                // try for a file
-                match servedir.call(request).await {
-                    Ok(response) => response.into_response(),
-                    Err(e) => {
-                        tracing::error!("Error trying to serve static file: {}", e);
-                        StatusCode::INTERNAL_SERVER_ERROR.into_response()
-                    }
-                }
-            }
-        })
+        .fallback_service(servedir)
         .layer(
             ServiceBuilder::new()
                 .layer(Extension(shared_state))
                 .layer(middleware::from_fn(record_metrics::record_metrics))
-                .layer(middleware::from_fn(timeout::timeout)),
+                .layer(middleware::from_fn(timeout::timeout))
+                .layer(TraceLayer::new_for_http()),
         );
 
     Ok(match &config.web.listen_address {
@@ -191,7 +168,7 @@ pub async fn run(
                 && e.kind() != ErrorKind::NotFound
             {
                 return Err(BindError::DeleteOldSocketFile(path, e));
-            };
+            }
             tokio::fs::create_dir_all(path.parent().unwrap())
                 .await
                 .map_err(|e| BindError::CreateParentDir(path, e))?;
