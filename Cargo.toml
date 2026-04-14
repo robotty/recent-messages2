@@ -31,7 +31,7 @@ lazy_static = "1"
 murmur3 = "0.5"
 num_cpus = "1"
 prometheus = { version = "0.13", default-features = false }
-rand = "0.8"
+rand = "0.9"
 refinery = { version = "0.8", features = ["tokio-postgres"] }
 regex = "1"
 reqwest = { version = "0.11", features = ["rustls-tls-webpki-roots", "json"], default-features = false }
