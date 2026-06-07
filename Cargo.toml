@@ -43,7 +43,7 @@ structopt = "0.3"
 thiserror = "2"
 tokio = { version = "1", features = ["full"] }
 tokio-postgres = { version = "0.7", features = ["with-chrono-0_4"] }
-tokio-postgres-rustls = "0.13"
+tokio-postgres-rustls = "0.14"
 tokio-stream = { version = "0.1", features = ["net"], default-features = false }
 tokio-util = "0.7"
 toml = "1"
@@ -52,7 +52,7 @@ tower-http = { version = "0.6", features = ["cors", "fs", "trace"] }
 tracing = "0.1"
 tracing-subscriber = "0.3"
 twitch-irc = { version = "6" , features = ["transport-tcp", "transport-tcp-rustls-native-roots", "metrics-collection"], default-features = false }
-rustls-platform-verifier = "0.6"
+rustls-platform-verifier = "0.7"
 
 [patch.crates-io]
 # see https://github.com/heim-rs/darwin-libproc/issues/4
