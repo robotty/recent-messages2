@@ -1,24 +1,26 @@
-use crate::web::error::ApiError;
 use crate::web::WebAppData;
+use crate::web::error::ApiError;
 use axum::extract::rejection::{PathRejection, QueryRejection};
 use axum::extract::{Path, Query};
 use axum::response::IntoResponse;
 use axum::{Extension, Json};
 use chrono::serde::ts_milliseconds_option;
 use chrono::{DateTime, Utc};
-use lazy_static::lazy_static;
-use prometheus::{linear_buckets, register_histogram_vec, HistogramVec};
+use prometheus::{HistogramVec, linear_buckets, register_histogram_vec};
 use serde::{Deserialize, Serialize};
+use std::sync::LazyLock;
 use std::time::Duration;
 
-lazy_static! {
-    static ref COMPONENTS_PERFORMANCE_HISTOGRAM: HistogramVec = register_histogram_vec!(
+static COMPONENTS_PERFORMANCE_HISTOGRAM: LazyLock<HistogramVec> = LazyLock::new(|| {
+    register_histogram_vec!(
         "recentmessages_get_recent_messages_endpoint_components_seconds",
         "Time taken to complete the different stages/elements of the /api/v2/recent-messages/:channel_login endpoint",
         &["stage"]
     )
-    .unwrap();
-    static ref MESSAGE_COUNT_HISTOGRAM: HistogramVec = register_histogram_vec!(
+    .unwrap()
+});
+static MESSAGE_COUNT_HISTOGRAM: LazyLock<HistogramVec> = LazyLock::new(|| {
+    register_histogram_vec!(
         "recentmessages_get_recent_messages_endpoint_message_count",
         "Number of messages returned from the database/actually sent to the user from the /api/v2/recent-messages/:channel_login endpoint",
         &["point"],
@@ -27,8 +29,8 @@ lazy_static! {
         // (= 10, 20, 30, ... 1000, +Inf)
         linear_buckets(10.0, 10.0, 99).unwrap()
     )
-    .unwrap();
-}
+    .unwrap()
+});
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct GetRecentMessagesPath {
@@ -52,6 +54,7 @@ pub struct GetRecentMessagesQueryOptions {
     pub after: Option<DateTime<Utc>>,
 }
 
+#[allow(clippy::derivable_impls)]
 impl Default for GetRecentMessagesQueryOptions {
     fn default() -> Self {
         GetRecentMessagesQueryOptions {
@@ -163,7 +166,12 @@ pub async fn get_recent_messages(
     let (error, error_code) = if is_confirmed_joined {
         (None, None)
     } else {
-        (Some("The bot is currently not joined to this channel (in progress or failed previously)"), Some("channel_not_joined"))
+        (
+            Some(
+                "The bot is currently not joined to this channel (in progress or failed previously)",
+            ),
+            Some("channel_not_joined"),
+        )
     };
 
     Ok(Json(GetRecentMessagesResponse {

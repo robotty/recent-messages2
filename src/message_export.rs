@@ -3,9 +3,8 @@ use crate::web::get_recent_messages::GetRecentMessagesQueryOptions;
 use chrono::{DateTime, Utc};
 use humantime::format_duration;
 use itertools::Itertools;
-use lazy_static::lazy_static;
-use std::collections::HashSet;
 use std::convert::TryFrom;
+use std::{collections::HashSet, sync::LazyLock};
 use twitch_irc::message::{
     AsRawIRC, ClearChatAction, ClearMsgMessage, IRCMessage, IRCPrefix, IRCTags, NoticeMessage,
     ServerMessage,
@@ -60,14 +59,14 @@ impl ContainerFrame {
                         "rm-timeout".to_owned(),
                     ),
                     ClearChatAction::UserBanned { user_login, .. } => (
-                        format!("{} has been permanently banned.", user_login),
+                        format!("{user_login} has been permanently banned."),
                         "rm-permaban".to_owned(),
                     ),
                 };
 
                 let mut tags = IRCTags::new();
                 // @msg-id=rm-clearchat/rm-timeout/rm-permaban
-                tags.0.insert("msg-id".to_owned(), Some(extra_tag));
+                tags.0.insert("msg-id".to_owned(), extra_tag);
 
                 // @msg-id=rm-timeout :tmi.twitch.tv NOTICE #channel :a_bad_user has been timed out for 5m 2s.
                 IRCMessage::new(
@@ -89,11 +88,11 @@ impl ContainerFrame {
         message_to_export
             .tags
             .0
-            .insert("historical".to_owned(), Some("1".to_owned()));
+            .insert("historical".to_owned(), "1".to_owned());
         // Add rm-received-ts=<timestamp>
         message_to_export.tags.0.insert(
             "rm-received-ts".to_owned(),
-            Some(self.time_received.timestamp_millis().to_string()),
+            self.time_received.timestamp_millis().to_string(),
         );
 
         // Add rm-deleted=1 if needed
@@ -101,7 +100,7 @@ impl ContainerFrame {
             message_to_export
                 .tags
                 .0
-                .insert("rm-deleted".to_owned(), Some("1".to_owned()));
+                .insert("rm-deleted".to_owned(), "1".to_owned());
         }
 
         Some(message_to_export.as_raw_irc())
@@ -114,18 +113,17 @@ struct MessageContainer {
     frames: Vec<ContainerFrame>,
 }
 
-lazy_static! {
-    static ref IGNORED_NOTICE_IDS: HashSet<&'static str> = [
+static IGNORED_NOTICE_IDS: LazyLock<HashSet<&'static str>> = LazyLock::new(|| {
+    [
         "no_permission",
         "host_on",
         "host_off",
         "host_target_went_offline",
-        "msg_channel_suspended"
+        "msg_channel_suspended",
     ]
-    .iter()
-    .cloned()
-    .collect();
-}
+    .into_iter()
+    .collect()
+});
 
 impl MessageContainer {
     pub fn append_stored_msg(&mut self, message: &StoredMessage) {

@@ -1,6 +1,6 @@
+use crate::web::WebAppData;
 use crate::web::auth::UserAuthorization;
 use crate::web::error::ApiError;
-use crate::web::WebAppData;
 use axum::Extension;
 use http::StatusCode;
 

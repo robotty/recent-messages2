@@ -84,7 +84,7 @@ export class App extends React.Component<{}, { auth: AuthState }> {
       }
       console.log(
         "after checking expirations, new auth state is actually going to be:",
-        newAuthState
+        newAuthState,
       );
 
       if (newAuthState.type === "present" || newAuthState.type === "missing") {
@@ -104,16 +104,19 @@ export class App extends React.Component<{}, { auth: AuthState }> {
       if (storedAuth.type === "present") {
         storedAuth.validUntil = new Date(storedAuth.validUntil);
         storedAuth.userDetailsValidUntil = new Date(
-          storedAuth.userDetailsValidUntil
+          storedAuth.userDetailsValidUntil,
         );
       }
       this.updateAuthState(storedAuth);
     }
 
-    this.runningTicker = setInterval(() => {
-      console.log("tick! making sure auth has not expired");
-      this.updateAuthState();
-    }, 3 * 60 * 1000); // every 3 minutes
+    this.runningTicker = setInterval(
+      () => {
+        console.log("tick! making sure auth has not expired");
+        this.updateAuthState();
+      },
+      3 * 60 * 1000,
+    ); // every 3 minutes
   }
 
   componentWillUnmount() {

@@ -8,7 +8,7 @@ function rot13(s: string): string {
     (c) =>
       "NOPQRSTUVWXYZABCDEFGHIJKLMnopqrstuvwxyzabcdefghijklm"[
         "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".indexOf(c)
-      ]
+      ],
   );
 }
 

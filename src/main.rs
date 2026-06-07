@@ -1,6 +1,4 @@
 #![type_length_limit = "99999999"]
-#![deny(clippy::all)]
-#![deny(clippy::cargo)]
 
 mod config;
 mod db;
@@ -50,7 +48,7 @@ async fn main() {
         tokio::spawn(monitoring::run_process_monitoring(shutdown_signal.clone()));
 
     // db init
-    let data_storage = Box::leak(Box::new(db::connect_to_postgresql(&config)));
+    let data_storage = Box::leak(Box::new(db::connect_to_postgresql(config)));
     let migrations_result = data_storage.run_migrations().await;
     match migrations_result {
         Ok(()) => {
@@ -62,7 +60,10 @@ async fn main() {
         }
     }
     if let Err(e) = data_storage.fetch_initial_metrics_values().await {
-        tracing::error!("Failed to query some initial message count from the DB to initialize exported metrics: {}", e);
+        tracing::error!(
+            "Failed to query some initial message count from the DB to initialize exported metrics: {}",
+            e
+        );
         std::process::exit(1);
     }
 
@@ -111,7 +112,7 @@ async fn main() {
     let mut webserver_join_handle = webserver_join_handle.fuse();
     let mut exit_code: i32 = 0;
     loop {
-        let all_simple_workers_terminated = simple_workers.iter().all(|fut| fut.is_terminated());
+        let all_simple_workers_terminated = simple_workers.iter().all(FusedFuture::is_terminated);
         if all_simple_workers_terminated && webserver_join_handle.is_terminated() {
             tracing::info!("Everything shut down successfully, ending");
             break;
@@ -120,7 +121,7 @@ async fn main() {
         let any_simple_worker = futures::future::select_all(simple_workers.iter_mut());
 
         tokio::select! {
-            _ = &mut os_shutdown_signal, if !os_shutdown_signal.is_terminated() => {
+            () = &mut os_shutdown_signal, if !os_shutdown_signal.is_terminated() => {
                 tracing::debug!("Received shutdown signal");
                 shutdown_signal.cancel();
             },
@@ -128,13 +129,13 @@ async fn main() {
                 let ((worker_result, name), _, _) = fut_output;
                 match worker_result {
                     Ok(()) => {
-                        if !shutdown_signal.is_cancelled() {
+                        if shutdown_signal.is_cancelled() {
+                            // regular end after graceful shutdown request
+                            tracing::info!("{} has successfully shut down gracefully", name);
+                        } else {
                             tracing::error!("{} ended without error even though no shutdown was requested (shutting down other parts of application gracefully)", name);
                             shutdown_signal.cancel();
                             exit_code = 1;
-                        } else {
-                            // regular end after graceful shutdown request
-                            tracing::info!("{} has successfully shut down gracefully", name);
                         }
                     }
                     Err(join_error) => {
@@ -157,13 +158,13 @@ async fn main() {
                 //   ctrl_c_event.is_terminated() will be TRUE
                 match webserver_result {
                     Ok(Ok(())) => {
-                        if !shutdown_signal.is_cancelled() {
+                        if shutdown_signal.is_cancelled() {
+                            // regular end after graceful shutdown request
+                            tracing::info!("Webserver has successfully shut down gracefully");
+                        } else {
                             tracing::error!("Webserver ended without error even though no shutdown was requested (shutting down other parts of application gracefully)");
                             shutdown_signal.cancel();
                             exit_code = 1;
-                        } else {
-                            // regular end after graceful shutdown request
-                            tracing::info!("Webserver has successfully shut down gracefully");
                         }
                     },
                     Ok(Err(tower_error)) => {
@@ -213,6 +214,6 @@ fn increase_nofile_rlimit() {
             Err(e) => tracing::error!("Failed to increase NOFILE rlimit to {}: {}", hard, e),
         }
     } else {
-        tracing::debug!("NOFILE rlimit: no need to increase (soft limit is not below hard limit)")
+        tracing::debug!("NOFILE rlimit: no need to increase (soft limit is not below hard limit)");
     }
 }

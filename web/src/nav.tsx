@@ -59,7 +59,7 @@ export class Nav extends React.Component<
               <NavLink
                 tag={RRLink}
                 to={`/login?returnTo=${encodeURIComponent(
-                  location.pathname + location.search + location.hash
+                  location.pathname + location.search + location.hash,
                 )}`}
               >
                 <i className="fas fa-sign-in-alt mr-1" />
@@ -97,7 +97,7 @@ export class Nav extends React.Component<
                 <DropdownItem
                   tag={RRLink}
                   to={`/logout?returnTo=${encodeURIComponent(
-                    location.pathname + location.search + location.hash
+                    location.pathname + location.search + location.hash,
                   )}`}
                 >
                   <i className="fas fa-sign-out-alt mr-1" />
