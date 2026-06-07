@@ -4,7 +4,9 @@ use crate::config::Config;
 use crate::db::DataStorage;
 use chrono::Utc;
 use chrono::prelude::*;
-use prometheus::{Histogram, exponential_buckets, register_histogram};
+use prometheus::{
+    Histogram, IntCounter, exponential_buckets, register_histogram, register_int_counter,
+};
 use tokio::sync::mpsc;
 use tokio::task::JoinHandle;
 use tokio_util::sync::CancellationToken;
@@ -16,6 +18,27 @@ static INTERNAL_FORWARD_TIME_TAKEN: LazyLock<Histogram> = LazyLock::new(|| {
     register_histogram!(
         "recentmessages_irc_forwarder_internal_forward_message_time_taken_seconds",
         "Time taken to add a message to the internal channel, this amount will climb if the system is overloaded"
+    )
+    .unwrap()
+});
+static STORE_CHUNK_RUNS: LazyLock<IntCounter> = LazyLock::new(|| {
+    register_int_counter!(
+        "recentmessages_irc_forwarder_store_chunk_runs",
+        "Number of runs the IRC forwarder has completed"
+    )
+    .unwrap()
+});
+static STORE_CHUNK_ERRORS: LazyLock<IntCounter> = LazyLock::new(|| {
+    register_int_counter!(
+        "recentmessages_irc_forwarder_store_chunk_errors",
+        "Number of times a chunk could not be appended to the database successfully"
+    )
+    .unwrap()
+});
+static STORE_CHUNK_TIME_TAKEN: LazyLock<Histogram> = LazyLock::new(|| {
+    register_histogram!(
+        "recentmessages_irc_forwarder_store_chunk_time_taken_seconds",
+        "Time taken to forward individual chunks of messages to the database"
     )
     .unwrap()
 });
@@ -96,10 +119,10 @@ impl IrcListener {
                     // surprising behaviour.
 
                     // For example: If a message is stored in the database at millisecond-timestamp 1701718211635.613
-                    // (notice the hidden .613 precision, which won't get exported in the @rm-received-ts tag),
-                    // The user could request ?since=1701718211635, where we would expect the message to NOT be returned.
-                    // However, because the value stored in the database is actually larger in the microseconds precision,
-                    // we get unexpected/surprising behaviour.
+                    // (notice the hidden .613 precision, which won't get exported in the @rm-received-ts tag), The user
+                    // could request ?since=1701718211635, where we would expect the message to NOT be returned.
+                    // However, because the value stored in the database is actually larger in the microseconds
+                    // precision, we get unexpected/surprising behaviour.
 
                     // Doing the truncating here is easier than doing it later during the query/filtering,
                     // since the database index cannot be used when filtering by the truncated timestamp.
@@ -132,7 +155,17 @@ impl IrcListener {
                     continue;
                 }
 
-                data_storage.append_messages(chunk);
+                tokio::spawn(async move {
+                    let timer = STORE_CHUNK_TIME_TAKEN.start_timer();
+                    let res = data_storage.append_messages(&chunk).await;
+                    timer.observe_duration();
+
+                    if let Err(e) = res {
+                        tracing::error!("Failed to append message to storage: {}", e);
+                        STORE_CHUNK_ERRORS.inc();
+                    }
+                    STORE_CHUNK_RUNS.inc();
+                });
             }
         };
 
