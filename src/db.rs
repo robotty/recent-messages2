@@ -1,10 +1,11 @@
-use crate::config::Config;
+use crate::config::{AppConfig, Config};
 use crate::web::auth::{TwitchUserAccessToken, UserAuthorization};
 use chrono::{DateTime, Utc};
 use deadpool_postgres::{ManagerConfig, PoolConfig, RecyclingMethod};
 use itertools::Itertools;
 use prometheus::{
-    Histogram, IntCounter, IntGauge, register_histogram, register_int_counter, register_int_gauge,
+    Histogram, HistogramVec, IntCounter, IntGauge, register_histogram, register_histogram_vec,
+    register_int_counter, register_int_gauge,
 };
 use rustls::ClientConfig;
 use rustls_platform_verifier::ConfigVerifierExt;
@@ -12,7 +13,7 @@ use std::ops::DerefMut;
 use std::time::Duration;
 use std::{collections::HashSet, sync::LazyLock};
 use tokio::time::MissedTickBehavior;
-use tokio_postgres::types::ToSql;
+use tokio_postgres::types::{ToSql, Type};
 use tokio_postgres_rustls::MakeRustlsConnect;
 use tokio_util::sync::CancellationToken;
 
@@ -24,24 +25,12 @@ static MESSAGES_APPENDED: LazyLock<IntCounter> = LazyLock::new(|| {
     .unwrap()
 });
 
+const REFRESH_MESSAGES_STORED_EVERY: Duration = Duration::from_secs(15);
+
 static MESSAGES_STORED: LazyLock<IntGauge> = LazyLock::new(|| {
     register_int_gauge!(
         "recentmessages_messages_stored",
         "Number of messages currently stored in storage"
-    )
-    .unwrap()
-});
-static MESSAGES_VACUUMED: LazyLock<IntCounter> = LazyLock::new(|| {
-    register_int_counter!(
-        "recentmessages_messages_vacuumed",
-        "Total number of messages that were removed by the automatic vacuum runner"
-    )
-    .unwrap()
-});
-static VACUUM_RUNS: LazyLock<IntCounter> = LazyLock::new(|| {
-    register_int_counter!(
-        "recentmessages_message_vacuum_runs",
-        "Total number of times the automatic vacuum runner has been started for a certain channel"
     )
     .unwrap()
 });
@@ -66,34 +55,14 @@ static TIME_TAKEN_TO_GET_DB_CONN: LazyLock<Histogram> = LazyLock::new(|| {
     )
     .unwrap()
 });
-
-pub fn connect_to_postgresql(config: &Config) -> DataStorage {
-    let pg_config = tokio_postgres::Config::from(config.db.clone());
-    tracing::debug!("PostgreSQL config: {:#?}", pg_config);
-
-    let mgr_config = ManagerConfig {
-        recycling_method: RecyclingMethod::Fast,
-    };
-    let pool_config = PoolConfig {
-        max_size: config.db.pool.max_size,
-        timeouts: deadpool_postgres::Timeouts::from(config.db.pool),
-        ..Default::default()
-    };
-    DB_CONNECTIONS_MAX.set(config.db.pool.max_size as i64);
-    DB_CONNECTIONS_IN_USE.set(0);
-
-    let tls_config = ClientConfig::with_platform_verifier().unwrap();
-    let tls = MakeRustlsConnect::new(tls_config);
-
-    let manager = deadpool_postgres::Manager::from_config(pg_config, tls, mgr_config);
-    let db_pool = deadpool_postgres::Pool::builder(manager)
-        .config(pool_config)
-        .runtime(deadpool_postgres::Runtime::Tokio1)
-        .build()
-        .unwrap();
-
-    DataStorage { db: db_pool }
-}
+static TIME_TAKEN_TO_POLL_METRICS: LazyLock<HistogramVec> = LazyLock::new(|| {
+    register_histogram_vec!(
+        "recentmessages_db_poll_metrics_time_seconds",
+        "Time taken to poll various metrics from the database",
+        &["metric"]
+    )
+    .unwrap()
+});
 
 mod migrations {
     use refinery::embed_migrations;
@@ -130,6 +99,34 @@ impl Drop for WrappedDbConn {
 }
 
 impl DataStorage {
+    pub fn connect(config: &Config) -> DataStorage {
+        let pg_config = tokio_postgres::Config::from(config.db.clone());
+        tracing::debug!("PostgreSQL config: {:#?}", pg_config);
+
+        let mgr_config = ManagerConfig {
+            recycling_method: RecyclingMethod::Fast,
+        };
+        let pool_config = PoolConfig {
+            max_size: config.db.pool.max_size,
+            timeouts: deadpool_postgres::Timeouts::from(config.db.pool),
+            ..Default::default()
+        };
+        DB_CONNECTIONS_MAX.set(config.db.pool.max_size as i64);
+        DB_CONNECTIONS_IN_USE.set(0);
+
+        let tls_config = ClientConfig::with_platform_verifier().unwrap();
+        let tls = MakeRustlsConnect::new(tls_config);
+
+        let manager = deadpool_postgres::Manager::from_config(pg_config, tls, mgr_config);
+        let db_pool = deadpool_postgres::Pool::builder(manager)
+            .config(pool_config)
+            .runtime(deadpool_postgres::Runtime::Tokio1)
+            .build()
+            .unwrap();
+
+        DataStorage { db: db_pool }
+    }
+
     async fn get_db_conn(&self) -> Result<WrappedDbConn, StorageError> {
         let timer = TIME_TAKEN_TO_GET_DB_CONN.start_timer();
         let db_conn = self.db.get().await;
@@ -144,15 +141,82 @@ impl DataStorage {
         Ok(())
     }
 
-    pub async fn fetch_initial_metrics_values(&self) -> Result<(), StorageError> {
-        let count: i64 = self
-            .get_db_conn()
-            .await?
-            .0
-            .query_one("SELECT COUNT(*) AS count FROM message", &[])
-            .await?
-            .get("count");
-        MESSAGES_STORED.set(count);
+    pub async fn setup_retention_policy(&self, app_config: &AppConfig) -> Result<(), StorageError> {
+        let mut db_conn = self.get_db_conn().await?;
+
+        let tx = db_conn.0.transaction().await?;
+
+        tx.execute(
+            r"SELECT remove_retention_policy(
+    relation => 'message',
+    if_exists => true
+)",
+            &[],
+        )
+        .await?;
+
+        tx.execute(
+            r"SELECT add_retention_policy(
+    relation => 'message',
+    drop_after => make_interval(secs => $1),
+    schedule_interval => make_interval(secs => $2)
+)",
+            &[
+                &app_config.messages_expire_after.as_secs_f64(),
+                &app_config.vacuum_messages_every.as_secs_f64(),
+            ],
+        )
+        .await?;
+
+        tx.commit().await?;
+
+        Ok(())
+    }
+
+    pub async fn run_task_update_metrics_values(&self, shutdown_signal: CancellationToken) {
+        let mut poll_interval = tokio::time::interval(REFRESH_MESSAGES_STORED_EVERY);
+        poll_interval.set_missed_tick_behavior(MissedTickBehavior::Delay);
+
+        let worker = async move {
+            loop {
+                poll_interval.tick().await;
+                let res = self.update_metrics_values().await;
+
+                if let Err(e) = res {
+                    tracing::error!("Failed to refresh metrics: {}", e);
+                }
+            }
+        };
+
+        tokio::select! {
+            _ = worker => {},
+            () = shutdown_signal.cancelled() => {}
+        }
+    }
+
+    pub async fn update_metrics_values(&self) -> Result<(), StorageError> {
+        let db_conn = self.get_db_conn().await?;
+
+        {
+            let timer = TIME_TAKEN_TO_POLL_METRICS
+                .with_label_values(&["messages_stored"])
+                .start_timer();
+            let statement = db_conn
+                .0
+                .prepare_typed_cached(
+                    "SELECT approximate_row_count FROM approximate_row_count('message')",
+                    &[],
+                )
+                .await?;
+            let count: i64 = db_conn
+                .0
+                .query_one(&statement, &[])
+                .await?
+                .get("approximate_row_count");
+            timer.observe_duration();
+            MESSAGES_STORED.set(count);
+        }
+
         Ok(())
     }
 
@@ -163,16 +227,20 @@ impl DataStorage {
         let db_conn = self.get_db_conn().await?;
 
         // TODO figure out whether this has to be sped up using an index.
-        let rows = db_conn
+        let statement = db_conn
             .0
-            .query(
+            .prepare_typed_cached(
                 r"SELECT channel_login
 FROM channel
 WHERE ignored_at IS NULL
   AND last_access > now() - make_interval(secs => $1)
 ORDER BY last_access DESC",
-                &[&channel_expiry.as_secs_f64()],
+                &[Type::FLOAT8],
             )
+            .await?;
+        let rows = db_conn
+            .0
+            .query(&statement, &[&channel_expiry.as_secs_f64()])
             .await?;
         let channels = rows.into_iter().map(|row| row.get(0)).collect();
 
@@ -184,29 +252,31 @@ ORDER BY last_access DESC",
         // this way we only update the last_access if it's been at least 30 minutes since
         // the last time the last_access was updated for that channel. For high traffic
         // channels this massively cuts down on the amount of writes the DB has to do
-        db_conn
+        let statement = db_conn
             .0
-            .execute(
+            .prepare_typed_cached(
                 r"INSERT INTO channel (channel_login) VALUES ($1)
 ON CONFLICT ON CONSTRAINT channel_pkey DO UPDATE
     SET last_access = now()
     WHERE channel.last_access < now() - INTERVAL '30 minutes'",
-                &[&channel_login],
+                &[Type::TEXT],
             )
             .await?;
+        db_conn.0.execute(&statement, &[&channel_login]).await?;
         Ok(())
     }
 
     pub async fn is_channel_ignored(&self, channel_login: &str) -> Result<bool, StorageError> {
         let db_conn = self.get_db_conn().await?;
-        let rows = db_conn
+        let statement = db_conn
             .0
-            .query(
+            .prepare_typed_cached(
                 r"SELECT ignored_at IS NOT NULL FROM channel
 WHERE channel_login = $1",
-                &[&channel_login],
+                &[Type::TEXT],
             )
             .await?;
+        let rows = db_conn.0.query(&statement, &[&channel_login]).await?;
         // if found, get the value from the returned row, otherwise, the channel is not known
         // and therefore not ignored
         Ok(rows.first().is_some_and(|row| row.get(0)))
@@ -218,15 +288,19 @@ WHERE channel_login = $1",
         ignored: bool,
     ) -> Result<(), StorageError> {
         let db_conn = self.get_db_conn().await?;
-        db_conn
+        let statement = db_conn
             .0
-            .query(
+            .prepare_typed_cached(
                 r"INSERT INTO channel (channel_login, ignored_at)
 VALUES ($1, CASE WHEN $2 THEN now() ELSE NULL END)
 ON CONFLICT ON CONSTRAINT channel_pkey DO UPDATE
     SET ignored_at = CASE WHEN $2 THEN now() ELSE NULL END",
-                &[&channel_login, &ignored],
+                &[Type::TEXT, Type::BOOL],
             )
+            .await?;
+        db_conn
+            .0
+            .execute(&statement, &[&channel_login, &ignored])
             .await?;
         Ok(())
     }
@@ -236,14 +310,30 @@ ON CONFLICT ON CONSTRAINT channel_pkey DO UPDATE
         user_authorization: &UserAuthorization,
     ) -> Result<(), StorageError> {
         let db_conn = self.get_db_conn().await?;
-
-        db_conn
+        let statement = db_conn
             .0
-            .execute(
+            .prepare_typed_cached(
                 "INSERT INTO user_authorization(access_token, twitch_access_token,
 twitch_refresh_token, twitch_authorization_last_validated, valid_until, user_id,
 user_login, user_name, user_profile_image_url)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
+                &[
+                    Type::TEXT,
+                    Type::TEXT,
+                    Type::TEXT,
+                    Type::TIMESTAMPTZ,
+                    Type::TIMESTAMPTZ,
+                    Type::TEXT,
+                    Type::TEXT,
+                    Type::TEXT,
+                    Type::TEXT,
+                ],
+            )
+            .await?;
+        db_conn
+            .0
+            .execute(
+                &statement,
                 &[
                     &user_authorization.access_token,
                     &user_authorization.twitch_token.access_token,
@@ -266,19 +356,20 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
         access_token: &str,
     ) -> Result<Option<UserAuthorization>, StorageError> {
         let db_conn = self.get_db_conn().await?;
-
-        let rows = db_conn
+        let statement = db_conn
             .0
-            .query(
+            .prepare_typed_cached(
                 "SELECT access_token, twitch_access_token, twitch_refresh_token,
 twitch_authorization_last_validated, valid_until, user_id,
 user_login, user_name, user_profile_image_url
 FROM user_authorization
 WHERE access_token = $1
 AND valid_until >= now()",
-                &[&access_token],
+                &[Type::TEXT],
             )
             .await?;
+
+        let rows = db_conn.0.query(&statement, &[&access_token]).await?;
 
         if let Some(row) = rows.first() {
             // token found in DB and not expired
@@ -306,10 +397,9 @@ AND valid_until >= now()",
         user_authorization: &UserAuthorization,
     ) -> Result<(), StorageError> {
         let db_conn = self.get_db_conn().await?;
-
-        db_conn
+        let statement = db_conn
             .0
-            .execute(
+            .prepare_typed_cached(
                 "UPDATE user_authorization
 SET twitch_access_token = $2,
 twitch_refresh_token = $3,
@@ -320,6 +410,23 @@ user_login = $7,
 user_name = $8,
 user_profile_image_url = $9
 WHERE access_token = $1",
+                &[
+                    Type::TEXT,
+                    Type::TEXT,
+                    Type::TEXT,
+                    Type::TIMESTAMPTZ,
+                    Type::TIMESTAMPTZ,
+                    Type::TEXT,
+                    Type::TEXT,
+                    Type::TEXT,
+                    Type::TEXT,
+                ],
+            )
+            .await?;
+        db_conn
+            .0
+            .execute(
+                &statement,
                 &[
                     &user_authorization.access_token,
                     &user_authorization.twitch_token.access_token,
@@ -341,14 +448,14 @@ WHERE access_token = $1",
 
     pub async fn delete_user_authorization(&self, access_token: &str) -> Result<(), StorageError> {
         let db_conn = self.get_db_conn().await?;
-
-        db_conn
+        let statement = db_conn
             .0
-            .execute(
+            .prepare_typed_cached(
                 "DELETE FROM user_authorization WHERE access_token = $1",
-                &[&access_token],
+                &[Type::TEXT],
             )
             .await?;
+        db_conn.0.execute(&statement, &[&access_token]).await?;
 
         Ok(())
     }
@@ -362,9 +469,9 @@ WHERE access_token = $1",
         after: Option<DateTime<Utc>>,
         max_buffer_size: usize,
     ) -> Result<Vec<StoredMessage>, StorageError> {
-        // limit: If specified, take the newest N messages.
         let db_conn = self.get_db_conn().await?;
 
+        // limit: If specified, take the newest N messages.
         let limit = match limit {
             Some(limit) => usize::min(limit, max_buffer_size),
             None => max_buffer_size,
@@ -372,18 +479,27 @@ WHERE access_token = $1",
 
         // The cast() below is to allow the PostgreSQL server to unambiguously detect the
         // type of $2 and $3. See: https://stackoverflow.com/a/64223435
-        let query = "\
+        let statement = db_conn
+            .0
+            .prepare_typed_cached(
+                "\
             SELECT time_received, message_source
             FROM message
             WHERE channel_login = $1
             AND   (cast($2 AS TIMESTAMP WITH TIME ZONE) IS NULL OR time_received < $2)
             AND   (cast($3 AS TIMESTAMP WITH TIME ZONE) IS NULL OR time_received > $3)
             ORDER BY time_received DESC
-            LIMIT $4";
+            LIMIT $4",
+                &[Type::TEXT, Type::TIMESTAMPTZ, Type::TIMESTAMPTZ, Type::INT8],
+            )
+            .await?;
 
         Ok(db_conn
             .0
-            .query(query, &[&channel_login, &before, &after, &(limit as i64)])
+            .query(
+                &statement,
+                &[&channel_login, &before, &after, &(limit as i64)],
+            )
             .await?
             .into_iter()
             .rev()
@@ -395,15 +511,15 @@ WHERE access_token = $1",
     }
 
     pub async fn purge_messages(&self, channel_login: &str) -> Result<(), StorageError> {
-        let num_messages_deleted = self
-            .get_db_conn()
-            .await?
+        let db_conn = self.get_db_conn().await?;
+        let statement = db_conn
             .0
-            .execute(
+            .prepare_typed_cached(
                 "DELETE FROM message WHERE channel_login = $1",
-                &[&channel_login],
+                &[Type::TEXT],
             )
             .await?;
+        let num_messages_deleted = db_conn.0.execute(&statement, &[&channel_login]).await?;
         MESSAGES_STORED.sub(num_messages_deleted as i64);
         Ok(())
     }
@@ -417,11 +533,14 @@ WHERE access_token = $1",
             return Ok(());
         }
         let num_messages = messages.len();
-        self.get_db_conn()
-            .await?
+        let db_conn = self.get_db_conn().await?;
+        let query = DataStorage::batch_message_insert_query(num_messages, 3);
+        let types = DataStorage::batch_message_insert_types(num_messages);
+        let statement = db_conn.0.prepare_typed_cached(&query, &types).await?;
+        db_conn
             .0
             .execute(
-                &DataStorage::batch_message_insert_query(num_messages, 3),
+                &statement,
                 DataStorage::batch_message_insert_values(messages).as_slice(),
             )
             .await?;
@@ -443,6 +562,16 @@ WHERE access_token = $1",
         out
     }
 
+    fn batch_message_insert_types(num_rows: usize) -> Vec<Type> {
+        let mut types = Vec::with_capacity(num_rows * 3);
+        for _ in 0..num_rows {
+            types.push(Type::TEXT);
+            types.push(Type::TIMESTAMPTZ);
+            types.push(Type::TEXT);
+        }
+        types
+    }
+
     fn batch_message_insert_query(num_rows: usize, num_columns: usize) -> String {
         let mut buf = String::from(
             "INSERT INTO message(channel_login, time_received, message_source) VALUES ",
@@ -461,116 +590,6 @@ WHERE access_token = $1",
             }
         }
         buf
-    }
-
-    pub async fn run_task_vacuum_old_messages(
-        &'static self,
-        config: &'static Config,
-        shutdown_signal: CancellationToken,
-    ) {
-        let vacuum_messages_every = config.app.vacuum_messages_every;
-        let message_expire_after = config.app.messages_expire_after;
-        let max_buffer_size = config.app.max_buffer_size;
-
-        let mut check_interval = tokio::time::interval(vacuum_messages_every);
-        check_interval.set_missed_tick_behavior(MissedTickBehavior::Delay);
-
-        let worker = async move {
-            loop {
-                check_interval.tick().await;
-                tracing::info!("Running vacuum for old messages");
-                let res = self
-                    .run_message_vacuum(
-                        vacuum_messages_every,
-                        message_expire_after,
-                        max_buffer_size,
-                    )
-                    .await;
-
-                if let Err(e) = res {
-                    tracing::error!(
-                        "Failed to start message vacuum batch, skipping entire batch: {}",
-                        e
-                    );
-                }
-            }
-        };
-
-        tokio::select! {
-            _ = worker => {},
-            () = shutdown_signal.cancelled() => {}
-        }
-    }
-
-    /// Delete messages older than `messages_expire_after` and messages that go beyond the
-    /// maximum buffer size.
-    async fn run_message_vacuum(
-        &self,
-        vacuum_messages_every: Duration,
-        messages_expire_after: Duration,
-        max_buffer_size: usize,
-    ) -> Result<(), StorageError> {
-        let db_conn = self.get_db_conn().await?;
-
-        let channels_with_messages: Vec<String> = db_conn
-            .0
-            .query("SELECT DISTINCT channel_login FROM message", &[])
-            .await?
-            .into_iter()
-            .map(|row| row.get("channel_login"))
-            .collect_vec();
-
-        if channels_with_messages.is_empty() {
-            return Ok(()); // dont want to divide by 0
-        }
-
-        let time_between_channels = vacuum_messages_every / channels_with_messages.len() as u32;
-        let mut interval = tokio::time::interval(time_between_channels);
-
-        for channel in channels_with_messages {
-            interval.tick().await;
-            VACUUM_RUNS.inc();
-
-            let execute_result = db_conn
-                .0
-                .execute(
-                    "DELETE FROM message
-WHERE channel_login = $1
-AND (
-	time_received < (
-		SELECT time_received
-		FROM message
-		WHERE channel_login = $1
-		ORDER BY time_received DESC
-		OFFSET $2
-		LIMIT 1
-	)
-
-	OR
-
-	time_received < now() - make_interval(secs => $3)
-)",
-                    &[
-                        &channel,
-                        &((max_buffer_size as i64) - 1),
-                        &messages_expire_after.as_secs_f64(),
-                    ],
-                )
-                .await;
-
-            let messages_deleted = match execute_result {
-                Ok(messages_deleted) => messages_deleted,
-                Err(e) => {
-                    tracing::error!("Failed to vacuum channel {}: {}", channel, e);
-                    continue;
-                }
-            };
-
-            MESSAGES_VACUUMED.inc_by(messages_deleted);
-            MESSAGES_STORED.sub(messages_deleted as i64);
-        }
-
-        Ok(())
     }
 }
 
