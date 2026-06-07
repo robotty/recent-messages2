@@ -3,7 +3,9 @@ use crate::web::auth::{TwitchUserAccessToken, UserAuthorization};
 use chrono::{DateTime, Utc};
 use deadpool_postgres::{ManagerConfig, PoolConfig, RecyclingMethod};
 use itertools::Itertools;
-use prometheus::{Histogram, IntCounter, IntGauge, register_histogram, register_int_counter, register_int_gauge};
+use prometheus::{
+    Histogram, IntCounter, IntGauge, register_histogram, register_int_counter, register_int_gauge,
+};
 use rustls::ClientConfig;
 use rustls_platform_verifier::ConfigVerifierExt;
 use std::ops::DerefMut;
