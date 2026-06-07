@@ -34,10 +34,7 @@ pub struct Config {
     pub web: WebConfig,
 
     #[serde(default)]
-    pub main_db: DatabaseConfig,
-
-    #[serde(default)]
-    pub shard_db: Vec<DatabaseConfig>,
+    pub db: DatabaseConfig,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -57,10 +54,10 @@ pub struct AppConfig {
 impl Default for AppConfig {
     fn default() -> Self {
         AppConfig {
-            vacuum_channels_every: Duration::from_secs(30 * 60), // 30 minutes
-            channels_expire_after: Duration::from_secs(24 * 60 * 60), // 24 hours
-            vacuum_messages_every: Duration::from_secs(30 * 60), // 30 minutes
-            messages_expire_after: Duration::from_secs(24 * 60 * 60), // 24 hours
+            vacuum_channels_every: Duration::from_mins(30),
+            channels_expire_after: Duration::from_hours(24),
+            vacuum_messages_every: Duration::from_mins(30),
+            messages_expire_after: Duration::from_hours(24),
             max_buffer_size: 500,
         }
     }
@@ -113,11 +110,11 @@ fn default_listen_addr() -> ListenAddr {
 }
 
 fn seven_days() -> Duration {
-    Duration::from_secs(7 * 24 * 60 * 60)
+    Duration::from_hours(7 * 24)
 }
 
 fn one_hour() -> Duration {
-    Duration::from_secs(60 * 60)
+    Duration::from_hours(1)
 }
 
 fn ten_seconds() -> Duration {
@@ -137,9 +134,6 @@ pub enum ListenAddr {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(default)]
 pub struct DatabaseConfig {
-    // Custom name for this database, e.g. db0 or heinrich or whatever the user calls their servers
-    pub name: Option<String>,
-
     pub user: Option<String>,
     // psql seems to accept arbitrary bytes instead of just valid UTF-8 here
     // (the password in the tokio_postgres library is a Vec<u8>)
@@ -273,7 +267,6 @@ impl From<postgres::Config> for DatabaseConfig {
         }
 
         DatabaseConfig {
-            name: None,
             user: config.get_user().map(String::from),
             password: config
                 .get_password()

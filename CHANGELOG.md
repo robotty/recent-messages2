@@ -6,6 +6,8 @@
   has been renamed to the almost identical `recentmessages_get_recent_messages_endpoint_components_seconds`.
   This new metric now also observes the `export_stored_messages` component, which is not async, hence the rename.
   (#287)
+- Breaking: Removed support for database sharding again. Revert to using `[db]` instead of `[main_db]` in your config.
+  (#321)
 - Added: `?before=` and `?after=` parameters to `/api/v2/recent-messages/:channel_login`. (#287)
 - Fixed: Internal errors occurring in web request handlers are now printed. (#287)
 - Fixed: Metric for performance of different endpoints now works again, was previously only showing one combined

@@ -177,11 +177,9 @@ impl MessageContainer {
             ServerMessage::Notice(NoticeMessage {
                 message_id: Some(message_id),
                 ..
-            }) => {
+            }) if IGNORED_NOTICE_IDS.contains(&message_id.as_str()) => {
                 // Don't export ignored NOTICE types
-                if IGNORED_NOTICE_IDS.contains(&message_id.as_str()) {
-                    return;
-                }
+                return;
             }
             _ => {}
         }
