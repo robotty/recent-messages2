@@ -128,6 +128,7 @@ static IGNORED_NOTICE_IDS: LazyLock<HashSet<&'static str>> = LazyLock::new(|| {
 impl MessageContainer {
     pub fn append_stored_msg(&mut self, message: &StoredMessage) {
         // parse the retrieved source back into a struct
+        // TODO: remove these unwraps (skip invalid stuff)
         let server_message =
             ServerMessage::try_from(IRCMessage::parse(&message.message_source).unwrap()).unwrap();
 
