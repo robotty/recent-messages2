@@ -823,9 +823,9 @@ dependencies = [
 
 [[package]]
 name = "http"
-version = "1.4.1"
+version = "1.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8be7462df143984c4598a256ef469b251d7d7f9e271135073e78fc535414f3d0"
+checksum = "6970f50e31d6fc17d3fa27329444bfa74e196cf62e95052a3f6fee181dba6425"
 dependencies = [
  "bytes",
  "itoa",
@@ -2925,8 +2925,9 @@ checksum = "e421abadd41a4225275504ea4d6566923418b7f05506fbc9c0fe86ba7396114b"
 
 [[package]]
 name = "twitch-irc"
-version = "6.0.0"
-source = "git+https://github.com/robotty/twitch-irc-rs?branch=fix-announcement-parsing#748b269a645239a2f03e2271a2dbcd1d8394d0e6"
+version = "6.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f7ec06b5563397bebbf16caaa765fb7e0a6f76b3f61349585c96c0eab4d2e116"
 dependencies = [
  "async-trait",
  "bytes",

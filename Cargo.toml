@@ -57,7 +57,6 @@ rustls-platform-verifier = "0.7"
 [patch.crates-io]
 # see https://github.com/heim-rs/darwin-libproc/issues/4
 darwin-libproc = { git = "https://github.com/Orycterope/darwin-libproc", rev = "f73ddb1002d51ae74c1b41670fae56bd5896b7a3" }
-twitch-irc = { git = "https://github.com/robotty/twitch-irc-rs", branch = "fix-announcement-parsing" }
 
 [target.'cfg(unix)'.dependencies]
 rlimit = "0.11"
