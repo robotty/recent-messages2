@@ -41,7 +41,8 @@ simple-process-stats = "1"
 structopt = "0.3"
 thiserror = "2"
 tokio = { version = "1", features = ["full"] }
-tokio-postgres = { version = "0.7", features = ["with-chrono-0_4"] }
+# pinned to 0.7.14 because of https://github.com/rust-postgres/rust-postgres/issues/1284
+tokio-postgres = { version = "=0.7.14", features = ["with-chrono-0_4"] }
 tokio-postgres-rustls = "0.14"
 tokio-stream = { version = "0.1", features = ["net"], default-features = false }
 tokio-util = "0.7"

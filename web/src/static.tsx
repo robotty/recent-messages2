@@ -118,7 +118,7 @@ export function Home() {
             <p>
               I made and run this project in my free time, and I don't want to
               collect money for doing that. However <em>running</em> the service
-              requires a server, which is not free. I currently pay about 26€
+              requires a server, which is not free. I currently pay about 10€
               per month to run this service (that's just the server costs). If
               you are feeling generous, you can help pay for the server costs by
               becoming a monthly sponsor through GitHub Sponsors, or by giving a

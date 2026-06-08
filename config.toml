@@ -83,17 +83,12 @@ host = [ { path = "/var/run/postgresql" } ]
 # Defaults to 2 hours
 #keepalives_idle = "2 hours"
 
-# Configure whether SSL is used. Valid values: "disable", "prefer", "require"
-# The certificate presented by the PostgreSQL server is validated against the webpki roots (i.e. you'll need
-# a certificate from Let's Encrypt or similar)
-# If this is not acceptable in your use case, feel free to make a GitHub issue about it, support for custom
-# root certificates could be added in the future.
-#sslmode = "prefer"
+# Configure whether TLS (formerly known as SSL) is used. Valid values: "disable", "prefer", "require"
+# The certificate presented by the PostgreSQL server is validated against the root certificates of the system.
+#ssl_mode = "prefer"
 
 # more supported options: application_name, target_session_attrs, channel_binding
 # (usually irrelevant, search them up if you need them)
-# TLS (SSL) is not supported at the moment because there has been no demand. It can be added if needed.
-# Create a GitHub issue if you need TLS in your use case.
 
 [db.pool]
 # maximum number of connections the DB connection pool will create

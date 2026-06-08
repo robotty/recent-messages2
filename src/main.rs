@@ -48,7 +48,7 @@ async fn main() {
         tokio::spawn(monitoring::run_process_monitoring(shutdown_signal.clone()));
 
     // db init
-    let data_storage = Box::leak(Box::new(db::connect_to_postgresql(config)));
+    let data_storage = Box::leak(Box::new(DataStorage::connect(config)));
     let migrations_result = data_storage.run_migrations().await;
     match migrations_result {
         Ok(()) => {
@@ -59,9 +59,9 @@ async fn main() {
             std::process::exit(1);
         }
     }
-    if let Err(e) = data_storage.fetch_initial_metrics_values().await {
+    if let Err(e) = data_storage.setup_retention_policy(&config.app).await {
         tracing::error!(
-            "Failed to query some initial message count from the DB to initialize exported metrics: {}",
+            "Failed to setup TimescaleDB retention policy in the database: {}",
             e
         );
         std::process::exit(1);
@@ -75,8 +75,8 @@ async fn main() {
     ) = irc_listener::IrcListener::start(data_storage, config, shutdown_signal.clone());
     let irc_listener = Box::leak(Box::new(irc_listener));
 
-    let old_msg_vacuum_join_handle =
-        tokio::spawn(data_storage.run_task_vacuum_old_messages(config, shutdown_signal.clone()));
+    let db_metrics_join_handle =
+        tokio::spawn(data_storage.run_task_update_metrics_values(shutdown_signal.clone()));
 
     let webserver =
         match web::run(data_storage, irc_listener, config, shutdown_signal.clone()).await {
@@ -106,7 +106,7 @@ async fn main() {
         )
         .fuse(),
         with_name(channel_jp_join_handle, "IRC channel join/part task").fuse(),
-        with_name(old_msg_vacuum_join_handle, "Old message vacuum task").fuse(),
+        with_name(db_metrics_join_handle, "Database metrics poller").fuse(),
     ];
 
     let mut webserver_join_handle = webserver_join_handle.fuse();
