@@ -1,6 +1,6 @@
 # Changelog
 
-# Unreleased
+## Unreleased
 
 - Breaking: Removed `recentmessages_get_recent_messages_endpoint_async_components_seconds` metric,
   has been renamed to the almost identical `recentmessages_get_recent_messages_endpoint_components_seconds`.
@@ -17,6 +17,6 @@
 - Fixed: Metric for performance of different endpoints now works again, was previously only showing one combined
   performance for all endpoints under endpoint "other". (#287)
 
-# v0.1.0
+## v0.1.0
 
 Initial Release.
