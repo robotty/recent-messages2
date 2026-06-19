@@ -54,6 +54,9 @@ tracing-subscriber = "0.3"
 twitch-irc = { version = "6" , features = ["transport-tcp", "transport-tcp-rustls-native-roots", "metrics-collection"], default-features = false }
 rustls-platform-verifier = "0.7"
 
+[target.'cfg(not(target_env = "msvc"))'.dependencies]
+tikv-jemallocator = "0.5"
+
 [patch.crates-io]
 # see https://github.com/heim-rs/darwin-libproc/issues/4
 darwin-libproc = { git = "https://github.com/Orycterope/darwin-libproc", rev = "f73ddb1002d51ae74c1b41670fae56bd5896b7a3" }
