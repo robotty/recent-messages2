@@ -55,7 +55,7 @@ twitch-irc = { version = "6" , features = ["transport-tcp", "transport-tcp-rustl
 rustls-platform-verifier = "0.7"
 
 [target.'cfg(not(target_env = "msvc"))'.dependencies]
-tikv-jemallocator = "0.5"
+tikv-jemallocator = "0.7"
 
 [patch.crates-io]
 # see https://github.com/heim-rs/darwin-libproc/issues/4
