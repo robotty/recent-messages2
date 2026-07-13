@@ -37,7 +37,7 @@ pub async fn run_process_monitoring(shutdown_signal: CancellationToken) {
             }
         }
 
-        let system_stats = ProcessStats::get().await;
+        let system_stats = ProcessStats::get();
         let system_stats = match system_stats {
             Ok(system_stats) => system_stats,
             Err(e) => {
