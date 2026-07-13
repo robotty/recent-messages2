@@ -9,7 +9,7 @@ jobs:
   check-format-rustfmt:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       - name: cargo fmt -- --check
         uses: qRoC/cargo-actions@v1
@@ -23,7 +23,7 @@ jobs:
       matrix:
         os: [ubuntu, windows, macOS]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       - name: cargo check
         uses: qRoC/cargo-actions@v1
@@ -38,7 +38,7 @@ jobs:
       matrix:
         os: [ubuntu, windows, macOS]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       - name: cargo build --release
         uses: qRoC/cargo-actions@v1
@@ -56,7 +56,7 @@ jobs:
     runs-on: ubuntu-latest
     container: node:lts
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - run: cd web && npm ci
       # If updating this command, make sure to update the same command in /scripts/reformat.sh too
       - run: ./web/node_modules/.bin/prettier --check --ignore-path ".gitignore" "**/*.md" "**/*.tsx" "**/*.yml" "**/*.json"
@@ -67,10 +67,10 @@ jobs:
       matrix:
         node: [current, lts]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - run: cd web && npm ci
       - run: cd web && npm run build
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         # only master branch
         if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
         with:
