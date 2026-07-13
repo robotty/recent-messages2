@@ -26,7 +26,7 @@ http = "1"
 humantime = "2"
 humantime-serde = "1"
 hyper = { version = "1", features = ["full"] }
-itertools = "0.14"
+itertools = "0.15"
 num_cpus = "1"
 prometheus = { version = "0.14", default-features = false }
 rand = "0.10"
@@ -37,7 +37,7 @@ rmp-serde = "1"
 rustls = "0.23"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-simple-process-stats = "1"
+simple-process-stats = "2"
 structopt = "0.3"
 thiserror = "2"
 tokio = { version = "1", features = ["full"] }
@@ -48,15 +48,11 @@ tokio-stream = { version = "0.1", features = ["net"], default-features = false }
 tokio-util = "0.7"
 toml = "1"
 tower = "0.5"
-tower-http = { version = "0.6", features = ["cors", "fs", "trace"] }
+tower-http = { version = "0.7", features = ["cors", "fs", "trace"] }
 tracing = "0.1"
 tracing-subscriber = "0.3"
 twitch-irc = { version = "6" , features = ["transport-tcp", "transport-tcp-rustls-native-roots", "metrics-collection"], default-features = false }
 rustls-platform-verifier = "0.7"
-
-[patch.crates-io]
-# see https://github.com/heim-rs/darwin-libproc/issues/4
-darwin-libproc = { git = "https://github.com/Orycterope/darwin-libproc", rev = "f73ddb1002d51ae74c1b41670fae56bd5896b7a3" }
 
 [target.'cfg(unix)'.dependencies]
 rlimit = "0.11"
