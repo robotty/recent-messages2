@@ -12,9 +12,13 @@ use crate::config::{Args, Config};
 use crate::db::DataStorage;
 use futures::future::FusedFuture;
 use futures::prelude::*;
+use mimalloc::MiMalloc;
 use structopt::StructOpt;
 use tokio::task::JoinHandle;
 use tokio_util::sync::CancellationToken;
+
+#[global_allocator]
+static GLOBAL: MiMalloc = MiMalloc;
 
 #[tokio::main]
 async fn main() {

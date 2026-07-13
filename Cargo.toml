@@ -53,6 +53,7 @@ tracing = "0.1"
 tracing-subscriber = "0.3"
 twitch-irc = { version = "6" , features = ["transport-tcp", "transport-tcp-rustls-native-roots", "metrics-collection"], default-features = false }
 rustls-platform-verifier = "0.7"
+mimalloc = "0.1.52"
 
 [target.'cfg(unix)'.dependencies]
 rlimit = "0.11"
