@@ -17,6 +17,7 @@
 - Fixed: Metric for performance of different endpoints now works again, was previously only showing one combined
   performance for all endpoints under endpoint "other". (#287)
 - Fixed: Memory leak caused by excessive use of prepared statements for variable-length statements. (#328)
+- Switched allocator to mimalloc. (#326)
 
 ## v0.1.0
 
