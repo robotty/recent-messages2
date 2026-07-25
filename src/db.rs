@@ -27,6 +27,12 @@ static MESSAGES_APPENDED: LazyLock<IntCounter> = LazyLock::new(|| {
 
 const REFRESH_MESSAGES_STORED_EVERY: Duration = Duration::from_secs(15);
 
+/// Only use a prepared statement for Message-apend INSERT statements for # of messages <= this value. This prevents
+/// memory from being used by prepared statements rarely used. Because the upper bound for chunk sizes is very large,
+/// without this we would be leaking memory (albeit up to a max ceiling, every on every pool connection every chunk size
+/// has been prepared, but this would take a very long time to reach)
+const PREPARE_MESSAGE_APPEND_STATEMENTS_UP_TO_SIZE: usize = 256;
+
 static MESSAGES_STORED: LazyLock<IntGauge> = LazyLock::new(|| {
     register_int_gauge!(
         "recentmessages_messages_stored",
@@ -537,10 +543,11 @@ WHERE access_token = $1",
         let query = DataStorage::batch_message_insert_query(num_messages);
         let values = DataStorage::batch_message_insert_values(messages);
 
-        if messages.len() <= 64 {
+        if messages.len() <= PREPARE_MESSAGE_APPEND_STATEMENTS_UP_TO_SIZE {
             // Only use prepared statement for the typical batch sizes
-            // (avg batch size in prod is around 40 at the time of writing this)
-            // This prevents constantly climbing memory use from prepared statements for unusual batch sizes
+            // (avg batch size in prod is around 40-100 at the time of writing this)
+            // This prevents constantly climbing memory use from prepared statements
+            // for unusual (large) batch sizes being kept around
             let types = DataStorage::batch_message_insert_types(num_messages);
             let statement = db_conn.0.prepare_typed_cached(&query, &types).await?;
             db_conn.0.execute(&statement, values.as_slice()).await?;
