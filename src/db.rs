@@ -524,7 +524,7 @@ WHERE access_token = $1",
         Ok(())
     }
 
-    /// Append a message to the storage.
+    /// Append one or more messages to the storage.
     pub async fn append_messages(
         &self,
         messages: &[(String, DateTime<Utc>, String)],
@@ -534,16 +534,12 @@ WHERE access_token = $1",
         }
         let num_messages = messages.len();
         let db_conn = self.get_db_conn().await?;
-        let query = DataStorage::batch_message_insert_query(num_messages, 3);
-        let types = DataStorage::batch_message_insert_types(num_messages);
-        let statement = db_conn.0.prepare_typed_cached(&query, &types).await?;
-        db_conn
-            .0
-            .execute(
-                &statement,
-                DataStorage::batch_message_insert_values(messages).as_slice(),
-            )
-            .await?;
+        let query = DataStorage::batch_message_insert_query(num_messages);
+        let values = DataStorage::batch_message_insert_values(messages);
+
+        // We don't use prepared statements here, since the query length is variable. Caching a lot of these variants
+        // would take up a lot of memory.
+        db_conn.0.execute(&query, values.as_slice()).await?;
         MESSAGES_APPENDED.inc_by(num_messages as u64);
         MESSAGES_STORED.add(num_messages as i64);
 
@@ -572,7 +568,8 @@ WHERE access_token = $1",
         types
     }
 
-    fn batch_message_insert_query(num_rows: usize, num_columns: usize) -> String {
+    fn batch_message_insert_query(num_rows: usize) -> String {
+        let num_columns = 3;
         let mut buf = String::from(
             "INSERT INTO message(channel_login, time_received, message_source) VALUES ",
         );
