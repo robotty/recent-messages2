@@ -16,7 +16,7 @@
 - Fixed: Internal errors occurring in web request handlers are now printed. (#287)
 - Fixed: Metric for performance of different endpoints now works again, was previously only showing one combined
   performance for all endpoints under endpoint "other". (#287)
-- Fixed: Memory leak caused by excessive use of prepared statements for variable-length statements. (#328)
+- Fixed: Memory leak caused by use of prepared statements for variable-length SQL statements. (#328)
 
 ## v0.1.0
 
