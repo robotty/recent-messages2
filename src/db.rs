@@ -558,16 +558,6 @@ WHERE access_token = $1",
         out
     }
 
-    fn batch_message_insert_types(num_rows: usize) -> Vec<Type> {
-        let mut types = Vec::with_capacity(num_rows * 3);
-        for _ in 0..num_rows {
-            types.push(Type::TEXT);
-            types.push(Type::TIMESTAMPTZ);
-            types.push(Type::TEXT);
-        }
-        types
-    }
-
     fn batch_message_insert_query(num_rows: usize) -> String {
         let num_columns = 3;
         let mut buf = String::from(
