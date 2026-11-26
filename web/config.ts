@@ -1,3 +1,5 @@
+/// <reference types="vite/client" />
+
 let cfg = {
   client_id: "nld8y6rt7f5u7l1xuq4eni8pzp8mjo",
   redirect_uri: "https://recent-messages.robotty.de/authorized",
@@ -35,12 +37,12 @@ let cfg = {
 
 export type Config = typeof cfg;
 
-if (process.env.NODE_ENV === "development") {
+if (import.meta.env.DEV) {
   cfg = {
     ...cfg,
     client_id: "199iyze11rzmuu05ddxqzix4g8soou",
-    redirect_uri: "http://localhost:2790/authorized",
-    api_base_url: "http://localhost:2790/api/v2",
+    redirect_uri: "http://localhost:5173/authorized",
+    api_base_url: "http://localhost:5173/api/v2",
   };
 }
 

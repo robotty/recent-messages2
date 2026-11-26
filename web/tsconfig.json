@@ -1,12 +1,15 @@
 {
-  "include": ["src/**/*", "config.js", "config.d.ts"],
+  "extends": "$app/tsconfig",
+  "include": ["src", "*"],
   "compilerOptions": {
-    "target": "es2021",
-    "moduleResolution": "node",
+    "allowJs": true,
+    "checkJs": true,
     "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "jsx": "react",
+    "skipLibCheck": true,
+    "sourceMap": true,
     "strict": true,
-    "types": ["node"]
+    "moduleResolution": "bundler"
   }
 }
