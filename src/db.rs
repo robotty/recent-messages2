@@ -233,8 +233,7 @@ impl DataStorage {
                 r"SELECT channel_login
 FROM channel
 WHERE ignored_at IS NULL
-  AND last_access > now() - make_interval(secs => $1)
-ORDER BY last_access DESC",
+  AND last_access > now() - make_interval(secs => $1)",
                 &[Type::FLOAT8],
             )
             .await?;
