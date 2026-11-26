@@ -2762,8 +2762,7 @@ checksum = "e421abadd41a4225275504ea4d6566923418b7f05506fbc9c0fe86ba7396114b"
 [[package]]
 name = "twitch-irc"
 version = "6.1.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ad54e91c7c201e64a81fbdf7ad7ba9c502ae589033749f96fe1711c5b44ca13d"
+source = "git+https://github.com/robotty/twitch-irc-rs?branch=main#a57870d180d84b6c1cf4df8de6f80e48cfe4762a"
 dependencies = [
  "async-trait",
  "bytes",
