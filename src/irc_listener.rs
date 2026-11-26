@@ -43,12 +43,18 @@ static STORE_CHUNK_TIME_TAKEN: LazyLock<Histogram> = LazyLock::new(|| {
     .unwrap()
 });
 static SET_WANTED_CHANNELS_TIME_TAKEN: LazyLock<Histogram> = LazyLock::new(|| {
+    // 100 exponential buckets from 0.1 ms to 120 s (~15% step between adjacent buckets)
+    // to give fine resolution for both fast post-optimization runs and slow 270k-channel runs.
+    let smallest_bucket = 0.0001_f64;
+    let largest_bucket = 120.0_f64;
+    let num_buckets = 100_usize;
+    let factor = (largest_bucket / smallest_bucket).powf(1.0 / ((num_buckets - 1) as f64));
+    let buckets = exponential_buckets(smallest_bucket, factor, num_buckets).unwrap();
+
     register_histogram!(
         "recentmessages_irc_set_wanted_channels_time_taken_seconds",
         "Time taken to process set_wanted_channels on the IRC client",
-        // 21 exponential buckets doubling from 0.1 ms to ~105 s (wider than Prometheus's default
-        // 5 ms - 10 s range so we capture both fast runs and multi-second 270k-channel runs).
-        exponential_buckets(0.0001, 2.0, 21).unwrap()
+        buckets
     )
     .unwrap()
 });
