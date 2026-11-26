@@ -42,6 +42,16 @@ static STORE_CHUNK_TIME_TAKEN: LazyLock<Histogram> = LazyLock::new(|| {
     )
     .unwrap()
 });
+static SET_WANTED_CHANNELS_TIME_TAKEN: LazyLock<Histogram> = LazyLock::new(|| {
+    register_histogram!(
+        "recentmessages_irc_set_wanted_channels_time_taken_seconds",
+        "Time taken to process set_wanted_channels on the IRC client",
+        // 21 exponential buckets doubling from 0.1 ms to ~105 s (wider than Prometheus's default
+        // 5 ms - 10 s range so we capture both fast runs and multi-second 270k-channel runs).
+        exponential_buckets(0.0001, 2.0, 21).unwrap()
+    )
+    .unwrap()
+});
 
 #[derive(Debug, Clone)]
 pub struct IrcListener {
@@ -222,7 +232,13 @@ impl IrcListener {
                     "Checked database for channels that should be joined, now at {} channels",
                     channels.len()
                 );
+                let timer = SET_WANTED_CHANNELS_TIME_TAKEN.start_timer();
                 irc_client.set_wanted_channels(channels).unwrap();
+                // `set_wanted_channels` only validates logins and enqueues a command onto the IRC
+                // client's FIFO event loop. Awaiting `get_channel_status` right after acts as a barrier
+                // so the timer measures the full processing time inside `twitch-irc`.
+                let _ = irc_client.get_channel_status(String::new()).await;
+                timer.observe_duration();
             }
         };
 
