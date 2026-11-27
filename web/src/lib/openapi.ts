@@ -8,8 +8,7 @@ export function getOpenApiSpec() {
     info: {
       title: "recent-messages2 API",
       version: "2.0.0",
-      description:
-        "HTTP API for retrieving recently sent Twitch IRC messages and managing channel opt-out/purge settings.",
+      description: "HTTP API for retrieving recently sent Twitch IRC messages.",
       license: {
         name: "GNU AGPL v3.0 or later",
         url: `${config.repo_url}/blob/master/LICENSE`,
@@ -27,26 +26,8 @@ export function getOpenApiSpec() {
         description:
           "Public endpoint for fetching recent channel chat messages.",
       },
-      {
-        name: "Channel Settings",
-        description:
-          "Authenticated endpoints for channel owners to blacklist their channel or purge stored messages.",
-      },
-      {
-        name: "Authentication",
-        description:
-          "Session endpoints backed by Twitch OAuth authorization codes.",
-      },
     ],
     components: {
-      securitySchemes: {
-        bearerAuth: {
-          type: "http",
-          scheme: "bearer",
-          description:
-            "Session access token returned by POST /auth/create or POST /auth/extend.",
-        },
-      },
       schemas: {
         GetRecentMessagesResponse: {
           type: "object",
@@ -93,49 +74,6 @@ export function getOpenApiSpec() {
               type: "string",
               example: "invalid_channel_login",
             },
-          },
-        },
-        GetIgnoredResponse: {
-          type: "object",
-          required: ["ignored"],
-          properties: {
-            ignored: {
-              type: "boolean",
-              description:
-                "Whether the authenticated channel is currently blacklisted from the service.",
-            },
-          },
-        },
-        SetIgnoredBody: {
-          type: "object",
-          required: ["ignored"],
-          properties: {
-            ignored: {
-              type: "boolean",
-              description:
-                "Set true to blacklist the channel and purge its messages, or false to re-enable collection.",
-            },
-          },
-        },
-        UserAuthorizationResponse: {
-          type: "object",
-          required: [
-            "access_token",
-            "valid_until",
-            "user_id",
-            "user_login",
-            "user_name",
-            "user_profile_image_url",
-            "user_details_valid_until",
-          ],
-          properties: {
-            access_token: { type: "string" },
-            valid_until: { type: "string", format: "date-time" },
-            user_id: { type: "string" },
-            user_login: { type: "string" },
-            user_name: { type: "string" },
-            user_profile_image_url: { type: "string", format: "uri" },
-            user_details_valid_until: { type: "string", format: "date-time" },
           },
         },
       },
@@ -242,213 +180,6 @@ export function getOpenApiSpec() {
                       "The channel login `randers` is excluded from this service",
                     error_code: "channel_ignored",
                   },
-                },
-              },
-            },
-            "500": {
-              description: "Internal server error.",
-              content: {
-                "application/json": {
-                  schema: { $ref: "#/components/schemas/ApiErrorResponse" },
-                },
-              },
-            },
-          },
-        },
-      },
-      "/ignored": {
-        get: {
-          tags: ["Channel Settings"],
-          summary: "Get channel blacklist status",
-          security: [{ bearerAuth: [] }],
-          responses: {
-            "200": {
-              description: "Current blacklist status for the user's channel.",
-              content: {
-                "application/json": {
-                  schema: { $ref: "#/components/schemas/GetIgnoredResponse" },
-                },
-              },
-            },
-            "401": {
-              description: "Missing or invalid authorization token.",
-              content: {
-                "application/json": {
-                  schema: { $ref: "#/components/schemas/ApiErrorResponse" },
-                },
-              },
-            },
-            "500": {
-              description: "Internal server error.",
-              content: {
-                "application/json": {
-                  schema: { $ref: "#/components/schemas/ApiErrorResponse" },
-                },
-              },
-            },
-          },
-        },
-        post: {
-          tags: ["Channel Settings"],
-          summary: "Set channel blacklist status",
-          description:
-            "Enables or disables message collection for the authenticated user's channel. Enabling also purges stored messages.",
-          security: [{ bearerAuth: [] }],
-          requestBody: {
-            required: true,
-            content: {
-              "application/json": {
-                schema: { $ref: "#/components/schemas/SetIgnoredBody" },
-              },
-            },
-          },
-          responses: {
-            "204": { description: "Channel blacklist status updated." },
-            "400": {
-              description: "Invalid JSON payload.",
-              content: {
-                "application/json": {
-                  schema: { $ref: "#/components/schemas/ApiErrorResponse" },
-                },
-              },
-            },
-            "401": {
-              description: "Missing or invalid authorization token.",
-              content: {
-                "application/json": {
-                  schema: { $ref: "#/components/schemas/ApiErrorResponse" },
-                },
-              },
-            },
-            "500": {
-              description: "Internal server error.",
-              content: {
-                "application/json": {
-                  schema: { $ref: "#/components/schemas/ApiErrorResponse" },
-                },
-              },
-            },
-          },
-        },
-      },
-      "/purge": {
-        post: {
-          tags: ["Channel Settings"],
-          summary: "Purge channel messages",
-          description:
-            "Deletes all messages currently stored for the authenticated user's channel.",
-          security: [{ bearerAuth: [] }],
-          responses: {
-            "204": { description: "Channel messages purged." },
-            "401": {
-              description: "Missing or invalid authorization token.",
-              content: {
-                "application/json": {
-                  schema: { $ref: "#/components/schemas/ApiErrorResponse" },
-                },
-              },
-            },
-            "500": {
-              description: "Internal server error.",
-              content: {
-                "application/json": {
-                  schema: { $ref: "#/components/schemas/ApiErrorResponse" },
-                },
-              },
-            },
-          },
-        },
-      },
-      "/auth/create": {
-        post: {
-          tags: ["Authentication"],
-          summary: "Create session from Twitch OAuth code",
-          parameters: [
-            {
-              name: "code",
-              in: "query",
-              required: true,
-              description: "Authorization code returned by Twitch OAuth2.",
-              schema: { type: "string" },
-            },
-          ],
-          responses: {
-            "200": {
-              description: "Session created.",
-              content: {
-                "application/json": {
-                  schema: {
-                    $ref: "#/components/schemas/UserAuthorizationResponse",
-                  },
-                },
-              },
-            },
-            "400": {
-              description: "Invalid or missing authorization code.",
-              content: {
-                "application/json": {
-                  schema: { $ref: "#/components/schemas/ApiErrorResponse" },
-                },
-              },
-            },
-            "500": {
-              description: "Internal server error.",
-              content: {
-                "application/json": {
-                  schema: { $ref: "#/components/schemas/ApiErrorResponse" },
-                },
-              },
-            },
-          },
-        },
-      },
-      "/auth/extend": {
-        post: {
-          tags: ["Authentication"],
-          summary: "Extend and revalidate current session",
-          security: [{ bearerAuth: [] }],
-          responses: {
-            "200": {
-              description: "Session extended.",
-              content: {
-                "application/json": {
-                  schema: {
-                    $ref: "#/components/schemas/UserAuthorizationResponse",
-                  },
-                },
-              },
-            },
-            "401": {
-              description: "Missing or invalid authorization token.",
-              content: {
-                "application/json": {
-                  schema: { $ref: "#/components/schemas/ApiErrorResponse" },
-                },
-              },
-            },
-            "500": {
-              description: "Internal server error.",
-              content: {
-                "application/json": {
-                  schema: { $ref: "#/components/schemas/ApiErrorResponse" },
-                },
-              },
-            },
-          },
-        },
-      },
-      "/auth/revoke": {
-        post: {
-          tags: ["Authentication"],
-          summary: "Revoke current session",
-          security: [{ bearerAuth: [] }],
-          responses: {
-            "204": { description: "Session revoked." },
-            "401": {
-              description: "Missing or invalid authorization token.",
-              content: {
-                "application/json": {
-                  schema: { $ref: "#/components/schemas/ApiErrorResponse" },
                 },
               },
             },
