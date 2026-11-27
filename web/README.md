@@ -1,14 +1,21 @@
 # recent-messages2 web
 
-Houses a static JavaScript-based front-end web app.
+Houses the static front-end web app built with Svelte 5 and SvelteKit (`@sveltejs/adapter-static`).
 
-Edit `config.ts`, then build like this:
+Edit `config.ts`, then install dependencies and run:
 
 ```bash
-npm i
+npm ci
+npm run dev
+```
+
+To type-check and create a production build in `dist`:
+
+```bash
+npm run check
 npm run build
 ```
 
-Output will be created in `dist`.
+Static documentation routes (`/`, `/api`, `/privacy`, `/donation-thank-you`) are prerendered to HTML, and dynamic routes (`/login`, `/authorized`, `/logout`, `/settings`) fall back to `200.html`.
 
-A sample nginx config file is available as `nginx-example.conf`
+A sample nginx config file is available as `nginx-example.conf`.

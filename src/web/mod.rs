@@ -135,7 +135,7 @@ pub async fn run(
 
     let servedir = ServeDir::new("web/dist")
         .append_index_html_on_directories(true)
-        .fallback(ServeFile::new("web/dist/index.html"));
+        .fallback(ServeFile::new("web/dist/200.html"));
 
     let app = Router::new()
         .nest("/api/v2", api)
